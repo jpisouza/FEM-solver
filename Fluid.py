@@ -1,0 +1,31 @@
+import numpy as np
+
+class Fluid:
+    
+    def __init__(self,mesh,Re,Pr,Ga,Gr,IC):
+        
+        self.Re = Re
+        self.Pr = Pr
+        self.Ga = Ga
+        self.Gr = Gr
+        
+        if not type(IC['vx']) == np.ndarray:
+            self.vx = float(IC['vx'])*np.ones((mesh.npoints), dtype='float')
+            self.vy = float(IC['vy'])*np.ones((mesh.npoints), dtype='float')
+            self.p = float(IC['p'])*np.ones((mesh.npoints_p), dtype='float')
+            self.T = float(IC['T'])*np.ones((mesh.npoints_p), dtype='float')
+
+        else:           
+            self.vx = IC['vx']
+            self.vy = IC['vy']
+            self.p = IC['p']
+            self.T = IC['T']
+
+
+        self.T_mini = np.zeros((mesh.npoints), dtype='float')
+        self.T_quad = np.zeros((mesh.npoints), dtype='float')
+        self.p_quad = np.zeros((mesh.npoints), dtype='float')
+
+        self.vxd = np.zeros((mesh.npoints), dtype='float')
+        self.vyd = np.zeros((mesh.npoints), dtype='float')
+        self.Td = np.zeros((mesh.npoints), dtype='float')

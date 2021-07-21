@@ -1,0 +1,25 @@
+Cedro:
+152.92.243.3
+user: joaosouza
+senha: joao2021
+ssh joaosouza@152.92.243.3
+
+para entrar na Taurus:
+ssh joaosouza@10.0.0.202
+pwd: joao2021
+
+Programas para estudar:
+ssh
+scp
+screen
+passwd
+ls
+top
+mkdir
+cd
+tar
+ssh-keygen
+sshfs
+
+
+export OMP_NUM_THREADS=6
