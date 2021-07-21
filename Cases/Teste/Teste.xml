@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<Case name="malhaTeste">
+  <Parameters Fr="100.0" Re="1000.0" Gr="0.0" Pr="0.7" Fr_flag="True" particles="False" kind="quad"/>
+  <BoundaryCondition>
+    <Boundary name="upper_bound" vx="0.0" vy="0.0" p="None" T="0"/>
+	<Boundary name="lower_bound" vx="0.0" vy="0.0" p="None" T="0"/>
+    <Boundary name="right_bound" vx="None" vy="None" p="0.0" T="None"/>
+    <Boundary name="left_bound" vx="1.0" vy="0.0" p="None" T="1"/>
+  </BoundaryCondition>
+  <OutFlow>
+    <OF name="right_bound"/>
+  </OutFlow>
+  <InitialCondition vx="0" vy="0" p="0" T="0"/>
+</Case>

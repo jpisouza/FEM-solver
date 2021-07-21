@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<Case name="poiseuille">
+  <Parameters Fr="100" Re="1000" Gr="0" Pr="0.7" Fr_flag="True" particles="False" kind="quad"/>
+  <BoundaryCondition>
+    <Boundary name="wall" vx="0" vy="0" p="None" T="0"/>
+    <Boundary name="outFlow" vx="None" vy="None" p="0" T="None"/>
+	<Boundary name="inFlow" vx="Profile-1" vy="0" p="None" T="1"/>
+  </BoundaryCondition>
+  <OutFlow>
+    <OF name="outFlow"/>
+  </OutFlow>
+  <InitialCondition vx="0" vy="0" p="0" T="0"/>
+</Case>

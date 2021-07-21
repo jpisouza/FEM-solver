@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<Case name="convection.xml">
+  <Particles nparticles="50" rho="5.0" diameter="0.1" nLoop="100" lim_inf_x="0.1" lim_sup_x="0.9" lim_inf_y="0.1" lim_sup_y="0.9"/>
+</Case>
