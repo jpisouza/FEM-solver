@@ -62,6 +62,10 @@ class Case:
                 v[:cls.mesh.npoints_p,:] = IC_['v']
                 v[cls.mesh.npoints_p:,:] = IC_c['v_c']
                 
+                forces = np.zeros((cls.mesh.npoints,2), dtype='float')
+                forces[:cls.mesh.npoints_p,:] = IC_['forces'][:,:2]
+                forces[cls.mesh.npoints_p:,:] = IC_c['forces_c'][:,:2]
+                
                 IC = {}
                 IC['vx'] = v[:,0]
                 IC['vy'] = v[:,1]
@@ -70,7 +74,8 @@ class Case:
 
             elif cls.mesh.mesh_kind == 'quad':
                 IC = {}
-                v = IC_['v']                
+                v = IC_['v']   
+                forces = IC_['forces'][:,:2]
 
                 IC['vx'] = v[:,0]
                 IC['vy'] = v[:,1]
@@ -79,7 +84,8 @@ class Case:
 
         else:
             IC = cls.root.find('InitialCondition').attrib
-        return IC
+            forces = np.zeros((cls.mesh.npoints,2), dtype='float')
+        return IC, forces
     
     @classmethod
     def set_OutFlow(cls):
@@ -106,10 +112,15 @@ class Case:
             x_part = np.zeros((nparticles,2), dtype='float')
             x_part[:,0] = lims[0,0] + (lims[0,1] - lims[0,0])*np.random.rand(nparticles)
             x_part[:,1] = lims[1,0] + (lims[1,1] - lims[1,0])*np.random.rand(nparticles)
+            v_part = np.zeros((nparticles,2), dtype='float')
 
         else:
             file = os.path.dirname(os.path.abspath(cls.case)) + '/Results/sol_particles' + str(i) + '.vtu'
             x_part = np.array(pv.read(file).points)[:,:2]
+            vx = np.array(pv.read(file)['vx'])
+            vy = np.array(pv.read(file)['vy'])
+            v_part = np.block([[vx],[vy]]).transpose()
+
 
         d = float(part['diameter'])
         rho = float(part['rho'])
@@ -118,7 +129,7 @@ class Case:
         d_part = d*np.ones( (x_part.shape[0]),dtype='float' )
         rho_part = rho*np.ones( (x_part.shape[0]),dtype='float' )
         
-        return x_part, d_part, rho_part, nLoop
+        return x_part, v_part, d_part, rho_part, nLoop
         
     @classmethod
     def set_kind(cls, root):

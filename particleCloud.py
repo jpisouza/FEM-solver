@@ -4,17 +4,20 @@ from particle import Particle
 
 class ParticleCloud:
     
-    def __init__(self,elements,nodes,pos_vector,d_vector,rho_vector):
+    def __init__(self,elements,nodes,pos_vector,v_vector,d_vector,rho_vector,forces):
         
         self.x = pos_vector
+        self.v = v_vector
         self.d = d_vector
         self.rho = rho_vector
         self.elements = elements
         self.nodes = nodes
         
+        self.forces = forces
+        
         self.particle_list = []
         for i in range(self.x.shape[0]):
-            particle = Particle(i,self.d[i],self.rho[i],self.x[i])
+            particle = Particle(i,self.d[i],self.rho[i],self.x[i],self.v[i])
             self.particle_list.append(particle)
 
            
@@ -83,9 +86,16 @@ class ParticleCloud:
                             break
 
     
+    def calc_force_vector(self):
+        for part in self.particle_list:
+            if not math.isnan(part.pos[0]):
+                self.calc_F(part.pos,part.element,part.F,part.m)
+            
+            
+            
     def solve(self,dt,nLoop,Re,Fr):
         dt_ = dt/float(nLoop)
-        x = np.zeros((len(self.particle_list),2), dtype='float') 
+        self.x = np.zeros((len(self.particle_list),2), dtype='float') 
         for n in range(nLoop):             
             # list_del = []
             # count = 0
@@ -96,15 +106,64 @@ class ParticleCloud:
                 if particle.delete:
                     particle.pos = [float('NaN'),float('NaN')]
                     # list_del.append(count)
-                x[particle.ID,:] = particle.pos
+                self.x[particle.ID,:] = particle.pos
+                self.v[particle.ID,:] = particle.v
                 # count += 1
                 
             # self.particle_list = np.delete(self.particle_list,list_del)
             # x = np.delete(x,list_del,axis = 0)
+            self.forces = np.zeros((np.max(self.nodes[0].IEN)+1,2), dtype = 'float')
+            self.calc_force_vector()
             self.set_element()
-        return x
+        
                     
+    
+    def calc_F(self,point,element,force,mass):
+        point1 = element.nodes[0]
+        point2 = element.nodes[1]
+        point3 = element.nodes[2]
+        
+        p = point
+        p1 = np.array([point1.x,point1.y])
+        p2 = np.array([point2.x,point2.y])
+        p3 = np.array([point3.x,point3.y])
+        
+        A = Area(p1,p2,p3)
+        A1 = Area(p,p2,p3)
+        A2 = Area(p,p1,p3)
+        A3 = Area(p,p1,p2)
+        
+        L1 = A1/A
+        L2 = A2/A
+        L3 = A3/A
+        
+        if element.IEN.shape[1] <= 4:
+            N1 = L1 - 9.0*L1*L2*L3
+            N2 = L2 - 9.0*L1*L2*L3
+            N3 = L3 - 9.0*L1*L2*L3
+            N4 = 27.0*L1*L2*L3
             
+            N = [N1,N2,N3,N4]
+            
+            for i in range (3):
+                self.forces[element.nodes[i].ID,:] -= N[i]*force/mass
+            self.forces[element.centroide.ID,:] -= N4*force/mass
+        
+        else:
+            N1 = (2*L1-1.0)*L1
+            N2 = (2*L2-1.0)*L2
+            N3 = (2*L3-1.0)*L3
+            N4 = 4*L1*L2
+            N5 = 4*L2*L3
+            N6 = 4*L1*L3
+            
+            N = [N1,N2,N3,N4,N5,N6]
+            
+            for i in range (3):
+                self.forces[element.nodes[i].ID,:] -= N[i]*force/mass
+                self.forces[element.edges[i].ID,:] -= N[i+3]*force/mass
+ 
+
 
 def pointInElement(p,element):
     v1 = element.nodes[0]
@@ -130,3 +189,10 @@ def sameSide(p1,p2,a,b):
 def dist_point(x,point):
     dist = np.sqrt((x[0]-point.x)**2 + (x[1]-point.y)**2)
     return dist
+
+def Area(p1,p2,p3):
+    Matriz = np.array([[1,p1[0],p1[1]],
+                        [1,p2[0],p2[1]],
+                        [1,p3[0],p3[1]]],dtype='float')
+    A = 0.5*np.linalg.det(Matriz)
+    return np.abs(A)

@@ -7,13 +7,15 @@ class Particle:
         self.ID = ID
         self.d = d        
         self.rho = rho
-        self.m = (4.0/3.0)*self.rho*np.pi*(0.5*self.d)**3
+        self.vol = (4.0/3.0)*np.pi*(0.5*self.d)**3
+        self.m = self.rho*self.vol
         self.pos = pos
         self.v = np.array(v)
         
         self.Cd = 0
         self.D = 0
         self.E = 0
+        self.F = 0
         self.v_f = 0
         self.element = 0
         self.stop = False
@@ -41,16 +43,9 @@ class Particle:
         self.calc_Cd(Re)
         self.calc_Drag()
         self.calc_E(Fr)
-        
-        # print('v_f = ' + str(self.v_f))
-        # print('elem = ' + str(self.element.ID))
-        # print('pos = ' + str(self.pos))
-        # print('v1 = ' + str(self.element.nodes[0].vx))
-        # print('v2 = ' + str(self.element.nodes[1].vx))
-        # print('v3 = ' + str(self.element.nodes[2].vx))
-        
-        # print('D = ' + str(self.D))
-        self.v = self.v + (self.E + self.D)*dt/self.m
+        self.F = self.D + self.E
+  
+        self.v = self.v + (self.F)*dt/self.m
     def calc_pos(self,dt):
         self.pos = self.pos + self.v*dt
 

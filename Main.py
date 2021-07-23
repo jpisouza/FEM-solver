@@ -12,7 +12,7 @@ from SetCase import Case
 
 
 i = 0
-end = 0
+end = 100
 dt = 0.1
 case = os.path.basename(os.path.normpath(os.getcwd()))
 # case = './Cases/cylinder/cylinder'
@@ -54,7 +54,7 @@ MESH = mesh(msh,mesh_kind)
 
 Case.read(case,MESH)
 
-IC = Case.set_IC(i)
+IC,forces = Case.set_IC(i)
 Re,Pr,Ga,Gr,Fr,particles_flag = Case.set_parameters()
 BC = Case.set_BC()
 
@@ -65,9 +65,10 @@ MESH.set_boundary_prior(BC,outflow)
 fluid = Fluid(MESH,Re,Pr,Ga,Gr,IC)
 
 if particles_flag:
-    x_part, d_part, rho_part, nLoop = Case.set_particles(i)
+    x_part, v_part, d_part, rho_part, nLoop = Case.set_particles(i)
     
-    particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,d_part,rho_part)
+    particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces)
+
 
 t = np.arange(i,end,dt)
 
@@ -100,13 +101,15 @@ if not i == 0:
 while i < end:
     
     # fluid = FEM.solve_fields(True,neighborElem,oface)
-    fluid = FEM.solve_fields()
-    
-    x_part=np.array([])
     if particles_flag:
-        x_part = particleCloud.solve(dt,nLoop,fluid.Re,1.0/np.sqrt(fluid.Ga))
+        fluid = FEM.solve_fields(particleCloud.forces)
+        particleCloud.solve(dt,nLoop,fluid.Re,1.0/np.sqrt(fluid.Ga))
+    else:
+        fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'))
+        particleCloud = 0
+        
     
-    Export.export_data(i,output_dir,fluid,MESH,x_part)
+    Export.export_data(i,output_dir,fluid,MESH,particleCloud)
 
     i+=1
 

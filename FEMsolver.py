@@ -392,7 +392,7 @@ class Ui_MainWindow(object):
             self.init_flag = False
         else:
             if self.particles:
-                self.plotter.update_coordinates(np.block([Main.x_part,0.01*np.ones((Main.x_part.shape[0],1), dtype='float')]), mesh=self.part)
+                self.plotter.update_coordinates(np.block([Main.particleCloud.x,0.01*np.ones((Main.particleCloud.x.shape[0],1), dtype='float')]), mesh=self.part)
             if str(self.comboBox.currentText()) == 'v_x':
                 self.plotter.update_scalars(Main.fluid.vx[:self.size], mesh=self.grid)
             elif str(self.comboBox.currentText()) == 'v_y':

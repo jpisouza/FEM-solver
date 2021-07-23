@@ -48,6 +48,10 @@ class Main:
                 v[cls.MESH.npoints_p:,:] = IC_c['v_c']
                 # T_mini[:cls.MESH.npoints_p] = IC_['T']
                 
+                forces = np.zeros((cls.MESH.npoints,2), dtype='float')
+                forces[:cls.MESH.npoints_p,:] = IC_['forces'][:,:2]
+                forces[cls.MESH.npoints_p:,:] = IC_c['forces_c'][:,:2]
+                
                 # for e in cls.MESH.IEN:
                 #     v1,v2,v3,v4 = e
                 #     T_mini[v4] = (T_mini[v1] + T_mini[v2] + T_mini[v3])/3.0
@@ -62,6 +66,7 @@ class Main:
             if cls.MESH.mesh_kind == 'quad':
                 IC = {}
                 v = IC_['v']
+                forces = IC_['forces'][:,:2]
                 IC['vx'] = v[:,0]
                 IC['vy'] = v[:,1]
                 IC['p'] = IC_['p'][:cls.MESH.npoints_p]
@@ -79,8 +84,9 @@ class Main:
                 IC['vy'] = 0
                 IC['p'] = 0
                 IC['T'] = 0
+            forces = np.zeros((cls.MESH.npoints,2), dtype='float')
 
-        return IC
+        return IC, forces
     
     @classmethod
     def set_OutFlow(cls,table):
@@ -107,11 +113,11 @@ class Main:
         cls.MESH = mesh(os.path.splitext(case)[0])
         cls.MESH.set_boundary_prior(cls.BC,cls.outflow)      
 
-        cls.IC = cls.set_IC(case,textEdit_dt_2)
+        cls.IC, cls.forces = cls.set_IC(case,textEdit_dt_2)
         
         cls.fluid = Fluid(cls.MESH,cls.Re,cls.Pr,cls.Ga,cls.Gr,cls.IC)
         FEM.set_matrices(cls.MESH,cls.fluid,cls.dt,cls.BC)
-
+        
         #----------------------------------------SL Gustavo ----------------------------------------------------------------
         # cls.neighborElem = [[]]
         # cls.neighborElem = [[] for i in range(cls.MESH.npoints_p)]
@@ -142,26 +148,38 @@ class Main:
         if textEdit_dt_2.toPlainText() == '':            
             cls.x_part[:,0] = particles_lim_inf_x + (particles_lim_sup_x - particles_lim_inf_x)*np.random.rand(particles_nparticles)
             cls.x_part[:,1] = particles_lim_inf_y + (particles_lim_sup_y - particles_lim_inf_y)*np.random.rand(particles_nparticles)
+            cls.v_part = np.zeros((particles_nparticles,2), dtype='float')
+            
         else:
             file = os.path.dirname(os.path.abspath(case)) + '/Results/sol_particles' + str(textEdit_dt_2.toPlainText()) + '.vtu'
             cls.x_part = np.array(pv.read(file).points)[:,:2]
+            vx = np.array(pv.read(file)['vx'])
+            vy = np.array(pv.read(file)['vy'])
+            cls.v_part = np.block([[vx],[vy]]).transpose()
+        
             
         cls.d_part = particles_D*np.ones( (cls.x_part.shape[0]),dtype='float' )
         cls.rho_part = particles_rho*np.ones( (cls.x_part.shape[0]),dtype='float' )
         cls.nLoop = particles_nLoop
         
-        cls.particleCloud = ParticleCloud(cls.MESH.elem_list,cls.MESH.node_list,cls.x_part,cls.d_part,cls.rho_part)
+        cls.particleCloud = ParticleCloud(cls.MESH.elem_list,cls.MESH.node_list,cls.x_part,cls.v_part,cls.d_part,cls.rho_part,cls.forces)
         
     @classmethod
     def play(cls,i):
         
         # cls.fluid = FEM.solve_fields(True,cls.neighborElem,cls.oface)
-        cls.fluid = FEM.solve_fields()
         
-        cls.x_part=np.array([])
+        # index = np.where(cls.forces != 0)
+        # if len(index[0]) != 0:
+        #     print(cls.forces[index[0]])
+        
         if cls.particles:
-            cls.x_part = cls.particleCloud.solve(cls.dt,cls.nLoop,cls.fluid.Re,1.0/np.sqrt(cls.fluid.Ga))
+            cls.fluid = FEM.solve_fields(cls.particleCloud.forces)
+            cls.particleCloud.solve(cls.dt,cls.nLoop,cls.fluid.Re,1.0/np.sqrt(cls.fluid.Ga))
+        else:
+            cls.fluid = FEM.solve_fields(np.zeros((cls.MESH.npoints,2), dtype='float'))
+            cls.particleCloud = 0
         
-        Export.export_data(i,cls.output_dir,cls.fluid,cls.MESH,cls.x_part)
+        Export.export_data(i,cls.output_dir,cls.fluid,cls.MESH,cls.particleCloud)
         
         
