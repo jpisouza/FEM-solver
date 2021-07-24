@@ -17,7 +17,7 @@ class Worker(QObject):
         Main.set_simulation(self.case,self.table,self.textEdit_Re,self.textEdit_Pr,self.textEdit_Ga,self.textEdit_Gr,self.textEdit_dt,self.textEdit_dt_2,self.convection)
         if self.particles:
             Main.particles = True
-            Main.set_simulation_particles(self.case,self.particles_D,self.particles_rho,self.particles_nLoop,self.particles_nparticles,self.particles_lim_inf_x,self.particles_lim_sup_x,self.particles_lim_inf_y,self.particles_lim_sup_y, self.textEdit_dt_2)
+            Main.set_simulation_particles(self.case,self.particles_D,self.particles_rho,self.particles_nLoop,self.particles_nparticles,self.particles_lim_inf_x,self.particles_lim_sup_x,self.particles_lim_inf_y,self.particles_lim_sup_y, self.textEdit_dt_2,self.two_way)
         else:
             Main.particles = False
     def runPlay(self):
@@ -274,6 +274,9 @@ class Ui_MainWindow(object):
         self.textEdit_dt_2 = QtWidgets.QTextEdit(self.Simtab)
         self.textEdit_dt_2.setGeometry(QtCore.QRect(650, 170, 71, 31))
         self.textEdit_dt_2.setObjectName("textEdit_dt_2")
+        self.checkBox_2way = QtWidgets.QCheckBox(self.Simtab)
+        self.checkBox_2way.setGeometry(QtCore.QRect(600, 530, 111, 20))
+        self.checkBox_2way.setObjectName("checkBox_2way")
         self.tabWidget.addTab(self.Simtab, "")
         self.Outputtab = QtWidgets.QWidget()
         self.Outputtab.setObjectName("Outputtab")
@@ -483,6 +486,10 @@ class Ui_MainWindow(object):
            worker.particles_lim_sup_x = float(self.textEdit_Ga_3.toPlainText())
            worker.particles_lim_inf_y = float(self.textEdit_Gr_2.toPlainText())
            worker.particles_lim_sup_y = float(self.textEdit_Gr_3.toPlainText())
+           if self.checkBox_2way.isChecked():
+               worker.two_way = True
+           else:
+               worker.two_way = False 
         else:
            worker.particles = False
         
@@ -546,6 +553,11 @@ class Ui_MainWindow(object):
         parameters.set('Fr_flag',Fr_flag)
         
         parameters.set('particles',particles)
+        
+        if self.checkBox_2way.isChecked():
+            parameters.set('two_way','True')
+        else:
+            parameters.set('two_way','False')
 
         boundaryCond = ET.SubElement(data,'BoundaryCondition')
 
@@ -632,7 +644,12 @@ class Ui_MainWindow(object):
         else:
             self.textEdit_Ga.setText(par.attrib['Fr'])
         
-        
+        if 'two_way' in par.attrib:
+            if par.attrib['two_way'] == 'True':
+                self.checkBox_2way.setChecked(True)
+            else:
+                self.checkBox_2way.setChecked(False)
+              
         BC_list = []
         for child in root.find('BoundaryCondition'):
             BC_list.append(child.attrib)
@@ -720,6 +737,7 @@ class Ui_MainWindow(object):
             self.textEdit_Gr_3.setVisible(True)
             self.textEdit_Re_3.setVisible(True)
             self.textEdit_Re_4.setVisible(True)
+            self.checkBox_2way.setVisible(True)
             self.particles = True
         else:
             self.label_D.setVisible(False)
@@ -739,6 +757,7 @@ class Ui_MainWindow(object):
             self.textEdit_Gr_3.setVisible(False)
             self.textEdit_Re_3.setVisible(False)
             self.textEdit_Re_4.setVisible(False)
+            self.checkBox_2way.setVisible(False)
             self.particles = False
             
     def retranslateUi(self, MainWindow):
@@ -777,6 +796,7 @@ class Ui_MainWindow(object):
         self.checkBox_conv.setText(_translate("MainWindow", "Convective"))
         self.checkBox_particles.setText(_translate("MainWindow", "Particles"))
         self.label_9.setText(_translate("MainWindow", "Start iteration:"))
+        self.checkBox_2way.setText(_translate("MainWindow", "Two-way"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Simtab), _translate("MainWindow", "Simulation settings"))
         self.pushButton_2.setText(_translate("MainWindow", "XY"))
         self.comboBox.setItemText(0, _translate("MainWindow", "v_x"))

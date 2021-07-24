@@ -344,33 +344,43 @@ class Ui_MainWindow(object):
     
     def adjust(self):
         if str(self.comboBox.currentText()) == 'v_x':
-            self.plotter.update_scalar_bar_range([np.min(Main.fluid.vx[:Main.MESH.npoints_p]),np.max(Main.fluid.vx[:Main.MESH.npoints_p])], name = 'Field')
+            self.plotter.update_scalar_bar_range([np.min(Main.fluid.vx[:self.size]),np.max(Main.fluid.vx[:self.size])], name = 'Field')
         elif str(self.comboBox.currentText()) == 'v_y':
-            self.plotter.update_scalar_bar_range([np.min(Main.fluid.vy[:Main.MESH.npoints_p]),np.max(Main.fluid.vy[:Main.MESH.npoints_p])], name = 'Field')
+            self.plotter.update_scalar_bar_range([np.min(Main.fluid.vy[:self.size]),np.max(Main.fluid.vy[:self.size])], name = 'Field')
         elif str(self.comboBox.currentText()) == 'p':
-            self.plotter.update_scalar_bar_range([np.min(Main.fluid.p[:Main.MESH.npoints_p]),np.max(Main.fluid.p[:Main.MESH.npoints_p])], name = 'Field')
+            self.plotter.update_scalar_bar_range([np.min(self.p[:self.size]),np.max(Main.fluid.p[:self.size])], name = 'Field')
         else:
-            self.plotter.update_scalar_bar_range([np.min(Main.fluid.T[:Main.MESH.npoints_p]),np.max(Main.fluid.T[:Main.MESH.npoints_p])], name = 'Field')
+            self.plotter.update_scalar_bar_range([np.min(self.T[:self.size]),np.max(Main.fluid.T[:self.size])], name = 'Field')
             
     def change_field(self):
         if str(self.comboBox.currentText()) == 'v_x':
-            self.plotter.update_scalars(Main.fluid.vx[:Main.MESH.npoints_p], mesh=self.grid)
+            self.plotter.update_scalars(Main.fluid.vx[:self.size], mesh=self.grid)
         elif str(self.comboBox.currentText()) == 'v_y':
-            self.plotter.update_scalars(Main.fluid.vy[:Main.MESH.npoints_p], mesh=self.grid)
+            self.plotter.update_scalars(Main.fluid.vy[:self.size], mesh=self.grid)
         elif str(self.comboBox.currentText()) == 'p':
-            self.plotter.update_scalars(Main.fluid.p[:Main.MESH.npoints_p], mesh=self.grid)
+            self.plotter.update_scalars(self.p[:self.size], mesh=self.grid)
         else:
-            self.plotter.update_scalars(Main.fluid.T[:Main.MESH.npoints_p], mesh=self.grid)
+            self.plotter.update_scalars(self.T[:self.size], mesh=self.grid)
             
         self.adjust()
             
     def display_grid(self, i):
-        file = os.path.dirname(os.path.abspath(self.fname)) + '/Results/sol-' + str(i) + '.vtk'       
-        if self.init_flag and self.simulation_status == 'play':  
+        file = os.path.dirname(os.path.abspath(self.fname)) + '/Results/sol-' + str(i) + '.vtk'
+        if Main.MESH.mesh_kind == 'quad':  
+            self.p = Main.fluid.p_quad
+            self.T = Main.fluid.T_quad
+        else:
+            self.p = Main.fluid.p
+            self.T = Main.fluid.T 
+        if self.init_flag and self.simulation_status == 'play': 
+            if Main.MESH.mesh_kind == 'quad':  
+                self.size = Main.MESH.npoints
+            else:
+                self.size = Main.MESH.npoints_p 
             self.plotter.clear()
             self.grid = pv.read(file)
             self.plotter.show_axes()
-            self.plotter.add_mesh(self.grid, scalars = Main.fluid.vx[:Main.MESH.npoints_p], show_edges=False,cmap='jet')
+            self.plotter.add_mesh(self.grid, scalars = Main.fluid.vx[:self.size], show_edges=False,cmap='jet')
             self.plotter.add_scalar_bar(title = 'Field', title_font_size = 16, n_labels = 5,label_font_size=16)
             if self.particles:
                 file_part = os.path.dirname(os.path.abspath(self.fname)) + '/Results/sol_particles' + str(i) + '.vtu'
@@ -382,15 +392,15 @@ class Ui_MainWindow(object):
             self.init_flag = False
         else:
             if self.particles:
-                self.plotter.update_coordinates(np.block([Main.x_part,0.01*np.ones((Main.x_part.shape[0],1), dtype='float')]), mesh=self.part)
+                self.plotter.update_coordinates(np.block([Main.particleCloud.x,0.01*np.ones((Main.particleCloud.x.shape[0],1), dtype='float')]), mesh=self.part)
             if str(self.comboBox.currentText()) == 'v_x':
-                self.plotter.update_scalars(Main.fluid.vx[:Main.MESH.npoints_p], mesh=self.grid)
+                self.plotter.update_scalars(Main.fluid.vx[:self.size], mesh=self.grid)
             elif str(self.comboBox.currentText()) == 'v_y':
-                self.plotter.update_scalars(Main.fluid.vy[:Main.MESH.npoints_p], mesh=self.grid)
+                self.plotter.update_scalars(Main.fluid.vy[:self.size], mesh=self.grid)
             elif str(self.comboBox.currentText()) == 'p':
-                self.plotter.update_scalars(Main.fluid.p[:Main.MESH.npoints_p], mesh=self.grid)
+                self.plotter.update_scalars(self.p[:self.size], mesh=self.grid)
             else:
-                self.plotter.update_scalars(Main.fluid.T[:Main.MESH.npoints_p], mesh=self.grid)
+                self.plotter.update_scalars(self.T[:self.size], mesh=self.grid)
                 
     def play(self):
         
@@ -417,14 +427,14 @@ class Ui_MainWindow(object):
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
-            self.worker.progress.connect(lambda: print('Simulation started!'))
+            self.worker.progress.connect(lambda: print('--------Simulation started!--------\n'))
             self.worker.progress.connect(lambda: self.label_3.setText('Simulation started!'))
             self.worker.sim_progress.connect(lambda i: self.label_3.setText('Iteration: ' + str(i)))
             self.worker.sim_progress.connect(self.display_grid)
             self.worker.finished.connect(lambda: self.label_3.setText("Simulation finished!"))
             self.worker.finished.connect(lambda: self.pushButton.setEnabled(True))
             self.worker.finished.connect(lambda: self.toolButton.setEnabled(True))
-            self.worker.finished.connect(lambda: print('Simulation finished!'))
+            self.worker.finished.connect(lambda: print('--------Simulation finished!--------\n'))
             self.comboBox.currentTextChanged.connect(self.change_field)
             self.pushButton_3.clicked.connect(self.adjust)
             # Step 6: Start the thread
@@ -541,18 +551,19 @@ class Ui_MainWindow(object):
 
         OF_flag = False
         for i in range(self.tableWidget.rowCount()):
+            j = int(self.tableWidget.item(i,4).text())-1
             boundary = ET.SubElement(boundaryCond,'Boundary')
-            boundary.set('name',str(self.tableWidget.verticalHeaderItem(i).text()))
-            boundary.set('vx',str(self.tableWidget.item(i,0).text()))
-            boundary.set('vy',str(self.tableWidget.item(i,1).text()))
-            boundary.set('p',str(self.tableWidget.item(i,2).text()))
-            boundary.set('T',str(self.tableWidget.item(i,3).text()))
-            if self.tableWidget.cellWidget(i, 5).isChecked():
+            boundary.set('name',str(self.tableWidget.verticalHeaderItem(j).text()))
+            boundary.set('vx',str(self.tableWidget.item(j,0).text()))
+            boundary.set('vy',str(self.tableWidget.item(j,1).text()))
+            boundary.set('p',str(self.tableWidget.item(j,2).text()))
+            boundary.set('T',str(self.tableWidget.item(j,3).text()))
+            if self.tableWidget.cellWidget(j, 5).isChecked():
                 if not OF_flag:
                     OutFlow = ET.SubElement(data,'OutFlow')
                 OF_flag = True
                 OF = ET.SubElement(OutFlow,'OF')
-                OF.set('name',str(self.tableWidget.verticalHeaderItem(i).text()))
+                OF.set('name',str(self.tableWidget.verticalHeaderItem(j).text()))
 
 
 
@@ -658,8 +669,8 @@ class Ui_MainWindow(object):
 
             
         self.tableWidget.setVisible(True)
-        if os.path.exists(os.path.dirname(self.sim_name) + '//' + os.path.splitext(root.attrib['name'])[0] + '.msh'):
-            self.fname = os.path.dirname(self.sim_name) + '//' + os.path.splitext(root.attrib['name'])[0] + '.msh'
+        if os.path.exists(os.path.dirname(self.sim_name) + '/' + os.path.splitext(root.attrib['name'])[0] + '.msh'):
+            self.fname = os.path.dirname(self.sim_name) + '/' + os.path.splitext(root.attrib['name'])[0] + '.msh'
         else:
             self.fname = os.path.splitext(os.path.abspath(root.attrib['name']))[0] + '.msh'
         
@@ -674,8 +685,6 @@ class Ui_MainWindow(object):
             path = os.path.abspath(os.path.splitext(self.sim_name)[0] + '_particles.xml')
             f2 = open(path, 'r')
             root = ET.fromstring(f2.read())
-            # tree = ET.parse(path)
-            # root = tree.getroot()
             par =  root.find('Particles').attrib
             self.textEdit_D.setText(par['diameter'])
             self.textEdit_rho.setText(par['rho'])

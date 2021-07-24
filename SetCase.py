@@ -37,6 +37,7 @@ class Case:
             Fr = 0.0
             Ga = float(par.attrib['Ga'])
         
+        two_way = True
         if 'two_way' in par.attrib:
             if par.attrib['two_way'] == 'True':
                 two_way = True

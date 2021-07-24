@@ -688,6 +688,19 @@
        </rect>
       </property>
      </widget>
+     <widget class="QCheckBox" name="checkBox_2way">
+      <property name="geometry">
+       <rect>
+        <x>600</x>
+        <y>530</y>
+        <width>111</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Two-way</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="Outputtab">
      <attribute name="title">

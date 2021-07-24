@@ -142,7 +142,7 @@ class Main:
             os.mkdir(cls.output_dir)
             
     @classmethod
-    def set_simulation_particles(cls,case,particles_D,particles_rho,particles_nLoop,particles_nparticles,particles_lim_inf_x,particles_lim_sup_x,particles_lim_inf_y,particles_lim_sup_y,textEdit_dt_2):
+    def set_simulation_particles(cls,case,particles_D,particles_rho,particles_nLoop,particles_nparticles,particles_lim_inf_x,particles_lim_sup_x,particles_lim_inf_y,particles_lim_sup_y,textEdit_dt_2,two_way):
         
         cls.x_part = np.zeros((particles_nparticles,2), dtype='float')
         if textEdit_dt_2.toPlainText() == '':            
@@ -161,8 +161,9 @@ class Main:
         cls.d_part = particles_D*np.ones( (cls.x_part.shape[0]),dtype='float' )
         cls.rho_part = particles_rho*np.ones( (cls.x_part.shape[0]),dtype='float' )
         cls.nLoop = particles_nLoop
+        cls.two_way = two_way
         
-        cls.particleCloud = ParticleCloud(cls.MESH.elem_list,cls.MESH.node_list,cls.x_part,cls.v_part,cls.d_part,cls.rho_part,cls.forces)
+        cls.particleCloud = ParticleCloud(cls.MESH.elem_list,cls.MESH.node_list,cls.x_part,cls.v_part,cls.d_part,cls.rho_part,cls.forces,cls.two_way)
         
     @classmethod
     def play(cls,i):

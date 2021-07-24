@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from particle import Particle
+from timeit import default_timer as timer
 
 class ParticleCloud:
     
@@ -113,9 +114,13 @@ class ParticleCloud:
                 
             # self.particle_list = np.delete(self.particle_list,list_del)
             # x = np.delete(x,list_del,axis = 0)
-            self.forces = np.zeros((np.max(self.nodes[0].IEN)+1,2), dtype = 'float')
-            if self.two_way:
-                self.calc_force_vector()
+            if n == (nLoop - 1):
+                self.forces = np.zeros((np.max(self.nodes[0].IEN)+1,2), dtype = 'float')
+                if self.two_way:
+                    start = timer()
+                    self.calc_force_vector()
+                    end = timer()
+                    print('time --> Calculate two-way forces = ' + str(end-start) + ' [s]')
             self.set_element()
         
                         
