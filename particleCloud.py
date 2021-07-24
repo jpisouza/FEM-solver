@@ -90,7 +90,7 @@ class ParticleCloud:
     def calc_force_vector(self):
         for part in self.particle_list:
             if not math.isnan(part.pos[0]):
-                self.calc_F(part.pos,part.element,part.F,part.m)
+                self.calc_F(part.pos,part.element,part.F,part.vol)
             
             
             
@@ -119,7 +119,7 @@ class ParticleCloud:
             self.set_element()
         
                         
-    def calc_F(self,point,element,force,mass):
+    def calc_F(self,point,element,force,volume):
         point1 = element.nodes[0]
         point2 = element.nodes[1]
         point3 = element.nodes[2]
@@ -147,8 +147,8 @@ class ParticleCloud:
             N = [N1,N2,N3,N4]
             
             for i in range (3):
-                self.forces[element.nodes[i].ID,:] -= N[i]*force/mass
-            self.forces[element.centroide.ID,:] -= N4*force/mass
+                self.forces[element.nodes[i].ID,:] -= N[i]*force/volume
+            self.forces[element.centroide.ID,:] -= N4*force/volume
         
         else:
             N1 = (2*L1-1.0)*L1
@@ -161,8 +161,8 @@ class ParticleCloud:
             N = [N1,N2,N3,N4,N5,N6]
             
             for i in range (3):
-                self.forces[element.nodes[i].ID,:] -= N[i]*force/mass
-                self.forces[element.edges[i].ID,:] -= N[i+3]*force/mass
+                self.forces[element.nodes[i].ID,:] -= N[i]*force/volume
+                self.forces[element.edges[i].ID,:] -= N[i+3]*force/volume
  
 
 
