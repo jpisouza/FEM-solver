@@ -36,8 +36,14 @@ class Case:
         else:
             Fr = 0.0
             Ga = float(par.attrib['Ga'])
+        
+        if 'two_way' in par.attrib:
+            if par.attrib['two_way'] == 'True':
+                two_way = True
+            else:
+                two_way = False
             
-        return Re,Pr,Ga,Gr,Fr, particles
+        return Re,Pr,Ga,Gr,Fr,particles,two_way
     
     @classmethod
     def set_BC(cls):

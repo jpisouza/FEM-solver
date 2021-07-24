@@ -4,7 +4,7 @@ from particle import Particle
 
 class ParticleCloud:
     
-    def __init__(self,elements,nodes,pos_vector,v_vector,d_vector,rho_vector,forces):
+    def __init__(self,elements,nodes,pos_vector,v_vector,d_vector,rho_vector,forces,two_way=True):
         
         self.x = pos_vector
         self.v = v_vector
@@ -14,6 +14,7 @@ class ParticleCloud:
         self.nodes = nodes
         
         self.forces = forces
+        self.two_way = two_way
         
         self.particle_list = []
         for i in range(self.x.shape[0]):
@@ -113,11 +114,11 @@ class ParticleCloud:
             # self.particle_list = np.delete(self.particle_list,list_del)
             # x = np.delete(x,list_del,axis = 0)
             self.forces = np.zeros((np.max(self.nodes[0].IEN)+1,2), dtype = 'float')
-            self.calc_force_vector()
+            if self.two_way:
+                self.calc_force_vector()
             self.set_element()
         
-                    
-    
+                        
     def calc_F(self,point,element,force,mass):
         point1 = element.nodes[0]
         point2 = element.nodes[1]

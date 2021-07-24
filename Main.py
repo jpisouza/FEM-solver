@@ -55,7 +55,7 @@ MESH = mesh(msh,mesh_kind)
 Case.read(case,MESH)
 
 IC,forces = Case.set_IC(i)
-Re,Pr,Ga,Gr,Fr,particles_flag = Case.set_parameters()
+Re,Pr,Ga,Gr,Fr,particles_flag,two_way = Case.set_parameters()
 BC = Case.set_BC()
 
 outflow = Case.set_OutFlow()
@@ -67,7 +67,7 @@ fluid = Fluid(MESH,Re,Pr,Ga,Gr,IC)
 if particles_flag:
     x_part, v_part, d_part, rho_part, nLoop = Case.set_particles(i)
     
-    particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces)
+    particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces,two_way)
 
 
 t = np.arange(i,end,dt)
