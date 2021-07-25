@@ -267,12 +267,12 @@ class FEM:
     def set_block_vectors(cls,BC,forces):
         cls.M = cls.M.tocsr()
         cls.M_T = cls.M_T.tocsr()
-        cls.vetor_vx = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vxd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Ga*(forces[:,0]/9.8))
+        cls.vetor_vx = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vxd) + sp.sparse.csr_matrix.dot(cls.M,forces[:,0])
 
         if cls.mesh.mesh_kind == 'mini':
-            cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T_mini + cls.fluid.Ga*(forces[:,1]/9.8 -cls.fluid.Ga))
+            cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T_mini + forces[:,1] -cls.fluid.Ga)
         elif cls.mesh.mesh_kind == 'quad':
-            cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T_quad + cls.fluid.Ga*(forces[:,1]/9.8 -cls.fluid.Ga))
+            cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T_quad + forces[:,1] -cls.fluid.Ga)
         cls.vetor_p = np.zeros((cls.mesh.npoints_p),dtype='float' )
         cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td[0:cls.mesh.npoints_p])
 
