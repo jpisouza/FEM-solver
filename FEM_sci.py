@@ -15,7 +15,7 @@ import Elements
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC):
+    def set_matrices(cls,mesh,fluid,dt,BC,porous = "False"):
 
         start = timer()
 
@@ -24,9 +24,12 @@ class FEM:
         cls.Ga = fluid.Ga
         cls.Gr = fluid.Gr
         cls.Pr = fluid.Pr
+        cls.Da = fluid.Da
+        cls.Fo = fluid.Fo
         cls.dt = dt
         cls.mesh = mesh
         cls.BC = BC
+        cls.porous = porous
         
         
         # Main.include('LinSolve.jl')
@@ -216,11 +219,34 @@ class FEM:
 
         cls.Dx = cls.Gx.transpose()
         cls.Dy = cls.Gy.transpose()
+    
+    @classmethod
+    def set_Darcy_Forchheimer(cls):
+        
+        v_diag = cls.calc_v_modulus()
+        
+        A1 = (1.0/(cls.Re*cls.Da))*cls.M.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(cls.M.tocsr(),v_diag)
+        
+        block_DF = sp.sparse.bmat([[A1, None],
+                                  [None, A1]])
+        
 
+        cls.Matriz[:2*cls.mesh.npoints, :2*cls.mesh.npoints] = cls.Matriz_orig[:2*cls.mesh.npoints, :2*cls.mesh.npoints] + block_DF
+        
+        
+    @classmethod
+    def calc_v_modulus(cls):
+        
+        v = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))
+        
+        v = v.power(0.5)
+        
+        return v
+        
     @classmethod
     def set_block_matrices(cls,BC):
         
-        A1 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K
+        A1 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K 
         
         cls.Matriz = sp.sparse.bmat([ [ A1, None, -cls.Gx],
                                       [ None, A1, -cls.Gy],
@@ -229,42 +255,46 @@ class FEM:
         cls.Matriz_T=(1.0/cls.dt)*cls.M_T + (1.0/(cls.Re*cls.Pr))*cls.K_T
         
         cls.Matriz = cls.Matriz.tocsr()
+        cls.Matriz_orig = cls.Matriz.copy()
+        
         cls.Matriz_T = cls.Matriz_T.tocsr()
         
-        for i in range(len(BC)):
-            
-            for j in cls.mesh.boundary[i]:
-                if BC[i]['vx'] != 'None':
-                    row = cls.Matriz.getrow(j)
-                    for col in row.indices:
-                        cls.Matriz[j,col] = 0
-                    cls.Matriz[j,j] = 1.0
+        if not cls.porous:
+            for i in range(len(BC)):
                 
-                if BC[i]['vy'] != 'None':
-                    row = cls.Matriz.getrow(j + cls.mesh.npoints)
-                    for col in row.indices:
-                        cls.Matriz[j + cls.mesh.npoints,col] = 0
-                    cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
-
-                if j < cls.mesh.npoints_p:   
-                    if BC[i]['T'] != 'None':
-                        row = cls.Matriz_T.getrow(j)
+                for j in cls.mesh.boundary[i]:
+                    if BC[i]['vx'] != 'None':
+                        row = cls.Matriz.getrow(j)
                         for col in row.indices:
-                            cls.Matriz_T[j,col] = 0
-                        cls.Matriz_T[j,j] = 1.0
+                            cls.Matriz[j,col] = 0
+                        cls.Matriz[j,j] = 1.0
                         
-                    if BC[i]['p'] != 'None':  
-                        row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
+                    if BC[i]['vy'] != 'None':
+                        row = cls.Matriz.getrow(j + cls.mesh.npoints)
                         for col in row.indices:
-                            cls.Matriz[j + 2*cls.mesh.npoints,col] = 0
-                        cls.Matriz = cls.Matriz.tolil()
-                        cls.Matriz[j + 2*cls.mesh.npoints,j + 2*cls.mesh.npoints] = 1.0
-                        cls.Matriz = cls.Matriz.tocsr()
-        cls.Matriz = cls.Matriz.tocsr()
-        cls.Matriz_T = cls.Matriz_T.tocsr()         
+                            cls.Matriz[j + cls.mesh.npoints,col] = 0
+                        cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
+    
+                    if j < cls.mesh.npoints_p: 
+                        if BC[i]['T'] != 'None':
+                            row = cls.Matriz_T.getrow(j)
+                            for col in row.indices:
+                                cls.Matriz_T[j,col] = 0
+                            cls.Matriz_T[j,j] = 1.0
+                            
+                        if BC[i]['p'] != 'None':
+                            row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
+                            for col in row.indices:
+                                cls.Matriz[j + 2*cls.mesh.npoints,col] = 0
+                            cls.Matriz = cls.Matriz.tolil()
+                            cls.Matriz[j + 2*cls.mesh.npoints,j + 2*cls.mesh.npoints] = 1.0
+                            cls.Matriz = cls.Matriz.tocsr()
+                            
+            cls.Matriz = cls.Matriz.tocsr()
+            cls.Matriz_T = cls.Matriz_T.tocsr() 
 
     @classmethod
-    def set_block_vectors(cls,BC,forces):
+    def set_block_vectors(cls,forces):
         cls.M = cls.M.tocsr()
         cls.M_T = cls.M_T.tocsr()
         cls.vetor_vx = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vxd) + sp.sparse.csr_matrix.dot(cls.M,forces[:,0])
@@ -276,11 +306,12 @@ class FEM:
         cls.vetor_p = np.zeros((cls.mesh.npoints_p),dtype='float' )
         cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td[0:cls.mesh.npoints_p])
 
-        
+    @classmethod
+    def set_BC(cls,BC):
         for i in range(len(BC)):
             
             for j in cls.mesh.boundary[i]:
-                if 'Profile' in BC[i]['vx']:
+                if 'Profile' in BC[i]['vx']:                    
                     u_0 = float(BC[i]['vx'].split('-')[1])
                     ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
                     h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
@@ -288,18 +319,20 @@ class FEM:
                 elif BC[i]['vx'] != 'None':
                     cls.vetor_vx[j] = float(BC[i]['vx'])
 
-                if 'Profile' in BC[i]['vy']:
+                if 'Profile' in BC[i]['vy']:                    
                     u_0 = float(BC[i]['vy'].split('-')[1])
                     ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
                     h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
                     cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)
+                    
                 elif BC[i]['vy'] != 'None':
                     cls.vetor_vy[j] = float(BC[i]['vy']) 
 
                 if j < cls.mesh.npoints_p: 
                     if BC[i]['T'] != 'None':
                         cls.vetor_T[j] = float(BC[i]['T'])
-                    if BC[i]['p'] != 'None':
+                        
+                    if BC[i]['p'] != 'None':                        
                         cls.vetor_p[j] = float(BC[i]['p'])
         
 
@@ -311,6 +344,80 @@ class FEM:
         cls.vetor = sp.sparse.bmat([[cls.vetor_vx,cls.vetor_vy,cls.vetor_p]])
         cls.vetor = cls.vetor.tocsr()
         cls.vetor_T = cls.vetor_T.tocsr()
+    
+    @classmethod
+    def set_BC_darcy(cls,BC):
+        for i in range(len(BC)):
+            
+            for j in cls.mesh.boundary[i]:
+                if 'Profile' in BC[i]['vx']:
+                    row = cls.Matriz.getrow(j)
+                    for col in row.indices:
+                        cls.Matriz[j,col] = 0
+                    cls.Matriz[j,j] = 1.0
+                    
+                    u_0 = float(BC[i]['vx'].split('-')[1])
+                    ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
+                    h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
+                    cls.vetor_vx[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)
+                elif BC[i]['vx'] != 'None':
+                    row = cls.Matriz.getrow(j)
+                    for col in row.indices:
+                        cls.Matriz[j,col] = 0
+                    cls.Matriz[j,j] = 1.0
+                    
+                    cls.vetor_vx[j] = float(BC[i]['vx'])
+
+                if 'Profile' in BC[i]['vy']:
+                    row = cls.Matriz.getrow(j + cls.mesh.npoints)
+                    for col in row.indices:
+                        cls.Matriz[j + cls.mesh.npoints,col] = 0
+                    cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
+                    
+                    u_0 = float(BC[i]['vy'].split('-')[1])
+                    ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
+                    h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
+                    cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)
+                    
+                elif BC[i]['vy'] != 'None':
+                    row = cls.Matriz.getrow(j + cls.mesh.npoints)
+                    for col in row.indices:
+                        cls.Matriz[j + cls.mesh.npoints,col] = 0
+                    cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
+                    
+                    cls.vetor_vy[j] = float(BC[i]['vy']) 
+
+                if j < cls.mesh.npoints_p: 
+                    if BC[i]['T'] != 'None':
+                        row = cls.Matriz_T.getrow(j)
+                        for col in row.indices:
+                            cls.Matriz_T[j,col] = 0
+                        cls.Matriz_T[j,j] = 1.0
+                        
+                        cls.vetor_T[j] = float(BC[i]['T'])
+                        
+                    if BC[i]['p'] != 'None':
+                        row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
+                        for col in row.indices:
+                            cls.Matriz[j + 2*cls.mesh.npoints,col] = 0
+                        cls.Matriz = cls.Matriz.tolil()
+                        cls.Matriz[j + 2*cls.mesh.npoints,j + 2*cls.mesh.npoints] = 1.0
+                        cls.Matriz = cls.Matriz.tocsr()
+                        
+                        cls.vetor_p[j] = float(BC[i]['p'])
+        
+
+        cls.vetor_vx = csr_matrix(cls.vetor_vx.reshape(-1,len(cls.vetor_vx)))
+        cls.vetor_vy = csr_matrix(cls.vetor_vy.reshape(-1,len(cls.vetor_vy)))
+        cls.vetor_p = csr_matrix(cls.vetor_p.reshape(-1,len(cls.vetor_p)))
+        cls.vetor_T = csr_matrix(cls.vetor_T.reshape(-1,len(cls.vetor_T)))
+
+        cls.vetor = sp.sparse.bmat([[cls.vetor_vx,cls.vetor_vy,cls.vetor_p]])
+        cls.vetor = cls.vetor.tocsr()
+        cls.vetor_T = cls.vetor_T.tocsr()
+        
+        cls.Matriz = cls.Matriz.tocsr()
+        cls.Matriz_T = cls.Matriz_T.tocsr()
     
     @classmethod
     def solve_fields(cls,forces,SLG=False,neighborElem=[[]],oface=[]):
@@ -351,8 +458,18 @@ class FEM:
                 cls.fluid.p_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.p_quad[cls.mesh.IEN[:,j]] + cls.fluid.p_quad[cls.mesh.IEN[:,i-3]])/2.0
                 
         
+        if cls.porous:
+            start = timer()
+            cls.set_Darcy_Forchheimer()
+            end = timer()
+            print('time --> Set Darcy/Forchheimer parcel = ' + str(end-start) + ' [s]')
+        
         start = timer()
-        cls.set_block_vectors(cls.BC,forces)
+        cls.set_block_vectors(forces)
+        if cls.porous:
+            cls.set_BC_darcy(cls.BC)
+        else:
+            cls.set_BC(cls.BC)
         end = timer()
         print('time --> Set boundaries = ' + str(end-start) + ' [s]')
         

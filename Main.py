@@ -55,14 +55,14 @@ MESH = mesh(msh,mesh_kind)
 Case.read(case,MESH)
 
 IC,forces = Case.set_IC(i)
-Re,Pr,Ga,Gr,Fr,particles_flag,two_way = Case.set_parameters()
+Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous = Case.set_parameters()
 BC = Case.set_BC()
 
 outflow = Case.set_OutFlow()
    
 MESH.set_boundary_prior(BC,outflow)
 
-fluid = Fluid(MESH,Re,Pr,Ga,Gr,IC)
+fluid = Fluid(MESH,Re,Pr,Ga,Gr,Da,Fo,IC)
 
 if particles_flag:
     x_part, v_part, d_part, rho_part, nLoop = Case.set_particles(i)
@@ -72,7 +72,7 @@ if particles_flag:
 
 t = np.arange(i,end,dt)
 
-FEM.set_matrices(MESH,fluid,dt,BC)
+FEM.set_matrices(MESH,fluid,dt,BC,porous)
 
 #----------------------------------------SL Gustavo ----------------------------------------------------------------
 # neighborElem = [[]]

@@ -2,12 +2,14 @@ import numpy as np
 
 class Fluid:
     
-    def __init__(self,mesh,Re,Pr,Ga,Gr,IC):
+    def __init__(self,mesh,Re,Pr,Ga,Gr,Da,Fo,IC):
         
         self.Re = Re
         self.Pr = Pr
         self.Ga = Ga
         self.Gr = Gr
+        self.Da = Da
+        self.Fo = Fo
         
         if not type(IC['vx']) == np.ndarray:
             self.vx = float(IC['vx'])*np.ones((mesh.npoints), dtype='float')
