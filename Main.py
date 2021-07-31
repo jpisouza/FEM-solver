@@ -62,7 +62,7 @@ outflow = Case.set_OutFlow()
    
 MESH.set_boundary_prior(BC,outflow)
 
-fluid = Fluid(MESH,Re,Pr,Ga,Gr,Da,Fo,IC)
+fluid = Fluid(MESH,Re,Pr,Ga,Gr,IC,Da,Fo)
 
 if particles_flag:
     x_part, v_part, d_part, rho_part, nLoop = Case.set_particles(i)

@@ -2,7 +2,7 @@ import numpy as np
 
 class Fluid:
     
-    def __init__(self,mesh,Re,Pr,Ga,Gr,Da,Fo,IC):
+    def __init__(self,mesh,Re,Pr,Ga,Gr,IC,Da=0,Fo=0):
         
         self.Re = Re
         self.Pr = Pr

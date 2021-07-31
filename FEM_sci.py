@@ -15,7 +15,7 @@ import Elements
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC,porous = "False"):
+    def set_matrices(cls,mesh,fluid,dt,BC,porous = False):
 
         start = timer()
 
