@@ -117,6 +117,14 @@ class Case:
         return OF_list
     
     @classmethod
+    def set_porous_region(cls,root):
+        porous_list = []
+        if root.find('Porous') is not None:
+            for child in root.find('Porous'):
+                porous_list.append(child.attrib['name'])
+        return porous_list
+    
+    @classmethod
     def set_particles(cls,i):
         path = os.path.abspath(cls.case + '_particles.xml')
         tree = ET.parse(path)

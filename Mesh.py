@@ -6,12 +6,27 @@ import os
 
 class mesh:
 
-    def __init__(self,case,kind='mini'):
+    def __init__(self,case,kind='mini',porous_list = []):
 
         self.mesh_kind = kind
         path = os.path.abspath( case + '.msh')
-
+        
+        self.porous_list = porous_list
         self.msh = meshio.read(path)
+        
+        self.dict_boundary = {}
+        self.dict_element = {}
+        i = 0
+        for key in self.msh.field_data:
+            if self.msh.field_data[key][1] < 2:
+                self.dict_boundary[self.msh.field_data[key][0]] = i
+            else:
+                self.dict_element[self.msh.field_data[key][0]] = i
+            i+=1
+            
+        
+        # self.start_point = self.msh.field_data[list(self.msh.field_data.keys())[0]][0]
+        
 
         if 'triangle6' in self.msh.cells:
 
@@ -86,9 +101,19 @@ class mesh:
             self.IENbound_orig = self.IENbound[:,0:2].copy()
             self.IEN_orig = self.IEN[:,0:3].copy()
 
-            self.IENboundTypeElem = list(self.msh.cell_data['line3']['gmsh:physical'] - 1)
+            self.IENboundTypeElem = list(self.msh.cell_data['line3']['gmsh:physical'])
+            self.IENTypeElem = list(self.msh.cell_data['triangle6']['gmsh:physical'])
             self.boundNames = list(self.msh.field_data.keys())
-            self.IENboundElem = [self.boundNames[elem] for elem in self.IENboundTypeElem]
+            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+            self.IENElem = []
+            self.porous_elem = []
+            if len(self.porous_list) > 0:
+                for elem in self.IENTypeElem:
+                    self.IENElem.append(self.boundNames[self.dict_element[elem]])
+                    if self.boundNames[self.dict_element[elem]] in porous_list:
+                        self.porous_elem.append(1)
+                    else:
+                        self.porous_elem.append(0)
 
         elif self.mesh_kind == 'mini':
 
@@ -100,11 +125,21 @@ class mesh:
             self.ne=len(self.IEN)
 
             self.npoints_p = len(self.X)
-
+            
             self.IENbound = self.msh.cells['line']
-            self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'] - 1)
+            self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
+            self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
             self.boundNames = list(self.msh.field_data.keys())
-            self.IENboundElem = [self.boundNames[elem] for elem in self.IENboundTypeElem]
+            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+            self.IENElem = []
+            self.porous_elem = []
+            if len(self.porous_list) > 0:
+                for elem in self.IENTypeElem:
+                    self.IENElem.append(self.boundNames[self.dict_element[elem]])
+                    if self.boundNames[self.dict_element[elem]] in porous_list:
+                        self.porous_elem.append(1)
+                    else:
+                        self.porous_elem.append(0)
             
             self.boundary = []
             
@@ -135,9 +170,19 @@ class mesh:
             self.npoints_p = len(self.X)
 
             self.IENbound = self.msh.cells['line']
-            self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'] - 1)
+            self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
+            self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
             self.boundNames = list(self.msh.field_data.keys())
-            self.IENboundElem = [self.boundNames[elem] for elem in self.IENboundTypeElem]
+            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+            self.IENElem = []
+            self.porous_elem = []
+            if len(self.porous_list) > 0:
+                for elem in self.IENTypeElem:
+                    self.IENElem.append(self.boundNames[self.dict_element[elem]])
+                    if self.boundNames[self.dict_element[elem]] in porous_list:
+                        self.porous_elem.append(1)
+                    else:
+                        self.porous_elem.append(0)
             
             self.boundary = []
 
@@ -218,13 +263,18 @@ class mesh:
         
         Node.node_list = []
         Element.elem_list = []
+        
+        self.porous_nodes = np.zeros((self.npoints), dtype='float')
         for ID in range (len(self.X)):
             self.node = Node(ID,self.IEN,self.IEN_orig, self.X[ID], self.Y[ID])
             print('Node ' + str(ID) + ' --------> generated')
         for ID in range (len(self.IEN)):
-            self.element = Element(ID,self.IEN,self.IEN_orig,Node.node_list)
+            self.element = Element(ID,self.IEN,self.IEN_orig,Node.node_list,mesh = self)
             print('Element ' + str(ID) + ' --------> generated')       
         print('\n')
+        
+        print(np.where(np.array(self.porous_nodes) == 1))
+        print(len(np.where(np.array(self.porous_nodes) == 1)[0]))
 
         self.node_list = Node.node_list
         self.elem_list = Element.elem_list

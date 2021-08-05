@@ -30,6 +30,8 @@ class FEM:
         cls.mesh = mesh
         cls.BC = BC
         cls.porous = porous
+        if len(cls.mesh.porous_elem)>0:
+            cls.porous = True
         
         
         # Main.include('LinSolve.jl')
@@ -230,8 +232,17 @@ class FEM:
         block_DF = sp.sparse.bmat([[A1, None],
                                   [None, A1]])
         
+        if len(cls.mesh.porous_list) > 0:
 
-        cls.Matriz[:2*cls.mesh.npoints, :2*cls.mesh.npoints] = cls.Matriz_orig[:2*cls.mesh.npoints, :2*cls.mesh.npoints] + block_DF
+            A2 = sp.sparse.diags(cls.mesh.porous_nodes)
+            block_porous = sp.sparse.bmat([[A2, None],
+                                           [None, A2]])
+         
+            cls.Matriz[:2*cls.mesh.npoints, :2*cls.mesh.npoints] = cls.Matriz_orig[:2*cls.mesh.npoints, :2*cls.mesh.npoints] + sp.sparse.csr_matrix.dot(block_porous,block_DF)
+        
+        else:
+            cls.Matriz[:2*cls.mesh.npoints, :2*cls.mesh.npoints] = cls.Matriz_orig[:2*cls.mesh.npoints, :2*cls.mesh.npoints] + block_DF
+        
         
         
     @classmethod
@@ -261,7 +272,6 @@ class FEM:
         
         if not cls.porous:
             for i in range(len(BC)):
-                
                 for j in cls.mesh.boundary[i]:
                     if BC[i]['vx'] != 'None':
                         row = cls.Matriz.getrow(j)
@@ -437,7 +447,7 @@ class FEM:
         else:
 
             start = timer()
-            cls.fluid.vxd, cls.fluid.vyd, cls.fluid.Td = semi_lagrange2(cls.mesh.node_list,cls.mesh.elem_list,cls.fluid.vx,cls.fluid.vy,cls.fluid.T,cls.dt,cls.mesh.IENbound)
+            cls.fluid.vxd, cls.fluid.vyd, cls.fluid.Td = semi_lagrange2(cls.mesh.node_list,cls.mesh.elem_list,cls.fluid.vx,cls.fluid.vy,cls.fluid.T,cls.dt,cls.mesh.IENbound,cls.mesh.boundary)
             end = timer()
             print('time --> SL calculation = ' + str(end-start) + ' [s]')
         
