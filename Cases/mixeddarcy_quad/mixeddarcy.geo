@@ -12,7 +12,7 @@ Point(4) = {-3, 0.5, 0, f};
 //+
 Line(1) = {1, 2};
 //+
-Line(2) = {2, 3};
+Line(7) = {2, 3};
 //+
 Line(3) = {3, 4};
 //+
@@ -26,11 +26,11 @@ Line(5) = {2, 5};
 //+
 Line(6) = {5, 6};
 //+
-Line(7) = {6, 3};
+Line(2) = {6, 3};
 //+
 
 //+
-Curve Loop(1) = {3, 4, 1, 2};
+Curve Loop(1) = {3, 4, 1, 7};
 //+
 Plane Surface(1) = {1};
 //+
@@ -38,12 +38,12 @@ Physical Curve("in_flow", 8) = {4};
 //+
 Physical Curve("out_flow", 9) = {6};
 //+
-Physical Curve("wall", 10) = {3, 7, 1, 5};
+Physical Curve("wall", 10) = {3, 2, 1, 5};
 //+
 Physical Surface("free", 11) = {1};
 
 //+
-Curve Loop(2) = {7, -2, 5, 6};
+Curve Loop(2) = {2, -7, 5, 6};
 //+
 Plane Surface(2) = {2};
 //+

@@ -267,14 +267,11 @@ class mesh:
         self.porous_nodes = np.zeros((self.npoints), dtype='float')
         for ID in range (len(self.X)):
             self.node = Node(ID,self.IEN,self.IEN_orig, self.X[ID], self.Y[ID])
-            print('Node ' + str(ID) + ' --------> generated')
+            print('Node ' + str(ID + 1) + ' --------> generated')
         for ID in range (len(self.IEN)):
             self.element = Element(ID,self.IEN,self.IEN_orig,Node.node_list,mesh = self)
-            print('Element ' + str(ID) + ' --------> generated')       
+            print('Element ' + str(ID + 1) + ' --------> generated')       
         print('\n')
-        
-        print(np.where(np.array(self.porous_nodes) == 1))
-        print(len(np.where(np.array(self.porous_nodes) == 1)[0]))
 
         self.node_list = Node.node_list
         self.elem_list = Element.elem_list

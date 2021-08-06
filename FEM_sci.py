@@ -229,19 +229,22 @@ class FEM:
         
         A1 = (1.0/(cls.Re*cls.Da))*cls.M.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(cls.M.tocsr(),v_diag)
         
-        block_DF = sp.sparse.bmat([[A1, None],
-                                  [None, A1]])
+        block_DF = sp.sparse.bmat([[A1, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
+                                   [None, A1,None],
+                                   [None,None,sp.sparse.csr_matrix((cls.mesh.npoints_p, cls.mesh.npoints_p), dtype= 'float')]])
+         
         
         if len(cls.mesh.porous_list) > 0:
 
             A2 = sp.sparse.diags(cls.mesh.porous_nodes)
-            block_porous = sp.sparse.bmat([[A2, None],
-                                           [None, A2]])
+            block_porous = sp.sparse.bmat([[A2, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
+                                           [None, A2,None],
+                                           [None,None,sp.sparse.csr_matrix((cls.mesh.npoints_p, cls.mesh.npoints_p), dtype= 'float')]])
          
-            cls.Matriz[:2*cls.mesh.npoints, :2*cls.mesh.npoints] = cls.Matriz_orig[:2*cls.mesh.npoints, :2*cls.mesh.npoints] + sp.sparse.csr_matrix.dot(block_porous,block_DF)
+            cls.Matriz = cls.Matriz_orig + sp.sparse.csr_matrix.dot(block_porous,block_DF)
         
         else:
-            cls.Matriz[:2*cls.mesh.npoints, :2*cls.mesh.npoints] = cls.Matriz_orig[:2*cls.mesh.npoints, :2*cls.mesh.npoints] + block_DF
+            cls.Matriz = cls.Matriz_orig + block_DF
         
         
         
