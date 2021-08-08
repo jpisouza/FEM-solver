@@ -77,7 +77,7 @@ Curve Loop(4) = {12, 17, 2, -10};
 //+
 Plane Surface(4) = {4};
 //+
-Curve Loop(5) = {13, 8, 1, -17};
+Curve Loop(5) = {13, 8, -1, 17};
 //+
 Plane Surface(5) = {5};
 //+

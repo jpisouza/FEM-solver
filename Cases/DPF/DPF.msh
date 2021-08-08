@@ -6,7 +6,7 @@ $PhysicalNames
 1 17 "wall"
 1 18 "in_flow"
 1 19 "out_flow"
-1 22 "symetry"
+1 22 "symmetry"
 2 20 "free"
 2 21 "porous"
 $EndPhysicalNames
