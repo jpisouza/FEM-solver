@@ -35,7 +35,7 @@ class ParticleCloud:
                 continue
             if part.element == 0:
                 for e in self.elements:
-                    if pointInElement(part.pos,e):
+                    if pointInElement(part,e):
                         part.element = e
                         break
             elif not part.delete:
@@ -53,8 +53,11 @@ class ParticleCloud:
                     count+=1
                     flag_break = False
                     for e in p.lista_elem:
-                        if pointInElement(part.pos,self.elements[e]):
+                        if pointInElement(part,self.elements[e]):
                             part.element = self.elements[e]
+                            if len(part.element.mesh.porous_elem) > 0 and part.element.mesh.porous_elem[e] == 1:
+                                part.v = [0,0]
+                                part.stop = True
                             flag_break = True
                             break
                     if flag_break:
@@ -171,7 +174,8 @@ class ParticleCloud:
  
 
 
-def pointInElement(p,element):
+def pointInElement(particle,element):
+    p = particle.pos
     v1 = element.nodes[0]
     v2 = element.nodes[1]
     v3 = element.nodes[2]
