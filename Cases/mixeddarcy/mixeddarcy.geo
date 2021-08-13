@@ -1,7 +1,7 @@
 // Gmsh project created on Sun Aug 01 16:16:26 2021
 SetFactory("OpenCASCADE");
 //+
-f=0.07;
+f=0.06;
 Point(1) = {-3, -0.5, 0, f};
 //+
 Point(2) = {0, -0.5, 0, f};
@@ -48,3 +48,5 @@ Curve Loop(2) = {7, -2, 5, 6};
 Plane Surface(2) = {2};
 //+
 Physical Surface("porous", 12) = {2};
+//+
+Physical Curve("porous_interface", 13) = {2};

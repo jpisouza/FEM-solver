@@ -15,7 +15,7 @@ plt.close('all')
 # leitura de malha e classificacao de contorno por nome (ccName)
 start = time.time()
 
-msh = meshio.read('DPF.msh')
+msh = meshio.read('mixeddarcy.msh')
 Xo = np.array(msh.points[:,0])
 Yo = np.array(msh.points[:,1])
 numNodes = len(Xo)
@@ -90,7 +90,7 @@ for i in range(0,numElemsb):
 # ----- FIM: conversao TRI6 (Gmsh) --> TRI6 (Navier-Stokes) ---------------- #
 
 
-IENboundTypeElem = list(msh.cell_data['line3']['gmsh:physical'] - 18)
+IENboundTypeElem = list(msh.cell_data['line3']['gmsh:physical'] - 8)
 boundNames = list(msh.field_data.keys())
 IENboundElem = [boundNames[elem] for elem in IENboundTypeElem]
 

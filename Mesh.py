@@ -27,74 +27,40 @@ class mesh:
         
         # self.start_point = self.msh.field_data[list(self.msh.field_data.keys())[0]][0]
         
-
         if 'triangle6' in self.msh.cells:
-
             self.mesh_kind = 'quad'
             Xo = np.array(self.msh.points[:,0])
             Yo = np.array(self.msh.points[:,1])
-            numNodes = len(Xo)
             IENo= np.array(self.msh.cells['triangle6'])
             numElems = len(IENo)
             self.ne = numElems
             IENboundo= self.msh.cells['line3']
             numElemsb = len(IENboundo)
-
-            vertlist = np.unique( IENo[:,0:3].flatten() )
-            edgelist = np.unique( IENo[:,3:6].flatten() )
-            numVerts = len(vertlist) 
-            numEdges = len(edgelist) 
-            convertp = -1*np.ones(( vertlist.max()+1 ),dtype='int')
-            converte = -1*np.ones(( edgelist.max()+1 ),dtype='int')
-
-            # vetores coordenadas X,Y
-            self.X = np.zeros( (numNodes),dtype='float' )
-            self.Y = np.zeros( (numNodes),dtype='float' )
-            count = 0
-            for v in vertlist:
-                convertp[v] = count
-                self.X[count] = Xo[v]
-                self.Y[count] = Yo[v]
-                count += 1
-
-            for e in edgelist:
-                converte[e] = count
-                self.X[count] = Xo[e]
-                self.Y[count] = Yo[e]
-                count += 1
-
-            # matriz de conectividade IEN
-            self.IEN = np.zeros( (numElems,6),dtype='int' )
-            for i in range(0,numElems):
-                for j in range(0,3):
-                    self.IEN[i,j]   = convertp[ IENo[i,j] ]
-                    self.IEN[i,j+3] = converte[ IENo[i,j+3] ]
-
-            bvertlist = np.unique( IENboundo[:,0:2].flatten() )
-            bedgelist = np.unique( IENboundo[:,2:3].flatten() )
-            numVertsb = len(bvertlist) 
-            numEdgesb = len(bedgelist) 
-            numNodesb = numVertsb+numEdgesb
-            convertbp = -1*np.ones(( bvertlist.max()+1 ),dtype='int')
-            convertbe = -1*np.ones(( bedgelist.max()+1 ),dtype='int')
-            countb = 0
-            for v in bvertlist:
-                convertbp[v] = countb
-                countb += 1
-
-            countb = 0
-            for e in bedgelist:
-                convertbe[e] = countb + numVerts
-                countb += 1
             
-            self.boundary = []
-
-            # matriz de conectividade de contorno IENbound
-            self.IENbound = np.zeros( (numElemsb,3),dtype='int' )
-            for i in range(0,numElemsb):
-                for j in range(0,2):
-                    self.IENbound[i,j]   = convertbp[ IENboundo[i,j] ]
-                    self.IENbound[i,j+1] = convertbe[ IENboundo[i,j+1] ]
+            converter = []
+            self.IEN = IENo.copy()
+            self.IENbound = IENboundo.copy()
+            self.X = Xo.copy()
+            self.Y = Yo.copy()
+            
+            for i in range(numElemsb):    
+                p = np.where(IENo == np.max(IENo[:,0:3]) - i)
+                p2 = np.where(IENo == IENboundo[numElemsb - 1 - i,2])
+                converter.append([np.max(IENo[:,0:3]) - i,IENboundo[numElemsb - 1 - i,2]])
+                for j in range(len(p[0])):
+                    if p[1][j] > 2:
+                        print("Refine mesh!")
+                    index = [p[0][j],p[1][j]]
+                    self.IEN[index[0],index[1]] = converter[i][1]
+                for j in range(len(p2[0])):
+                    index = [p2[0][j],p2[1][j]]
+                    self.IEN[index[0],index[1]] = converter[i][0]
+                
+                self.X[converter[i][0]] = Xo[converter[i][1]]
+                self.X[converter[i][1]] = Xo[converter[i][0]]
+                self.Y[converter[i][0]] = Yo[converter[i][1]]
+                self.Y[converter[i][1]] = Yo[converter[i][0]]
+                self.IENbound[numElemsb - 1 - i,2] = converter[i][0]
             
             self.npoints = np.max(self.IEN) + 1
             self.npoints_p = np.max(self.IEN[:,0:3]) + 1
@@ -114,48 +80,137 @@ class mesh:
                         self.porous_elem.append(1)
                     else:
                         self.porous_elem.append(0)
-
-        elif self.mesh_kind == 'mini':
-
-            self.X = self.msh.points[:,0]
-            self.Y = self.msh.points[:,1]
-
-            self.IEN = self.msh.cells['triangle']
-            self.IEN_orig = self.IEN.copy()
-            self.ne=len(self.IEN)
-
-            self.npoints_p = len(self.X)
-            
-            self.IENbound = self.msh.cells['line']
-            self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
-            self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
-            self.boundNames = list(self.msh.field_data.keys())
-            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
-            self.IENElem = []
-            self.porous_elem = []
-            if len(self.porous_list) > 0:
-                for elem in self.IENTypeElem:
-                    self.IENElem.append(self.boundNames[self.dict_element[elem]])
-                    if self.boundNames[self.dict_element[elem]] in porous_list:
-                        self.porous_elem.append(1)
-                    else:
-                        self.porous_elem.append(0)
             
             self.boundary = []
-            
-            #Acrescenta ponto central do elemento
-            new_elements = np.arange(self.npoints_p,self.npoints_p+self.ne,1).reshape(self.ne,1)
-            self.IEN = np.block([[self.IEN,new_elements]])
-            
-            X_ = self.X[self.IEN_orig]
-            Y_ = self.Y[self.IEN_orig]
+                        
+        # if 'triangle6' in self.msh.cells:
 
-            centroids_x = (1.0/3.0)*X_.sum(axis=1)
-            centroids_y = (1.0/3.0)*Y_.sum(axis=1)
-            self.X = np.append(self.X,centroids_x)
-            self.Y = np.append(self.Y,centroids_y)
+        #     self.mesh_kind = 'quad'
+        #     Xo = np.array(self.msh.points[:,0])
+        #     Yo = np.array(self.msh.points[:,1])
+        #     numNodes = len(Xo)
+        #     IENo= np.array(self.msh.cells['triangle6'])
+        #     numElems = len(IENo)
+        #     self.ne = numElems
+        #     IENboundo= self.msh.cells['line3']
+        #     numElemsb = len(IENboundo)
 
-            self.npoints = len(self.X)
+        #     vertlist = np.unique( IENo[:,0:3].flatten() )
+        #     edgelist = np.unique( IENo[:,3:6].flatten() )
+        #     numVerts = len(vertlist) 
+        #     numEdges = len(edgelist) 
+        #     convertp = -1*np.ones(( vertlist.max()+1 ),dtype='int')
+        #     converte = -1*np.ones(( edgelist.max()+1 ),dtype='int')
+
+        #     # vetores coordenadas X,Y
+        #     self.X = np.zeros( (numNodes),dtype='float' )
+        #     self.Y = np.zeros( (numNodes),dtype='float' )
+        #     count = 0
+        #     for v in vertlist:
+        #         convertp[v] = count
+        #         self.X[count] = Xo[v]
+        #         self.Y[count] = Yo[v]
+        #         count += 1
+
+        #     for e in edgelist:
+        #         converte[e] = count
+        #         self.X[count] = Xo[e]
+        #         self.Y[count] = Yo[e]
+        #         count += 1
+
+        #     # matriz de conectividade IEN
+        #     self.IEN = np.zeros( (numElems,6),dtype='int' )
+        #     for i in range(0,numElems):
+        #         for j in range(0,3):
+        #             self.IEN[i,j]   = convertp[ IENo[i,j] ]
+        #             self.IEN[i,j+3] = converte[ IENo[i,j+3] ]
+
+        #     bvertlist = np.unique( IENboundo[:,0:2].flatten() )
+        #     bedgelist = np.unique( IENboundo[:,2:3].flatten() )
+        #     numVertsb = len(bvertlist) 
+        #     numEdgesb = len(bedgelist) 
+        #     numNodesb = numVertsb+numEdgesb
+        #     convertbp = -1*np.ones(( bvertlist.max()+1 ),dtype='int')
+        #     convertbe = -1*np.ones(( bedgelist.max()+1 ),dtype='int')
+        #     countb = 0
+        #     for v in bvertlist:
+        #         convertbp[v] = countb
+        #         countb += 1
+
+        #     countb = 0
+        #     for e in bedgelist:
+        #         convertbe[e] = countb + numVerts
+        #         countb += 1
+            
+        #     self.boundary = []
+
+        #     # matriz de conectividade de contorno IENbound
+        #     self.IENbound = np.zeros( (numElemsb,3),dtype='int' )
+        #     for i in range(0,numElemsb):
+        #         for j in range(0,2):
+        #             self.IENbound[i,j]   = convertbp[ IENboundo[i,j] ]
+        #             self.IENbound[i,j+1] = convertbe[ IENboundo[i,j+1] ]
+            
+        #     self.npoints = np.max(self.IEN) + 1
+        #     self.npoints_p = np.max(self.IEN[:,0:3]) + 1
+        #     self.IENbound_orig = self.IENbound[:,0:2].copy()
+        #     self.IEN_orig = self.IEN[:,0:3].copy()
+
+        #     self.IENboundTypeElem = list(self.msh.cell_data['line3']['gmsh:physical'])
+        #     self.IENTypeElem = list(self.msh.cell_data['triangle6']['gmsh:physical'])
+        #     self.boundNames = list(self.msh.field_data.keys())
+        #     self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+        #     self.IENElem = []
+        #     self.porous_elem = []
+        #     if len(self.porous_list) > 0:
+        #         for elem in self.IENTypeElem:
+        #             self.IENElem.append(self.boundNames[self.dict_element[elem]])
+        #             if self.boundNames[self.dict_element[elem]] in porous_list:
+        #                 self.porous_elem.append(1)
+        #             else:
+        #                 self.porous_elem.append(0)
+
+        # elif self.mesh_kind == 'mini':
+
+        #     self.X = self.msh.points[:,0]
+        #     self.Y = self.msh.points[:,1]
+
+        #     self.IEN = self.msh.cells['triangle']
+        #     self.IEN_orig = self.IEN.copy()
+        #     self.ne=len(self.IEN)
+
+        #     self.npoints_p = len(self.X)
+            
+        #     self.IENbound = self.msh.cells['line']
+        #     self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
+        #     self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
+        #     self.boundNames = list(self.msh.field_data.keys())
+        #     self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+        #     self.IENElem = []
+        #     self.porous_elem = []
+        #     if len(self.porous_list) > 0:
+        #         for elem in self.IENTypeElem:
+        #             self.IENElem.append(self.boundNames[self.dict_element[elem]])
+        #             if self.boundNames[self.dict_element[elem]] in porous_list:
+        #                 self.porous_elem.append(1)
+        #             else:
+        #                 self.porous_elem.append(0)
+            
+        #     self.boundary = []
+            
+        #     #Acrescenta ponto central do elemento
+        #     new_elements = np.arange(self.npoints_p,self.npoints_p+self.ne,1).reshape(self.ne,1)
+        #     self.IEN = np.block([[self.IEN,new_elements]])
+            
+        #     X_ = self.X[self.IEN_orig]
+        #     Y_ = self.Y[self.IEN_orig]
+
+        #     centroids_x = (1.0/3.0)*X_.sum(axis=1)
+        #     centroids_y = (1.0/3.0)*Y_.sum(axis=1)
+        #     self.X = np.append(self.X,centroids_x)
+        #     self.Y = np.append(self.Y,centroids_y)
+
+        #     self.npoints = len(self.X)
 
         
         elif self.mesh_kind == 'quad':

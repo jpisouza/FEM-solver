@@ -1,7 +1,7 @@
 // Gmsh project created on Sun Aug 01 16:16:26 2021
 SetFactory("OpenCASCADE");
 //+
-f=0.06;
+f=1;
 Point(1) = {-3, -0.5, 0, f};
 //+
 Point(2) = {3, -0.5, 0, f};
