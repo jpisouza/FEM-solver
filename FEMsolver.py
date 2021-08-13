@@ -371,7 +371,7 @@ class Ui_MainWindow(object):
         file = os.path.dirname(os.path.abspath(self.fname)) + '/Results/sol-' + str(i) + '.vtk'
         if Main.MESH.mesh_kind == 'quad':  
             self.p = Main.fluid.p_quad
-            self.T = Main.fluid.T_quad
+            self.T = Main.fluid.T
         else:
             self.p = Main.fluid.p
             self.T = Main.fluid.T 

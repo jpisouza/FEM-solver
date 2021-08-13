@@ -70,7 +70,7 @@ class Main:
                 IC['vx'] = v[:,0]
                 IC['vy'] = v[:,1]
                 IC['p'] = IC_['p'][:cls.MESH.npoints_p]
-                IC['T'] = IC_['T'][:cls.MESH.npoints_p]
+                IC['T'] = IC_['T']
 
         else:
             xml = os.path.abspath(os.path.splitext(case)[0] + '.xml')

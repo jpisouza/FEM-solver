@@ -101,7 +101,7 @@ class Case:
                 IC['vx'] = v[:,0]
                 IC['vy'] = v[:,1]
                 IC['p'] = IC_['p'][:cls.mesh.npoints_p]
-                IC['T'] = IC_['T'][:cls.mesh.npoints_p]
+                IC['T'] = IC_['T']
 
         else:
             IC = cls.root.find('InitialCondition').attrib

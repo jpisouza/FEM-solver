@@ -142,7 +142,8 @@ def baricentric_quad(point,element):
 
     vx = N1*element.nodes[0].vx + N2*element.nodes[1].vx + N3*element.nodes[2].vx + N4*edges[0].vx + N5*edges[1].vx + N6*edges[2].vx
     vy = N1*element.nodes[0].vy + N2*element.nodes[1].vy + N3*element.nodes[2].vy + N4*edges[0].vy + N5*edges[1].vy + N6*edges[2].vy
-    T = L1*element.nodes[0].T + L2*element.nodes[1].T + L3*element.nodes[2].T 
+    T = N1*element.nodes[0].T + N2*element.nodes[1].T + N3*element.nodes[2].T + N4*edges[0].T + N5*edges[1].T + N6*edges[2].T
+   
 
     return vx, vy, T
 
@@ -335,9 +336,12 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary):
         if np.any([point.ID in boundary[i] for i in range(len(boundary))]) and not point.out_flow:
             vxd[point.ID] = vx[point.ID]
             vyd[point.ID] = vy[point.ID]
-            if not point.edge:
+            if IENbound.shape[1] == 2 and not point.edge:
                 Td[point.ID] = T[point.ID]
                 point.Td = Td[point.ID]
+            else:
+               Td[point.ID] = T[point.ID]
+               point.Td = Td[point.ID] 
             point.vxd = vxd[point.ID]
             point.vyd = vyd[point.ID]
            

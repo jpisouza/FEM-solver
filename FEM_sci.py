@@ -42,10 +42,13 @@ class FEM:
         cls.Gy = lil_matrix( (mesh.npoints,mesh.npoints_p),dtype='float' )
         cls.Dx = lil_matrix( (mesh.npoints_p,mesh.npoints),dtype='float' )
         cls.Dy = lil_matrix( (mesh.npoints_p,mesh.npoints),dtype='float' )
-        cls.M_T = lil_matrix( (mesh.npoints_p,mesh.npoints_p),dtype='float' )
-        cls.K_T = lil_matrix( (mesh.npoints_p,mesh.npoints_p),dtype='float' )
-        cls.Gx_T = lil_matrix( (mesh.npoints_p,mesh.npoints_p),dtype='float' )
-        cls.Gy_T = lil_matrix( (mesh.npoints_p,mesh.npoints_p),dtype='float' )
+        
+        if cls.mesh.mesh_kind == 'mini':
+            cls.M_T = lil_matrix( (mesh.npoints_p,mesh.npoints_p),dtype='float' )
+            cls.K_T = lil_matrix( (mesh.npoints_p,mesh.npoints_p),dtype='float' )
+        else:
+            cls.M_T = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
+            cls.K_T = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
         
         if cls.mesh.mesh_kind == 'mini':
             cls.build_mini()
@@ -68,8 +71,8 @@ class FEM:
             lin.getM([v1,v2,v3])
             kelem = quad.kxx + quad.kyy
             melem = quad.mass
-            kelem_T = lin.kxx + lin.kyy
-            melem_T = lin.mass
+            kelem_T = quad.kxx + quad.kyy
+            melem_T = quad.mass
             for ilocal in range(0,6):
                  iglobal = cls.mesh.IEN[e,ilocal]
                  for jlocal in range(0,6):
@@ -77,16 +80,12 @@ class FEM:
             
                      cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]             
                      cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
+                     cls.M_T[iglobal,jglobal] = cls.M_T[iglobal,jglobal] + melem_T[ilocal,jlocal]
+                     cls.K_T[iglobal,jglobal] = cls.K_T[iglobal,jglobal] + kelem_T[ilocal,jlocal]
                      
                  for jlocal in range(0,3):
                      jglobal = cls.mesh.IEN[e,jlocal]
-                     
-                     if ilocal <=2:                 
-                         cls.M_T[iglobal,jglobal] = cls.M_T[iglobal,jglobal] + melem_T[ilocal,jlocal]
-                         cls.K_T[iglobal,jglobal] = cls.K_T[iglobal,jglobal] + kelem_T[ilocal,jlocal]
-                         cls.Gx_T[iglobal,jglobal] = cls.Gx_T[iglobal,jglobal] + lin.gx[ilocal,jlocal]
-                         cls.Gy_T[iglobal,jglobal] = cls.Gy_T[iglobal,jglobal] + lin.gy[ilocal,jlocal]
-                         
+
                      cls.Gx[iglobal,jglobal] = cls.Gx[iglobal,jglobal] + quad.gx[ilocal,jlocal]
                      cls.Gy[iglobal,jglobal] = cls.Gy[iglobal,jglobal] + quad.gy[ilocal,jlocal]
                      cls.Dx[jglobal,iglobal] = cls.Dx[jglobal,iglobal] + quad.dx[jlocal,ilocal]
@@ -122,8 +121,6 @@ class FEM:
                      if ilocal <=2:                 
                          cls.M_T[iglobal,jglobal] = cls.M_T[iglobal,jglobal] + melem_T[ilocal,jlocal]
                          cls.K_T[iglobal,jglobal] = cls.K_T[iglobal,jglobal] + kelem_T[ilocal,jlocal]
-                         cls.Gx_T[iglobal,jglobal] = cls.Gx_T[iglobal,jglobal] + lin.gx[ilocal,jlocal]
-                         cls.Gy_T[iglobal,jglobal] = cls.Gy_T[iglobal,jglobal] + lin.gy[ilocal,jlocal]
                          
                      cls.Gx[iglobal,jglobal] = cls.Gx[iglobal,jglobal] + mini.gx[ilocal,jlocal]
                      cls.Gy[iglobal,jglobal] = cls.Gy[iglobal,jglobal] + mini.gy[ilocal,jlocal]
@@ -213,8 +210,6 @@ class FEM:
                      if ilocal <=2:                 
                          cls.M_T[iglobal,jglobal] = cls.M_T[iglobal,jglobal] + melem_T[ilocal,jlocal]
                          cls.K_T[iglobal,jglobal] = cls.K_T[iglobal,jglobal] + kelem_T[ilocal,jlocal]
-                         cls.Gx_T[iglobal,jglobal] = cls.Gx_T[iglobal,jglobal] + gx_lin[ilocal,jlocal]
-                         cls.Gy_T[iglobal,jglobal] = cls.Gy_T[iglobal,jglobal] + gy_lin[ilocal,jlocal]
                          
                      cls.Gx[iglobal,jglobal] = cls.Gx[iglobal,jglobal] + gx[ilocal,jlocal]
                      cls.Gy[iglobal,jglobal] = cls.Gy[iglobal,jglobal] + gy[ilocal,jlocal]
@@ -287,6 +282,13 @@ class FEM:
                         for col in row.indices:
                             cls.Matriz[j + cls.mesh.npoints,col] = 0
                         cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
+                    
+                    if cls.mesh.mesh_kind == 'quad':
+                        if BC[i]['T'] != 'None':
+                            row = cls.Matriz_T.getrow(j)
+                            for col in row.indices:
+                                cls.Matriz_T[j,col] = 0
+                            cls.Matriz_T[j,j] = 1.0
     
                     if j < cls.mesh.npoints_p: 
                         if BC[i]['T'] != 'None':
@@ -314,10 +316,12 @@ class FEM:
 
         if cls.mesh.mesh_kind == 'mini':
             cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T_mini + forces[:,1] -cls.fluid.Ga)
+            cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td[0:cls.mesh.npoints_p])
         elif cls.mesh.mesh_kind == 'quad':
-            cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T_quad + forces[:,1] -cls.fluid.Ga)
+            cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T + forces[:,1] -cls.fluid.Ga)
+            cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td)
         cls.vetor_p = np.zeros((cls.mesh.npoints_p),dtype='float' )
-        cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td[0:cls.mesh.npoints_p])
+        
 
     @classmethod
     def set_BC(cls,BC):
@@ -340,10 +344,15 @@ class FEM:
                     
                 elif BC[i]['vy'] != 'None':
                     cls.vetor_vy[j] = float(BC[i]['vy']) 
-
-                if j < cls.mesh.npoints_p: 
+                    
+                if cls.mesh.mesh_kind == 'quad':
                     if BC[i]['T'] != 'None':
                         cls.vetor_T[j] = float(BC[i]['T'])
+                            
+                if j < cls.mesh.npoints_p: 
+                    if cls.mesh.mesh_kind == 'mini':
+                        if BC[i]['T'] != 'None':
+                            cls.vetor_T[j] = float(BC[i]['T'])
                         
                     if BC[i]['p'] != 'None':                        
                         cls.vetor_p[j] = float(BC[i]['p'])
@@ -399,8 +408,8 @@ class FEM:
                     cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
                     
                     cls.vetor_vy[j] = float(BC[i]['vy']) 
-
-                if j < cls.mesh.npoints_p: 
+                
+                if cls.mesh.mesh_kind == 'quad':
                     if BC[i]['T'] != 'None':
                         row = cls.Matriz_T.getrow(j)
                         for col in row.indices:
@@ -408,6 +417,16 @@ class FEM:
                         cls.Matriz_T[j,j] = 1.0
                         
                         cls.vetor_T[j] = float(BC[i]['T'])
+
+                if j < cls.mesh.npoints_p: 
+                    if cls.mesh.mesh_kind == 'mini':
+                        if BC[i]['T'] != 'None':
+                            row = cls.Matriz_T.getrow(j)
+                            for col in row.indices:
+                                cls.Matriz_T[j,col] = 0
+                            cls.Matriz_T[j,j] = 1.0
+                            
+                            cls.vetor_T[j] = float(BC[i]['T'])
                         
                     if BC[i]['p'] != 'None':
                         row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
@@ -454,11 +473,10 @@ class FEM:
             end = timer()
             print('time --> SL calculation = ' + str(end-start) + ' [s]')
         
-        cls.fluid.T_mini[0:cls.mesh.npoints_p] = cls.fluid.T
-        cls.fluid.T_quad[0:cls.mesh.npoints_p] = cls.fluid.T
         cls.fluid.p_quad[0:cls.mesh.npoints_p] = cls.fluid.p
 
         if cls.mesh.mesh_kind == 'mini':
+            cls.fluid.T_mini[0:cls.mesh.npoints_p] = cls.fluid.T
             T_ = cls.fluid.T[cls.mesh.IEN_orig]
             centroids_T = T_.sum(axis=1)/3.0
             cls.fluid.T_mini[cls.mesh.npoints_p:] = centroids_T
@@ -467,7 +485,6 @@ class FEM:
                 j=i-2
                 if i == 5:
                     j = 0
-                cls.fluid.T_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.T_quad[cls.mesh.IEN[:,j]] + cls.fluid.T_quad[cls.mesh.IEN[:,i-3]])/2.0
                 cls.fluid.p_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.p_quad[cls.mesh.IEN[:,j]] + cls.fluid.p_quad[cls.mesh.IEN[:,i-3]])/2.0
                 
         

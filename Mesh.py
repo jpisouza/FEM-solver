@@ -170,47 +170,47 @@ class mesh:
         #             else:
         #                 self.porous_elem.append(0)
 
-        # elif self.mesh_kind == 'mini':
+        elif self.mesh_kind == 'mini':
 
-        #     self.X = self.msh.points[:,0]
-        #     self.Y = self.msh.points[:,1]
+            self.X = self.msh.points[:,0]
+            self.Y = self.msh.points[:,1]
 
-        #     self.IEN = self.msh.cells['triangle']
-        #     self.IEN_orig = self.IEN.copy()
-        #     self.ne=len(self.IEN)
+            self.IEN = self.msh.cells['triangle']
+            self.IEN_orig = self.IEN.copy()
+            self.ne=len(self.IEN)
 
-        #     self.npoints_p = len(self.X)
+            self.npoints_p = len(self.X)
             
-        #     self.IENbound = self.msh.cells['line']
-        #     self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
-        #     self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
-        #     self.boundNames = list(self.msh.field_data.keys())
-        #     self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
-        #     self.IENElem = []
-        #     self.porous_elem = []
-        #     if len(self.porous_list) > 0:
-        #         for elem in self.IENTypeElem:
-        #             self.IENElem.append(self.boundNames[self.dict_element[elem]])
-        #             if self.boundNames[self.dict_element[elem]] in porous_list:
-        #                 self.porous_elem.append(1)
-        #             else:
-        #                 self.porous_elem.append(0)
+            self.IENbound = self.msh.cells['line']
+            self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
+            self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
+            self.boundNames = list(self.msh.field_data.keys())
+            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+            self.IENElem = []
+            self.porous_elem = []
+            if len(self.porous_list) > 0:
+                for elem in self.IENTypeElem:
+                    self.IENElem.append(self.boundNames[self.dict_element[elem]])
+                    if self.boundNames[self.dict_element[elem]] in porous_list:
+                        self.porous_elem.append(1)
+                    else:
+                        self.porous_elem.append(0)
             
-        #     self.boundary = []
+            self.boundary = []
             
-        #     #Acrescenta ponto central do elemento
-        #     new_elements = np.arange(self.npoints_p,self.npoints_p+self.ne,1).reshape(self.ne,1)
-        #     self.IEN = np.block([[self.IEN,new_elements]])
+            #Acrescenta ponto central do elemento
+            new_elements = np.arange(self.npoints_p,self.npoints_p+self.ne,1).reshape(self.ne,1)
+            self.IEN = np.block([[self.IEN,new_elements]])
             
-        #     X_ = self.X[self.IEN_orig]
-        #     Y_ = self.Y[self.IEN_orig]
+            X_ = self.X[self.IEN_orig]
+            Y_ = self.Y[self.IEN_orig]
 
-        #     centroids_x = (1.0/3.0)*X_.sum(axis=1)
-        #     centroids_y = (1.0/3.0)*Y_.sum(axis=1)
-        #     self.X = np.append(self.X,centroids_x)
-        #     self.Y = np.append(self.Y,centroids_y)
+            centroids_x = (1.0/3.0)*X_.sum(axis=1)
+            centroids_y = (1.0/3.0)*Y_.sum(axis=1)
+            self.X = np.append(self.X,centroids_x)
+            self.Y = np.append(self.Y,centroids_y)
 
-        #     self.npoints = len(self.X)
+            self.npoints = len(self.X)
 
         
         elif self.mesh_kind == 'quad':

@@ -37,7 +37,7 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
         cells['triangle6'] = MESH.IEN
 
         point_data = {'p' : fluid.p_quad}
-        data_T  = {'T' : fluid.T_quad}
+        data_T  = {'T' : fluid.T}
         data_v = {'v' : np.transpose(np.block([[fluid.vx],[fluid.vy],[np.zeros((MESH.npoints),dtype='float')]]))}
         if particleCloud != 0:
             data_F = {'forces' : np.block([particleCloud.forces,np.zeros((MESH.npoints,1),dtype='float')])}
