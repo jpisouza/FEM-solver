@@ -336,12 +336,9 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary):
         if np.any([point.ID in boundary[i] for i in range(len(boundary))]) and not point.out_flow:
             vxd[point.ID] = vx[point.ID]
             vyd[point.ID] = vy[point.ID]
-            if IENbound.shape[1] == 2 and not point.edge:
-                Td[point.ID] = T[point.ID]
-                point.Td = Td[point.ID]
-            else:
-               Td[point.ID] = T[point.ID]
-               point.Td = Td[point.ID] 
+            Td[point.ID] = T[point.ID]
+            
+            point.Td = Td[point.ID]
             point.vxd = vxd[point.ID]
             point.vyd = vyd[point.ID]
            

@@ -100,7 +100,7 @@ class Case:
 
                 IC['vx'] = v[:,0]
                 IC['vy'] = v[:,1]
-                IC['p'] = IC_['p'][:cls.mesh.npoints_p]
+                IC['p'] = IC_['p'][list(cls.mesh.converter.keys())]
                 IC['T'] = IC_['T']
 
         else:

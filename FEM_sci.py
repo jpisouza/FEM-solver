@@ -63,12 +63,12 @@ class FEM:
     @classmethod
     def build_quad_GQ(cls):
         quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
-        lin = Elements.Linear(cls.mesh.X[:cls.mesh.npoints_p],cls.mesh.Y[:cls.mesh.npoints_p])
+        lin = Elements.Linear(cls.mesh.X[list(cls.mesh.converter.keys())],cls.mesh.Y[list(cls.mesh.converter.keys())])
         # loop de elementos finitos
         for e in range(0,cls.mesh.ne):
             v1,v2,v3,v4,v5,v6 = cls.mesh.IEN[e]
             quad.getM([v1,v2,v3,v4,v5,v6])
-            lin.getM([v1,v2,v3])
+            lin.getM([cls.mesh.converter[v1],cls.mesh.converter[v2],cls.mesh.converter[v3]])
             kelem = quad.kxx + quad.kyy
             melem = quad.mass
             kelem_T = quad.kxx + quad.kyy
@@ -86,10 +86,10 @@ class FEM:
                  for jlocal in range(0,3):
                      jglobal = cls.mesh.IEN[e,jlocal]
 
-                     cls.Gx[iglobal,jglobal] = cls.Gx[iglobal,jglobal] + quad.gx[ilocal,jlocal]
-                     cls.Gy[iglobal,jglobal] = cls.Gy[iglobal,jglobal] + quad.gy[ilocal,jlocal]
-                     cls.Dx[jglobal,iglobal] = cls.Dx[jglobal,iglobal] + quad.dx[jlocal,ilocal]
-                     cls.Dy[jglobal,iglobal] = cls.Dy[jglobal,iglobal] + quad.dy[jlocal,ilocal]
+                     cls.Gx[iglobal,cls.mesh.converter[jglobal]] = cls.Gx[iglobal,cls.mesh.converter[jglobal]] + quad.gx[ilocal,jlocal]
+                     cls.Gy[iglobal,cls.mesh.converter[jglobal]] = cls.Gy[iglobal,cls.mesh.converter[jglobal]] + quad.gy[ilocal,jlocal]
+                     cls.Dx[cls.mesh.converter[jglobal],iglobal] = cls.Dx[cls.mesh.converter[jglobal],iglobal] + quad.dx[jlocal,ilocal]
+                     cls.Dy[cls.mesh.converter[jglobal],iglobal] = cls.Dy[cls.mesh.converter[jglobal],iglobal] + quad.dy[jlocal,ilocal]
 
         # cls.Dx = cls.Gx.transpose()
         # cls.Dy = cls.Gy.transpose()
@@ -289,21 +289,31 @@ class FEM:
                             for col in row.indices:
                                 cls.Matriz_T[j,col] = 0
                             cls.Matriz_T[j,j] = 1.0
-    
-                    if j < cls.mesh.npoints_p: 
-                        if BC[i]['T'] != 'None':
-                            row = cls.Matriz_T.getrow(j)
-                            for col in row.indices:
-                                cls.Matriz_T[j,col] = 0
-                            cls.Matriz_T[j,j] = 1.0
+                      
+                        if j in cls.mesh.IEN[:,:3]:
+                            if BC[i]['p'] != 'None':
+                                row = cls.Matriz.getrow(cls.mesh.converter[j] + 2*cls.mesh.npoints)
+                                for col in row.indices:
+                                    cls.Matriz[cls.mesh.converter[j] + 2*cls.mesh.npoints,col] = 0
+                                cls.Matriz = cls.Matriz.tolil()
+                                cls.Matriz[cls.mesh.converter[j] + 2*cls.mesh.npoints,cls.mesh.converter[j] + 2*cls.mesh.npoints] = 1.0
+                                cls.Matriz = cls.Matriz.tocsr()
                             
-                        if BC[i]['p'] != 'None':
-                            row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
-                            for col in row.indices:
-                                cls.Matriz[j + 2*cls.mesh.npoints,col] = 0
-                            cls.Matriz = cls.Matriz.tolil()
-                            cls.Matriz[j + 2*cls.mesh.npoints,j + 2*cls.mesh.npoints] = 1.0
-                            cls.Matriz = cls.Matriz.tocsr()
+                    elif cls.mesh.mesh_kind == 'mini':
+                        if j < cls.mesh.npoints_p: 
+                            if BC[i]['T'] != 'None':
+                                row = cls.Matriz_T.getrow(j)
+                                for col in row.indices:
+                                    cls.Matriz_T[j,col] = 0
+                                cls.Matriz_T[j,j] = 1.0
+                               
+                            if BC[i]['p'] != 'None':
+                                row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
+                                for col in row.indices:
+                                    cls.Matriz[j + 2*cls.mesh.npoints,col] = 0
+                                cls.Matriz = cls.Matriz.tolil()
+                                cls.Matriz[j + 2*cls.mesh.npoints,j + 2*cls.mesh.npoints] = 1.0
+                                cls.Matriz = cls.Matriz.tocsr()
                             
             cls.Matriz = cls.Matriz.tocsr()
             cls.Matriz_T = cls.Matriz_T.tocsr() 
@@ -348,14 +358,18 @@ class FEM:
                 if cls.mesh.mesh_kind == 'quad':
                     if BC[i]['T'] != 'None':
                         cls.vetor_T[j] = float(BC[i]['T'])
-                            
-                if j < cls.mesh.npoints_p: 
-                    if cls.mesh.mesh_kind == 'mini':
+                    
+                    if j in cls.mesh.IEN[:,:3]:
+                        if BC[i]['p'] != 'None':
+                            cls.vetor_p[cls.mesh.converter[j]] = float(BC[i]['p'])
+                
+                elif cls.mesh.mesh_kind == 'mini':
+                    if j < cls.mesh.npoints_p: 
                         if BC[i]['T'] != 'None':
                             cls.vetor_T[j] = float(BC[i]['T'])
-                        
-                    if BC[i]['p'] != 'None':                        
-                        cls.vetor_p[j] = float(BC[i]['p'])
+                            
+                        if BC[i]['p'] != 'None':                        
+                            cls.vetor_p[j] = float(BC[i]['p'])
         
 
         cls.vetor_vx = csr_matrix(cls.vetor_vx.reshape(-1,len(cls.vetor_vx)))
@@ -410,6 +424,7 @@ class FEM:
                     cls.vetor_vy[j] = float(BC[i]['vy']) 
                 
                 if cls.mesh.mesh_kind == 'quad':
+                                                
                     if BC[i]['T'] != 'None':
                         row = cls.Matriz_T.getrow(j)
                         for col in row.indices:
@@ -417,9 +432,20 @@ class FEM:
                         cls.Matriz_T[j,j] = 1.0
                         
                         cls.vetor_T[j] = float(BC[i]['T'])
-
-                if j < cls.mesh.npoints_p: 
-                    if cls.mesh.mesh_kind == 'mini':
+                        
+                    if j in cls.mesh.IEN[:,:3]:
+                        if BC[i]['p'] != 'None':
+                            row = cls.Matriz.getrow(cls.mesh.converter[j] + 2*cls.mesh.npoints)
+                            for col in row.indices:
+                                cls.Matriz[cls.mesh.converter[j] + 2*cls.mesh.npoints,col] = 0
+                            cls.Matriz = cls.Matriz.tolil()
+                            cls.Matriz[cls.mesh.converter[j] + 2*cls.mesh.npoints,cls.mesh.converter[j] + 2*cls.mesh.npoints] = 1.0
+                            cls.Matriz = cls.Matriz.tocsr()
+                            
+                            cls.vetor_p[cls.mesh.converter[j]] = float(BC[i]['p'])
+                        
+                elif cls.mesh.mesh_kind == 'mini':
+                    if j < cls.mesh.npoints_p: 
                         if BC[i]['T'] != 'None':
                             row = cls.Matriz_T.getrow(j)
                             for col in row.indices:
@@ -428,15 +454,15 @@ class FEM:
                             
                             cls.vetor_T[j] = float(BC[i]['T'])
                         
-                    if BC[i]['p'] != 'None':
-                        row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
-                        for col in row.indices:
-                            cls.Matriz[j + 2*cls.mesh.npoints,col] = 0
-                        cls.Matriz = cls.Matriz.tolil()
-                        cls.Matriz[j + 2*cls.mesh.npoints,j + 2*cls.mesh.npoints] = 1.0
-                        cls.Matriz = cls.Matriz.tocsr()
-                        
-                        cls.vetor_p[j] = float(BC[i]['p'])
+                        if BC[i]['p'] != 'None':
+                            row = cls.Matriz.getrow(j + 2*cls.mesh.npoints)
+                            for col in row.indices:
+                                cls.Matriz[j + 2*cls.mesh.npoints,col] = 0
+                            cls.Matriz = cls.Matriz.tolil()
+                            cls.Matriz[j + 2*cls.mesh.npoints,j + 2*cls.mesh.npoints] = 1.0
+                            cls.Matriz = cls.Matriz.tocsr()
+                            
+                            cls.vetor_p[j] = float(BC[i]['p'])
         
 
         cls.vetor_vx = csr_matrix(cls.vetor_vx.reshape(-1,len(cls.vetor_vx)))
@@ -472,21 +498,13 @@ class FEM:
             cls.fluid.vxd, cls.fluid.vyd, cls.fluid.Td = semi_lagrange2(cls.mesh.node_list,cls.mesh.elem_list,cls.fluid.vx,cls.fluid.vy,cls.fluid.T,cls.dt,cls.mesh.IENbound,cls.mesh.boundary)
             end = timer()
             print('time --> SL calculation = ' + str(end-start) + ' [s]')
-        
-        cls.fluid.p_quad[0:cls.mesh.npoints_p] = cls.fluid.p
 
         if cls.mesh.mesh_kind == 'mini':
             cls.fluid.T_mini[0:cls.mesh.npoints_p] = cls.fluid.T
             T_ = cls.fluid.T[cls.mesh.IEN_orig]
             centroids_T = T_.sum(axis=1)/3.0
             cls.fluid.T_mini[cls.mesh.npoints_p:] = centroids_T
-        elif cls.mesh.mesh_kind == 'quad':
-            for i in range (3,6):
-                j=i-2
-                if i == 5:
-                    j = 0
-                cls.fluid.p_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.p_quad[cls.mesh.IEN[:,j]] + cls.fluid.p_quad[cls.mesh.IEN[:,i-3]])/2.0
-                
+        
         
         if cls.porous:
             start = timer()
@@ -514,6 +532,14 @@ class FEM:
         cls.fluid.vx = sol[0:cls.mesh.npoints]
         cls.fluid.vy = sol[cls.mesh.npoints:2*cls.mesh.npoints]
         cls.fluid.p = sol[2*cls.mesh.npoints:]
+     
+        if cls.mesh.mesh_kind == 'quad':
+            cls.fluid.p_quad[list(cls.mesh.converter.keys())] = cls.fluid.p
+            for i in range (3,6):
+                j=i-2
+                if i == 5:
+                    j = 0
+                cls.fluid.p_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.p_quad[cls.mesh.IEN[:,j]] + cls.fluid.p_quad[cls.mesh.IEN[:,i-3]])/2.0     
         
         start = timer()
         cls.fluid.T = sp.sparse.linalg.spsolve(cls.Matriz_T,cls.vetor_T.transpose())

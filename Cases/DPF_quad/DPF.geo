@@ -1,7 +1,7 @@
 // Gmsh project created on Sun Aug 01 16:16:26 2021
 SetFactory("OpenCASCADE");
 //+
-f=1;
+f=0.06;
 Point(1) = {-3, -0.5, 0, f};
 //+
 Point(2) = {3, -0.5, 0, f};
@@ -42,53 +42,55 @@ Line(7) = {6,10};
 //+
 Line(8) = {11, 12};
 //+
-Line(9) = {3, 2};
+Line(9) = {4, 3};
 //+
-Line(10) = {2, 1};
+Line(10) = {3, 2};
 //+
-Line(11) = {6, 3};
+Line(11) = {2, 1};
 //+
-Line(12) = {2, 7};
+Line(12) = {5, 6};
 //+
-Line(13) = {7, 11};
+Line(13) = {6, 3};
 //+
-Line(14) = {5, 6};
+Line(14) = {2, 7};
 //+
-Line(15) = {4, 3};
+Line(15) = {7, 8};
 //+
-Line(16) = {2, 1};
+Line(16) = {7, 11};
 //+
-Line(17) = {7, 8};
 
 //+
-Curve Loop(1) = {6, -7, -14, 5};
+Physical Curve("wall", 17) = {5, 4, 2, 1, 10, 14, 13};
+//+
+Physical Curve("in_flow", 18) = {3};
+//+
+Physical Curve("out_flow", 19) = {16, 7};
+//+
+Curve Loop(1) = {6, -7, -12, 5};
 //+
 Plane Surface(1) = {1};
 //+
-Curve Loop(2) = {11, -15, 4, 14};
+Curve Loop(2) = {12, 13, -9, 4};
 //+
 Plane Surface(2) = {2};
 //+
-Curve Loop(3) = {9, 10, 3, 15};
+Curve Loop(3) = {9, 10, 11, 3};
 //+
 Plane Surface(3) = {3};
 //+
-Curve Loop(4) = {12, 17, 2, -10};
+
+//+
+Curve Loop(4) = {2, -11, 14, 15};
 //+
 Plane Surface(4) = {4};
+
 //+
-Curve Loop(5) = {13, 8, -1, 17};
+Curve Loop(5) = {8, 1, -15, 16};
 //+
 Plane Surface(5) = {5};
 //+
-Physical Curve("in_flow", 19) = {3};
+Physical Surface("free", 20) = {1, 3, 5};
 //+
-Physical Curve("out_flow", 20) = {7, 13};
+Physical Surface("porous", 21) = {2, 4};
 //+
-Physical Curve("symmetry", 18) = {6, 8};
-//+
-Physical Curve("wall", 21) = {4, 5, 2, 1, 9, 11, 12};
-//+
-Physical Surface("free", 22) = {1, 3, 5};
-//+
-Physical Surface("porous", 23) = {2, 4};
+Physical Curve("symmetry", 22) = {6, 8};

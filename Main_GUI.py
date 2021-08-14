@@ -69,7 +69,7 @@ class Main:
                 forces = IC_['forces'][:,:2]
                 IC['vx'] = v[:,0]
                 IC['vy'] = v[:,1]
-                IC['p'] = IC_['p'][:cls.MESH.npoints_p]
+                IC['p'] = IC_['p'][list(cls.MESH.converter.keys())]
                 IC['T'] = IC_['T']
 
         else:

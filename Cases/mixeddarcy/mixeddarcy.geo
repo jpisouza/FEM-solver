@@ -48,5 +48,4 @@ Curve Loop(2) = {7, -2, 5, 6};
 Plane Surface(2) = {2};
 //+
 Physical Surface("porous", 12) = {2};
-//+
-Physical Curve("porous_interface", 13) = {2};
+
