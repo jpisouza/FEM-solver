@@ -15,9 +15,13 @@ class Main:
     @classmethod
     def def_MESH(cls,case):
         path = os.path.abspath(case)
-        cls.mesh = meshio.read(path)
+        cls.msh = meshio.read(path)
         
-        cls.boundNames = list(cls.mesh.field_data.keys())
+        cls.boundNames = []
+
+        for key in cls.msh.field_data:
+            if cls.msh.field_data[key][1] < 2:
+                cls.boundNames.append(key)
         
     @classmethod
     def set_BC(cls,table):

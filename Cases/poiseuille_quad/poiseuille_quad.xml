@@ -4,7 +4,7 @@
   <BoundaryCondition>
     <Boundary name="wall" vx="0" vy="0" p="None" T="0"/>
     <Boundary name="outFlow" vx="None" vy="None" p="0" T="None"/>
-	<Boundary name="inFlow" vx="Profile-1" vy="0" p="None" T="1"/>
+	<Boundary name="inFlow" vx="1" vy="0" p="None" T="1"/>
   </BoundaryCondition>
   <OutFlow>
     <OF name="outFlow"/>

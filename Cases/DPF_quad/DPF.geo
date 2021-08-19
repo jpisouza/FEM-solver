@@ -42,7 +42,7 @@ Line(7) = {6,10};
 //+
 Line(8) = {11, 12};
 //+
-Line(9) = {4, 3};
+Line(9) = {3, 4};
 //+
 Line(10) = {3, 2};
 //+
@@ -50,7 +50,7 @@ Line(11) = {2, 1};
 //+
 Line(12) = {5, 6};
 //+
-Line(13) = {6, 3};
+Line(13) = {3, 6};
 //+
 Line(14) = {2, 7};
 //+
@@ -65,32 +65,33 @@ Physical Curve("wall", 17) = {5, 4, 2, 1, 10, 14, 13};
 Physical Curve("in_flow", 18) = {3};
 //+
 Physical Curve("out_flow", 19) = {16, 7};
+
+
+Physical Curve("symmetry", 22) = {6, 8};
+
+
 //+
-Curve Loop(1) = {6, -7, -12, 5};
+Curve Loop(1) = {9, -3, -11, -10};
 //+
 Plane Surface(1) = {1};
+
 //+
-Curve Loop(2) = {12, 13, -9, 4};
+Curve Loop(2) = {13, -12, -4, -9};
 //+
 Plane Surface(2) = {2};
 //+
-Curve Loop(3) = {9, 10, 11, 3};
+Curve Loop(3) = {7, -6, -5, 12};
 //+
 Plane Surface(3) = {3};
 //+
-
-//+
-Curve Loop(4) = {2, -11, 14, 15};
+Curve Loop(4) = {11, -2, -15, -14};
 //+
 Plane Surface(4) = {4};
-
 //+
-Curve Loop(5) = {8, 1, -15, 16};
+Curve Loop(5) = {15, -1, -8, -16};
 //+
 Plane Surface(5) = {5};
 //+
-Physical Surface("free", 20) = {1, 3, 5};
+Physical Surface("free", 23) = {3, 1, 5};
 //+
-Physical Surface("porous", 21) = {2, 4};
-//+
-Physical Curve("symmetry", 22) = {6, 8};
+Physical Surface("porous", 24) = {2, 4};

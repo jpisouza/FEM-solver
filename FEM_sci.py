@@ -230,7 +230,6 @@ class FEM:
          
         
         if len(cls.mesh.porous_list) > 0:
-
             A2 = sp.sparse.diags(cls.mesh.porous_nodes)
             block_porous = sp.sparse.bmat([[A2, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
                                            [None, A2,None],

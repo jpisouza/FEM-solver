@@ -500,7 +500,7 @@ class Ui_MainWindow(object):
         self.fname, _ = QtWidgets.QFileDialog.getOpenFileName(MainWindow, 'Open file', 'C:','(*.msh)')
         Main.def_MESH(self.fname)
         
-        for i in range(len(Main.boundNames)-1):
+        for i in range(len(Main.boundNames)):
             rowPosition = self.tableWidget.rowCount()
             self.tableWidget.insertRow(rowPosition)
             item = QtWidgets.QTableWidgetItem(Main.boundNames[i])

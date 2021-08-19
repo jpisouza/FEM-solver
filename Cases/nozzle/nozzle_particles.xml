@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<Case name="Heat_exchanger.xml">
+  <Particles nparticles="50" rho="7.0" diameter="0.01" nLoop="10" lim_inf_x="0.0" lim_sup_x="3.0" lim_inf_y="-0.4" lim_sup_y="0.4"/>
+</Case>
