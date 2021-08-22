@@ -18,10 +18,12 @@ class Main:
         cls.msh = meshio.read(path)
         
         cls.boundNames = []
-
+        cls.regionNames = []
         for key in cls.msh.field_data:
             if cls.msh.field_data[key][1] < 2:
                 cls.boundNames.append(key)
+            else:
+                cls.regionNames.append(key)
         
     @classmethod
     def set_BC(cls,table):
@@ -101,25 +103,36 @@ class Main:
         return OF_list
                 
     @classmethod
-    def set_parameters(cls,textEdit_Re,textEdit_Pr,textEdit_Ga,textEdit_Gr,textEdit_dt,convection):
+    def set_parameters(cls,textEdit_Re,textEdit_Pr,textEdit_Ga,textEdit_Gr,textEdit_dt,convection, Da, Fo):
         if convection:
             Ga = float(textEdit_Ga.toPlainText())
         else:
             Ga = 1.0/float(textEdit_Ga.toPlainText())**2
-        return  float(textEdit_Re.toPlainText()), float(textEdit_Pr.toPlainText()), Ga, float(textEdit_Gr.toPlainText()), float(textEdit_dt.toPlainText())
+        if Da == "":
+            Da = 0
+        try:
+            float(Fo)
+        except:
+            Fo = 0
+        try:
+            float(Da)
+        except:
+            Da = 0
+        return  float(textEdit_Re.toPlainText()), float(textEdit_Pr.toPlainText()), Ga, float(textEdit_Gr.toPlainText()), float(textEdit_dt.toPlainText()), float(Da), float(Fo)
         
     @classmethod
-    def set_simulation(cls,case,table,textEdit_Re,textEdit_Pr,textEdit_Ga,textEdit_Gr,textEdit_dt,textEdit_dt_2,convection):
+    def set_simulation(cls,case,table,textEdit_Re,textEdit_Pr,textEdit_Ga,textEdit_Gr,textEdit_dt,textEdit_dt_2,convection, Da, Fo, porous_list):
         cls.BC = cls.set_BC(table)
-        cls.Re,cls.Pr,cls.Ga,cls.Gr, cls.dt = cls.set_parameters(textEdit_Re,textEdit_Pr,textEdit_Ga,textEdit_Gr,textEdit_dt,convection)
+        cls.Re,cls.Pr,cls.Ga,cls.Gr, cls.dt, cls.Da, cls.Fo = cls.set_parameters(textEdit_Re,textEdit_Pr,textEdit_Ga,textEdit_Gr,textEdit_dt,convection, Da, Fo)
         cls.outflow = cls.set_OutFlow(table)
-
-        cls.MESH = mesh(os.path.splitext(case)[0])
+        cls.porous_list = porous_list
+        
+        cls.MESH = mesh(os.path.splitext(case)[0], "mini", cls.porous_list)
         cls.MESH.set_boundary_prior(cls.BC,cls.outflow)      
 
         cls.IC, cls.forces = cls.set_IC(case,textEdit_dt_2)
         
-        cls.fluid = Fluid(cls.MESH,cls.Re,cls.Pr,cls.Ga,cls.Gr,cls.IC)
+        cls.fluid = Fluid(cls.MESH,cls.Re,cls.Pr,cls.Ga,cls.Gr,cls.IC,cls.Da,cls.Fo)
         FEM.set_matrices(cls.MESH,cls.fluid,cls.dt,cls.BC)
         
         #----------------------------------------SL Gustavo ----------------------------------------------------------------

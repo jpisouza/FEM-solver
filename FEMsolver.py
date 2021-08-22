@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import pyvista as pv
 from pyvistaqt import QtInteractor
+from Porous_window import Ui_Porous_window
 
 class Worker(QObject):
     finished = pyqtSignal()
@@ -14,7 +15,7 @@ class Worker(QObject):
     sim_progress = pyqtSignal(int)
 
     def set_simulation(self) :
-        Main.set_simulation(self.case,self.table,self.textEdit_Re,self.textEdit_Pr,self.textEdit_Ga,self.textEdit_Gr,self.textEdit_dt,self.textEdit_dt_2,self.convection)
+        Main.set_simulation(self.case,self.table,self.textEdit_Re,self.textEdit_Pr,self.textEdit_Ga,self.textEdit_Gr,self.textEdit_dt,self.textEdit_dt_2,self.convection,self.Da,self.Fo,self.porous_list)
         if self.particles:
             Main.particles = True
             Main.set_simulation_particles(self.case,self.particles_D,self.particles_rho,self.particles_nLoop,self.particles_nparticles,self.particles_lim_inf_x,self.particles_lim_sup_x,self.particles_lim_inf_y,self.particles_lim_sup_y, self.textEdit_dt_2,self.two_way)
@@ -277,6 +278,10 @@ class Ui_MainWindow(object):
         self.checkBox_2way = QtWidgets.QCheckBox(self.Simtab)
         self.checkBox_2way.setGeometry(QtCore.QRect(600, 530, 111, 20))
         self.checkBox_2way.setObjectName("checkBox_2way")
+        self.darcy_button = QtWidgets.QPushButton(self.Simtab)
+        self.darcy_button.setGeometry(QtCore.QRect(40, 170, 131, 28))
+        self.darcy_button.setObjectName("darcy_button")
+        self.darcy_button.setEnabled(False)
         self.tabWidget.addTab(self.Simtab, "")
         self.Outputtab = QtWidgets.QWidget()
         self.Outputtab.setObjectName("Outputtab")
@@ -333,17 +338,52 @@ class Ui_MainWindow(object):
         self.actionSave_simulation_settings.triggered.connect(self.saveSimulation)
         self.checkBox_conv.stateChanged.connect(self.conv_or_exp)
         self.checkBox_particles.stateChanged.connect(self.set_particles)
+        self.darcy_button.clicked.connect(self.create_porous_window)
         
         
         self.tableWidget.setVisible(False)
         self.checkBox_particles.setChecked(True)
         self.simulation_status = 'stop'
         
-    
+        self.porous_list = []
+        self.Da = ""
+        self.Fo = ""
         
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+    
+    def create_porous_window(self):
+        self.Porous_window = QtWidgets.QMainWindow()
+        self.ui = Ui_Porous_window()
+        self.ui.setupUi(self.Porous_window)
+        self.checkbox_porous_list = []
+        
+        self.ui.darcy_input.setText(str(self.Da))
+        self.ui.Fo_input.setText(str(self.Fo))
+                
+        for i in range (len(Main.regionNames)):
+            porous_checkBox = QtWidgets.QCheckBox(self.ui.centralwidget)
+            porous_checkBox.setGeometry(QtCore.QRect(210, 100 - 30*i, 81, 20))
+            porous_checkBox.setObjectName("porous_checkBox" + str(i))
+            porous_checkBox.setText(Main.regionNames[i])
+            self.checkbox_porous_list.append(porous_checkBox)
+            if Main.regionNames[i] in self.porous_list:
+                 self.checkbox_porous_list[-1].setChecked(True)
+            
+        self.ui.save_Button.clicked.connect(self.save_darcy)
+        self.ui.cancel_Button.clicked.connect(self.Porous_window.close)
+            
+        self.Porous_window.show()
+    
+    def save_darcy(self):
+        self.Da = self.ui.darcy_input.toPlainText()
+        self.Fo = self.ui.Fo_input.toPlainText()
+        self.porous_list = []
+        for i in range (len(Main.regionNames)):
+            if self.checkbox_porous_list[i].isChecked():
+                self.porous_list.append(Main.regionNames[i])
+        self.Porous_window.close()
     
     def adjust(self):
         if str(self.comboBox.currentText()) == 'v_x':
@@ -464,6 +504,9 @@ class Ui_MainWindow(object):
         worker.textEdit_Re = self.textEdit_Re
         worker.textEdit_Pr = self.textEdit_Pr
         worker.textEdit_Ga = self.textEdit_Ga
+        worker.Da = self.Da
+        worker.Fo = self.Fo
+        worker.porous_list = self.porous_list
         if self.checkBox_conv.isChecked():
             worker.convection = True
         else:
@@ -517,6 +560,7 @@ class Ui_MainWindow(object):
 
         
         self.label_3.setText("Case loaded!")
+        self.darcy_button.setEnabled(True)
     
     def saveSimulation(self):
         save_name,_ = QtWidgets.QFileDialog.getSaveFileName(MainWindow, 'Save file', 'C:','(*.xml)')
@@ -547,6 +591,11 @@ class Ui_MainWindow(object):
         else:
             particles = 'False'
         
+        if self.Da != '':
+            parameters.set('Da',self.Da)
+        if self.Fo != '':
+            parameters.set('Fo',self.Fo)
+            
         parameters.set('Re',Re)
         parameters.set('Gr',Gr)
         parameters.set('Pr',Pr)
@@ -577,7 +626,11 @@ class Ui_MainWindow(object):
                 OF = ET.SubElement(OutFlow,'OF')
                 OF.set('name',str(self.tableWidget.verticalHeaderItem(j).text()))
 
-
+        if len(self.porous_list) > 0:
+            Porous = ET.SubElement(data,'Porous')
+            for i in range (len(self.porous_list)):
+                Region = ET.SubElement(Porous,'Region')
+                Region.set('name',self.porous_list[i])
 
         initialCond = ET.SubElement(data,'InitialCondition')
 
@@ -694,7 +747,16 @@ class Ui_MainWindow(object):
         self.textEdit.setText(self.fname)
         self.textEdit.setReadOnly(True)
         self.tableWidget.verticalHeader().setVisible(True)
+        Main.def_MESH(self.fname)
+        self.darcy_button.setEnabled(True)
         
+        if 'Da' in par.attrib:
+            self.Da = par.attrib["Da"]
+        if 'Fo' in par.attrib:
+            self.Fo = par.attrib["Fo"]
+        if root.find('Porous') is not None:
+            for child in root.find('Porous'):
+                self.porous_list.append(child.attrib['name'])
       
         self.label_3.setText("Case loaded!")
         
@@ -797,6 +859,7 @@ class Ui_MainWindow(object):
         self.checkBox_particles.setText(_translate("MainWindow", "Particles"))
         self.label_9.setText(_translate("MainWindow", "Start iteration:"))
         self.checkBox_2way.setText(_translate("MainWindow", "Two-way"))
+        self.darcy_button.setText(_translate("MainWindow", "Porous regions"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Simtab), _translate("MainWindow", "Simulation settings"))
         self.pushButton_2.setText(_translate("MainWindow", "XY"))
         self.comboBox.setItemText(0, _translate("MainWindow", "v_x"))

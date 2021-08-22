@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
 <Case name="porous">
-  <Parameters Fr="100" Re="6.38" Gr="0" Pr="0.7" Da="0.373" Fo = "1.952" porous = "False" Fr_flag="True" particles="False" two_way="False"/>
+  <Parameters Fr="100" Da="0.373" Fo="1.952" Re="6.38" Gr="0" Pr="0.7" Fr_flag="True" particles="False" two_way="False"/>
   <BoundaryCondition>
     <Boundary name="wall" vx="0" vy="0" p="None" T="0"/>
     <Boundary name="out_flow" vx="None" vy="None" p="0" T="None"/>
-	<Boundary name="in_flow" vx="Profile-2.67" vy="0" p="None" T="1.0"/>
-	<Boundary name="slip_left" vx="0" vy="None" p="None" T="None"/>
-	<Boundary name="slip_bottom" vx="None" vy="0" p="None" T="None"/>
+    <Boundary name="in_flow" vx="Profile-2.67" vy="0" p="None" T="1.0"/>
+    <Boundary name="slip_left" vx="0" vy="None" p="None" T="None"/>
+    <Boundary name="slip_bottom" vx="None" vy="0" p="None" T="None"/>
   </BoundaryCondition>
   <OutFlow>
     <OF name="out_flow"/>
