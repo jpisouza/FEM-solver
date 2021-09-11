@@ -101,6 +101,10 @@ class ParticleCloud:
     def solve(self,dt,nLoop,Re,Fr):
         dt_ = dt/float(nLoop)
         self.x = np.zeros((len(self.particle_list),2), dtype='float') 
+        # print(self.particle_list[0].v_f - self.particle_list[0].v)
+        # print(self.particle_list[0].pos)
+        # print(self.particle_list[0].m)
+        # print('\n')
         for n in range(nLoop):             
             # list_del = []
             # count = 0
@@ -110,14 +114,18 @@ class ParticleCloud:
                     particle.calc_pos(dt_)
                 if particle.delete:
                     particle.pos = [float('NaN'),float('NaN')]
-                    # list_del.append(count)
+
                 self.x[particle.ID,:] = particle.pos
                 self.v[particle.ID,:] = particle.v
-                # count += 1
-                
-            # self.particle_list = np.delete(self.particle_list,list_del)
-            # x = np.delete(x,list_del,axis = 0)
-            if n == (nLoop - 1):
+
+                # print (self.particle_list[0].Re_p)
+                # print (self.particle_list[0].D)
+                # print (self.particle_list[0].E)
+                # print (self.particle_list[0].Cd)
+                # print (self.particle_list[0].v_f - self.particle_list[0].v)
+                # print(self.particle_list[0].pos)
+                # print('\n')
+            if n == (nLoop - 1):                
                 self.forces = np.zeros((np.max(self.nodes[0].IEN)+1,2), dtype = 'float')
                 if self.two_way:
                     start = timer()

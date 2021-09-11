@@ -70,7 +70,6 @@ if particles_flag:
     particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces,two_way)
 
 
-t = np.arange(i,end,dt)
 
 FEM.set_matrices(MESH,fluid,dt,BC,porous)
 

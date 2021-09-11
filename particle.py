@@ -23,10 +23,11 @@ class Particle:
         
     def calc_Cd(self,Re):
         
-        Re_p = Re*np.linalg.norm(self.v-self.v_f)*self.d
-        if Re_p > 0.0:
-            if Re_p<1000:
-                self.Cd = (24.0/Re_p)*(1+0.15*Re_p**0.687)
+        self.Re_p = Re*np.linalg.norm(self.v-self.v_f)*self.d
+        
+        if self.Re_p > 0.0:
+            if self.Re_p<1000:
+                self.Cd = (24.0/self.Re_p)*(1+0.15*self.Re_p**0.687)
             else:
                 self.Cd = 0.44
         else:

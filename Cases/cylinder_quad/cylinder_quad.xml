@@ -7,7 +7,7 @@
     <Boundary name="inFlow" vx="1.0" vy="0.0" p="None" T="1"/>
   </BoundaryCondition>
   <OutFlow>
-    <OF name="right_bound"/>
+    <OF name="outFlow"/>
   </OutFlow>
   <InitialCondition vx="0" vy="0" p="0" T="0"/>
 </Case>

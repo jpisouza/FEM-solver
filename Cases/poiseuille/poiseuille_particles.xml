@@ -1,4 +1,5 @@
 <?xml version="1.0" ?>
 <Case name="poiseuille.xml">
-  <Particles nparticles="1" rho="7.0" diameter="0.3" nLoop="10" lim_inf_x="-3.0" lim_sup_x="-2.5" lim_inf_y="-0.05" lim_sup_y="0.05"/>
+  <Particles nparticles="50" rho="10000.0" diameter="2e-5" nLoop="300" lim_inf_x="-5.5" lim_sup_x="0" lim_inf_y="-0.25" lim_sup_y="0.25" distribution="normal_log"/>
+  <distribution mean="2.07" sigma="0.20" factor="1e-6"/>
 </Case>

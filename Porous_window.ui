@@ -96,19 +96,6 @@
      <string>Fo:</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="porous_checkBox">
-    <property name="geometry">
-     <rect>
-      <x>210</x>
-      <y>100</y>
-      <width>81</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>porous</string>
-    </property>
-   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

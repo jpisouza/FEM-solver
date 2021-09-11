@@ -130,6 +130,10 @@ class Case:
         tree = ET.parse(path)
         root = tree.getroot()
         part = root.find('Particles').attrib
+        if 'distribution' in part:
+            dist = part['distribution']
+        else:
+            dist = 'uniform'
         if i == 0:          
             nparticles = int(part['nparticles'])
             lims = np.zeros((2,2), dtype='float')
@@ -142,20 +146,24 @@ class Case:
             x_part[:,0] = lims[0,0] + (lims[0,1] - lims[0,0])*np.random.rand(nparticles)
             x_part[:,1] = lims[1,0] + (lims[1,1] - lims[1,0])*np.random.rand(nparticles)
             v_part = np.zeros((nparticles,2), dtype='float')
+            if dist == 'uniform':
+                d = float(part['diameter'])
+                d_part = d*np.ones( (x_part.shape[0]),dtype='float' )
+            elif dist == "normal_log":
+                par_dist = root.find('distribution').attrib
+                d_part = float(par_dist['factor'])*np.power(10.0,np.random.normal(float(par_dist['mean']), float(par_dist['sigma']), nparticles))
 
         else:
             file = os.path.dirname(os.path.abspath(cls.case)) + '/Results/sol_particles' + str(i) + '.vtu'
             x_part = np.array(pv.read(file).points)[:,:2]
             vx = np.array(pv.read(file)['vx'])
             vy = np.array(pv.read(file)['vy'])
+            d_part = np.array(pv.read(file)['d'])
             v_part = np.block([[vx],[vy]]).transpose()
-
-
-        d = float(part['diameter'])
+       
         rho = float(part['rho'])
         nLoop = int(part['nLoop'])
               
-        d_part = d*np.ones( (x_part.shape[0]),dtype='float' )
         rho_part = rho*np.ones( (x_part.shape[0]),dtype='float' )
         
         return x_part, v_part, d_part, rho_part, nLoop
