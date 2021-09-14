@@ -13,6 +13,8 @@ class ParticleCloud:
         self.rho = rho_vector
         self.elements = elements
         self.nodes = nodes
+        self.type = 'fixed'
+        self.trapped = 0
         
         self.forces = forces
         self.two_way = two_way
@@ -23,7 +25,6 @@ class ParticleCloud:
             self.particle_list.append(particle)
 
            
-        self.set_element()
     
     def set_element(self):
         
@@ -32,6 +33,8 @@ class ParticleCloud:
             if math.isnan(part.pos[0]):
                 part.stop = True
                 part.delete = True
+                continue
+            if part.stop:
                 continue
             if part.element == 0:
                 for e in self.elements:
@@ -58,6 +61,7 @@ class ParticleCloud:
                             if len(part.element.mesh.porous_elem) > 0 and part.element.mesh.porous_elem[e] == 1:
                                 part.v = [0,0]
                                 part.stop = True
+                                self.trapped += 1
                             flag_break = True
                             break
                     if flag_break:
@@ -97,42 +101,70 @@ class ParticleCloud:
                 self.calc_F(part.pos,part.element,part.F,part.vol)
             
             
-            
+    def set_distribution(self, mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part):
+        self.mean = mean
+        self.sigma = sigma
+        self.factor = factor
+        self.inlet = inlet
+        self.type = type_
+        self.freq = freq
+        self.dist = dist
+        self.rho_value = rho
+        self.lims = lims
+        self.max_part = max_part
+        
     def solve(self,dt,nLoop,Re,Fr):
+        start = timer()
         dt_ = dt/float(nLoop)
+        
+        if self.type != 'fixed' and not len(self.particle_list) > self.max_part:
+            if self.dist == 'normal_log':
+                d_part = self.factor*np.power(10.0,np.random.normal(self.mean, self.sigma, self.freq))
+            elif self.dist == 'uniform':
+                d_part = self.mean*np.ones( (self.freq),dtype='float' )
+            self.d = np.append(self.d,d_part)
+            
+            for i in range(len(self.elements[0].mesh.BC)):
+                if self.elements[0].mesh.BC[i]['name'] == self.inlet:
+                    x_max = np.max(self.elements[0].mesh.X[self.elements[0].mesh.boundary[i]])
+                    x_min = np.min(self.elements[0].mesh.X[self.elements[0].mesh.boundary[i]])
+                    
+                    y_max = np.max(self.elements[0].mesh.Y[self.elements[0].mesh.boundary[i]])
+                    y_min = np.min(self.elements[0].mesh.Y[self.elements[0].mesh.boundary[i]])
+                    break
+            x_part = np.zeros((self.freq,2), dtype='float')  
+            x_part[:,0] = x_min + self.lims[0]*(x_max - x_min) + (self.lims[1] - self.lims[0])*(x_max - x_min)*np.random.rand(self.freq)
+            x_part[:,1] = y_min + self.lims[0]*(y_max - y_min) + (self.lims[1] - self.lims[0])*(y_max - y_min)*np.random.rand(self.freq)
+                    
+            for i in range(self.freq):
+                particle = Particle(len(self.particle_list),d_part[i],self.rho_value,x_part[i],np.array([0,0]))
+                self.particle_list.append(particle)
+                
         self.x = np.zeros((len(self.particle_list),2), dtype='float') 
-        # print(self.particle_list[0].v_f - self.particle_list[0].v)
-        # print(self.particle_list[0].pos)
-        # print(self.particle_list[0].m)
-        # print('\n')
+        self.v = np.zeros((len(self.particle_list),2), dtype='float') 
+
         for n in range(nLoop):             
-            # list_del = []
-            # count = 0
+            self.set_element()
             for particle in self.particle_list:
                 if not particle.stop:
                     particle.calc_v(Re,Fr,dt_)
                     particle.calc_pos(dt_)
                 if particle.delete:
                     particle.pos = [float('NaN'),float('NaN')]
-
                 self.x[particle.ID,:] = particle.pos
                 self.v[particle.ID,:] = particle.v
 
-                # print (self.particle_list[0].Re_p)
-                # print (self.particle_list[0].D)
-                # print (self.particle_list[0].E)
-                # print (self.particle_list[0].Cd)
-                # print (self.particle_list[0].v_f - self.particle_list[0].v)
-                # print(self.particle_list[0].pos)
-                # print('\n')
-            if n == (nLoop - 1):                
+            if n == (nLoop - 1): 
                 self.forces = np.zeros((np.max(self.nodes[0].IEN)+1,2), dtype = 'float')
                 if self.two_way:
-                    start = timer()
+                    start_ = timer()
                     self.calc_force_vector()
-                    end = timer()
-                    print('time --> Calculate two-way forces = ' + str(end-start) + ' [s]')
-            self.set_element()
+                    end_ = timer()
+                    print('time --> Calculate two-way forces = ' + str(end_-start_) + ' [s]')
+                    
+        print('particles trapped = ' + str(self.trapped))
+        end = timer()
+        print('time --> Particles\' motion = ' + str(end-start) + ' [s]')
         
                         
     def calc_F(self,point,element,force,volume):

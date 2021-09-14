@@ -65,10 +65,11 @@ MESH.set_boundary_prior(BC,outflow)
 fluid = Fluid(MESH,Re,Pr,Ga,Gr,IC,Da,Fo)
 
 if particles_flag:
-    x_part, v_part, d_part, rho_part, nLoop = Case.set_particles(i)
+    x_part, v_part, d_part, rho_part, nLoop, inlet, lims, mean, sigma, factor, type_, freq, dist, rho, max_part = Case.set_particles(i)
     
     particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces,two_way)
 
+    particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
 
 
 FEM.set_matrices(MESH,fluid,dt,BC,porous)

@@ -224,6 +224,7 @@ class mesh:
 
     def set_boundary_prior(self,BC,outflow):
         
+        self.BC = BC
         k = 0
         bound_list = []
         outflow_bound_list = []
@@ -240,6 +241,9 @@ class mesh:
             k+=1
 
         self.boundary = bound_list
+        self.boundary_list = []
+        for r in range(len(self.boundary)):
+            self.boundary_list = self.boundary_list + self.boundary[r]
         self.outflow_boundary = outflow_bound_list
 
 

@@ -134,7 +134,42 @@ class Case:
             dist = part['distribution']
         else:
             dist = 'uniform'
-        if i == 0:          
+        
+        if 'type' in part:
+            type_ = part['type']
+        else:
+            type_ = 'fixed'
+            
+        if i == 0 and type_ == 'continuous':
+            freq = int(part['frequency'])
+            lims = np.zeros((2), dtype='float')
+            lims[0] = float(part['lim_inf'])
+            lims[1] = float(part['lim_sup'])
+            inlet = part['inlet']
+            if 'max_part' in part:
+                max_part = part['max_part']
+            else:
+                max_part = float('NaN')
+            x_part = np.array([])
+            nparticles = len(x_part)
+            v_part = np.zeros((nparticles,2), dtype='float')
+            if dist == 'uniform':
+                d = float(part['diameter'])
+                mean = d
+                sigma = 0.0
+                d_part = d*np.ones( (x_part.shape[0]),dtype='float' )
+                factor = 1.0
+            elif dist == "normal_log":
+                par_dist = root.find('distribution').attrib
+                mean = float(par_dist['mean'])
+                sigma = float(par_dist['sigma'])
+                factor = float(par_dist['factor'])
+                d_part = factor*np.power(10.0,np.random.normal(mean, sigma, nparticles))
+            
+        elif i == 0 and type_ == 'fixed':    
+            inlet = ''
+            freq = 0
+            max_part = float('NaN')
             nparticles = int(part['nparticles'])
             lims = np.zeros((2,2), dtype='float')
             lims[0,0] = float(part['lim_inf_x'])
@@ -148,25 +183,64 @@ class Case:
             v_part = np.zeros((nparticles,2), dtype='float')
             if dist == 'uniform':
                 d = float(part['diameter'])
+                mean = d
+                sigma = 0.0
                 d_part = d*np.ones( (x_part.shape[0]),dtype='float' )
+                factor = 1.0
             elif dist == "normal_log":
                 par_dist = root.find('distribution').attrib
-                d_part = float(par_dist['factor'])*np.power(10.0,np.random.normal(float(par_dist['mean']), float(par_dist['sigma']), nparticles))
-
-        else:
+                mean = float(par_dist['mean'])
+                sigma = float(par_dist['sigma'])
+                factor = float(par_dist['factor'])
+                d_part = factor*np.power(10.0,np.random.normal(mean, sigma, nparticles))
+                
+        elif i > 0:
             file = os.path.dirname(os.path.abspath(cls.case)) + '/Results/sol_particles' + str(i) + '.vtu'
+            if type_ == 'continuous':
+                freq = int(part['frequency'])
+                lims = np.zeros((2), dtype='float')
+                lims[0] = float(part['lim_inf'])
+                lims[1] = float(part['lim_sup'])
+                inlet = part['inlet']
+                if 'max_part' in part:
+                    max_part = part['max_part']
+                else:
+                    max_part = float('NaN')
+            else:
+                inlet = ''
+                freq = 0
+                max_part = float('NaN')
+                nparticles = int(part['nparticles'])
+                lims = np.zeros((2,2), dtype='float')
+                lims[0,0] = float(part['lim_inf_x'])
+                lims[0,1] = float(part['lim_sup_x'])
+                lims[1,0] = float(part['lim_inf_y'])
+                lims[1,1] = float(part['lim_sup_y'])
+                
             x_part = np.array(pv.read(file).points)[:,:2]
             vx = np.array(pv.read(file)['vx'])
             vy = np.array(pv.read(file)['vy'])
             d_part = np.array(pv.read(file)['d'])
             v_part = np.block([[vx],[vy]]).transpose()
+            nparticles = len(x_part)
+            
+            if dist == 'uniform':
+                d = float(part['diameter'])
+                mean = d
+                sigma = 0.0
+                factor = 1.0
+            elif dist == "normal_log":
+                par_dist = root.find('distribution').attrib
+                mean = float(par_dist['mean'])
+                sigma = float(par_dist['sigma'])
+                factor = float(par_dist['factor'])
        
         rho = float(part['rho'])
         nLoop = int(part['nLoop'])
               
         rho_part = rho*np.ones( (x_part.shape[0]),dtype='float' )
         
-        return x_part, v_part, d_part, rho_part, nLoop
+        return x_part, v_part, d_part, rho_part, nLoop, inlet, lims, mean, sigma, factor, type_, freq, dist, rho, max_part
         
     @classmethod
     def set_kind(cls, root):
@@ -174,5 +248,10 @@ class Case:
            return root.find('Parameters').attrib['kind']
        else:
            return 'mini'
+      
+    
+        
+        
+        
          
         

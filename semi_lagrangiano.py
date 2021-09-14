@@ -314,7 +314,7 @@ def semi_lagrange(nodes,elements,vx,vy,dt,IENbound):
     return vxd, vyd
 
 
-def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary):
+def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary_list):
     vxd = np.zeros( (len(vx)),dtype='float' )
     vyd = np.zeros( (len(vx)),dtype='float' )
     Td = np.zeros( (len(vx)),dtype='float' )
@@ -333,7 +333,7 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary):
             point.T = T[point.ID]
     for point in nodes:
 
-        if np.any([point.ID in boundary[i] for i in range(len(boundary))]) and not point.out_flow:
+        if point.ID in boundary_list and not point.out_flow:
             vxd[point.ID] = vx[point.ID]
             vyd[point.ID] = vy[point.ID]
             Td[point.ID] = T[point.ID]
@@ -382,7 +382,7 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary):
                     if dist < dist_min:
                         dist_min = dist
                         p = nodes[vizinho]
-                if p == p_2ant and np.any([p.ID in boundary[i] for i in range(len(boundary))]):
+                if p == p_2ant and boundary_list:
                     # print('caiu aqui ---' + str(point.ID))
                     # print('p = ' + str(p.ID))
                     # print('p_ant = ' + str(p_ant.ID))
