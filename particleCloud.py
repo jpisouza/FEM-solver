@@ -21,7 +21,7 @@ class ParticleCloud:
             self.rho_value = rho_vector[0]
         else:
             self.mean = 1.0
-            self.rho_value = 1e3
+            self.rho_value = 1e4
             
         self.factor = 1.0
         
@@ -68,7 +68,7 @@ class ParticleCloud:
                         if pointInElement(part,self.elements[e]):
                             part.element = self.elements[e]
                             if len(part.element.mesh.porous_elem) > 0 and part.element.mesh.porous_elem[e] == 1:
-                                if 0.5*part.m*np.linalg.norm(part.v)**2 <= 0.005*0.5*self.self.rho_value*(4.0/3.0)*((0.5*self.factor*np.power(10.0,self.mean))**3):
+                                if 0.5*part.m*np.linalg.norm(part.v)**2 <= 0.005*0.5*self.rho_value*(4.0/3.0)*((0.5*self.factor*np.power(10.0,self.mean))**3):
                                     part.stop = True
                                     part.v = [0,0]
                                     self.trapped += 1
