@@ -16,7 +16,11 @@ class ParticleCloud:
         self.type = 'fixed'
         self.trapped = 0
         self.sigma = 0
-        self.mean = d_vector[0]
+        if len(d_vector) > 0:
+            self.mean = d_vector[0]
+        else:
+            self.mean = 1.0
+            
         self.factor = 1.0
         
         self.forces = forces
