@@ -21,7 +21,7 @@ class ParticleCloud:
             self.rho_value = rho_vector[0]
         else:
             self.mean = 1.0
-            self.rho_value = rho_vector[0]
+            self.rho_value = 1e3
             
         self.factor = 1.0
         
@@ -130,9 +130,12 @@ class ParticleCloud:
         if self.type != 'fixed' and not len(self.particle_list) > self.max_part:
             if self.dist == 'normal_log':
                 d_part = self.factor*np.power(10.0,np.random.normal(self.mean, self.sigma, self.freq))
+                rho_part = self.rho_value*np.ones( (self.freq),dtype='float' )
             elif self.dist == 'uniform':
                 d_part = self.mean*np.ones( (self.freq),dtype='float' )
+                rho_part = self.rho_value*np.ones( (self.freq),dtype='float' )
             self.d = np.append(self.d,d_part)
+            self.rho = np.append(self.rho,rho_part)
             
             for i in range(len(self.elements[0].mesh.BC)):
                 if self.elements[0].mesh.BC[i]['name'] == self.inlet:
