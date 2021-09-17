@@ -15,6 +15,9 @@ class ParticleCloud:
         self.nodes = nodes
         self.type = 'fixed'
         self.trapped = 0
+        self.sigma = 0
+        self.mean = d_vector[0]
+        self.factor = 1.0
         
         self.forces = forces
         self.two_way = two_way
@@ -59,9 +62,10 @@ class ParticleCloud:
                         if pointInElement(part,self.elements[e]):
                             part.element = self.elements[e]
                             if len(part.element.mesh.porous_elem) > 0 and part.element.mesh.porous_elem[e] == 1:
-                                part.v = [0,0]
-                                part.stop = True
-                                self.trapped += 1
+                                if 0.5*part.m*np.linalg.norm(part.v)**2 <= 0.005*0.5*self.rho[0]*(4.0/3.0)*((0.5*self.factor*np.power(10.0,self.mean))**3):
+                                    part.stop = True
+                                    part.v = [0,0]
+                                    self.trapped += 1
                             flag_break = True
                             break
                     if flag_break:
