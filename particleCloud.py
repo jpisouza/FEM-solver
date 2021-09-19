@@ -25,6 +25,8 @@ class ParticleCloud:
             
         self.factor = 1.0
         
+        self.counter_exit = 0
+        
         self.forces = forces
         self.two_way = two_way
         
@@ -68,7 +70,8 @@ class ParticleCloud:
                         if pointInElement(part,self.elements[e]):
                             part.element = self.elements[e]
                             if len(part.element.mesh.porous_elem) > 0 and part.element.mesh.porous_elem[e] == 1:
-                                if 0.5*part.m*np.linalg.norm(part.v)**2 <= 0.01*0.5*self.rho_value*(4.0/3.0)*((0.5*self.factor*np.power(10.0,self.mean))**3):
+                                #if 0.5*part.m*np.linalg.norm(part.v)**2 <= 0.05*0.5*self.rho_value*(4.0/3.0)*((0.5*self.factor*np.power(10.0,self.mean))**3):
+                                if np.linalg.norm(part.v) <= 0.01:
                                     part.stop = True
                                     part.v = [0,0]
                                     self.trapped += 1
@@ -99,6 +102,7 @@ class ParticleCloud:
                                 part.stop = True
                                 if p.out_flow:
                                     part.delete = True
+                                    self.count_exit += 1
                                 flag_break = True
                                 break
                         if flag_break:
@@ -126,6 +130,7 @@ class ParticleCloud:
     def solve(self,dt,nLoop,Re,Fr):
         start = timer()
         dt_ = dt/float(nLoop)
+        self.count_exit = 0
         
         if self.type != 'fixed' and not len(self.particle_list) > self.max_part:
             if self.dist == 'normal_log':
@@ -176,6 +181,7 @@ class ParticleCloud:
                     print('time --> Calculate two-way forces = ' + str(end_-start_) + ' [s]')
                     
         print('particles trapped = ' + str(self.trapped))
+        print('particles exit number = ' + str(self.count_exit))
         end = timer()
         print('time --> Particles\' motion = ' + str(end-start) + ' [s]')
         

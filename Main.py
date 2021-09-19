@@ -46,7 +46,7 @@ if os.path.exists(os.path.dirname(os.path.abspath(case)) + '/' + os.path.splitex
 else:
     msh = os.path.splitext(os.path.abspath(root.attrib['name']))[0]
 
-
+type_ = ''
 output_dir = os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/Results')
 
 mesh_kind = Case.set_kind(root)
@@ -70,6 +70,9 @@ if particles_flag:
     particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces,two_way)
 
     particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
+    
+    if type_ == "continuous":
+        f = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/exhaust.txt'), 'a')
 
 
 FEM.set_matrices(MESH,fluid,dt,BC,porous)
@@ -104,6 +107,8 @@ while i < end:
     if particles_flag:
         fluid = FEM.solve_fields(particleCloud.forces)
         particleCloud.solve(dt,nLoop,fluid.Re,1.0/np.sqrt(fluid.Ga))
+        if type_ == "continuous":
+            f.write(str(particleCloud.count_exit) + '\n')
     else:
         fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'))
         particleCloud = 0
@@ -113,5 +118,6 @@ while i < end:
 
     i+=1
 
-
+if type_ == "continuous":
+    f.close()
 
