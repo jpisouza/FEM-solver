@@ -71,7 +71,7 @@ class ParticleCloud:
                             part.element = self.elements[e]
                             if len(part.element.mesh.porous_elem) > 0 and part.element.mesh.porous_elem[e] == 1:
                                 #if 0.5*part.m*np.linalg.norm(part.v)**2 <= 0.05*0.5*self.rho_value*(4.0/3.0)*((0.5*self.factor*np.power(10.0,self.mean))**3):
-                                if np.linalg.norm(part.v) <= 0.01:
+                                if np.linalg.norm(part.v) <= 0.05:
                                     part.stop = True
                                     part.v = [0,0]
                                     self.trapped += 1
