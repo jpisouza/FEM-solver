@@ -824,7 +824,7 @@ class Ui_MainWindow(object):
             
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "JFlow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "FEMsolver"))
         self.tableWidget.setSortingEnabled(False)
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "vx"))

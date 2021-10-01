@@ -72,7 +72,10 @@ if particles_flag:
     particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
     
     if type_ == "continuous":
-        f = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/exhaust.txt'), 'a')
+        if i == 0:
+            f = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/exhaust.txt'), 'w')
+        else:
+            f = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/exhaust.txt'), 'a')
 
 
 FEM.set_matrices(MESH,fluid,dt,BC,porous)
