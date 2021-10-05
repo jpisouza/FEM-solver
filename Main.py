@@ -111,7 +111,12 @@ while i < end:
         fluid = FEM.solve_fields(particleCloud.forces)
         particleCloud.solve(dt,nLoop,fluid.Re,1.0/np.sqrt(fluid.Ga))
         if type_ == "continuous":
+            if i == 0:
+                f = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/exhaust.txt'), 'w')
+            else:
+                f = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/exhaust.txt'), 'a')
             f.write(str(particleCloud.count_exit) + '\n')
+            f.close()
     else:
         fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'))
         particleCloud = 0
@@ -121,6 +126,6 @@ while i < end:
 
     i+=1
 
-if type_ == "continuous":
-    f.close()
+# if type_ == "continuous":
+#     f.close()
 
