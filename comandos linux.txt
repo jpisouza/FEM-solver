@@ -9,7 +9,7 @@ ssh joaosouza@10.0.0.202
 pwd: joao2021
 
 cygnus:
-ssh joaosouza@10.0.0.202
+ssh joaosouza@10.0.0.209
 
 Programas para estudar:
 ssh
