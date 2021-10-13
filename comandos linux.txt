@@ -8,6 +8,9 @@ para entrar na Taurus:
 ssh joaosouza@10.0.0.202
 pwd: joao2021
 
+cygnus:
+ssh joaosouza@10.0.0.202
+
 Programas para estudar:
 ssh
 scp
@@ -23,3 +26,5 @@ sshfs
 
 
 export OMP_NUM_THREADS=6
+
+conda_env_create -f conda.osx.yaml
