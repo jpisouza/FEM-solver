@@ -529,9 +529,3 @@ def semi_lagrange3(nodes,elements,vx,vy,dt,IENbound):
         
     return vxd, vyd                        
                     
-                
-            
-
-        
-        
-        
