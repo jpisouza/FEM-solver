@@ -1,5 +1,5 @@
 //+
-fator = 0.03;
+fator = 0.5;
 Point(1) = {0, 0, 0, fator};
 //+
 Point(2) = {1, 0, 0, fator};

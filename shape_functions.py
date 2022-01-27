@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
 
 x_ = np.linspace(0,1)
 y_ = np.linspace(0,1)
@@ -54,55 +55,73 @@ for i in range (x.shape[0]):
 plt.close('all')
 fig = plt.figure(1)
 ax = fig.add_subplot(221, projection='3d')
-surf = ax.plot_surface(x,y,N1)
+surf = ax.plot_surface(x,y,N1,cmap=cm.jet, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
+
 
 ax = fig.add_subplot(222, projection='3d')
-surf = ax.plot_surface(x,y,N2)
+surf = ax.plot_surface(x,y,N2,cmap=cm.jet, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
+
 
 ax = fig.add_subplot(223, projection='3d')
-surf = ax.plot_surface(x,y,N3)
+surf = ax.plot_surface(x,y,N3,cmap=cm.jet, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
+
 
 ax = fig.add_subplot(224, projection='3d')
-surf = ax.plot_surface(x,y,N4)
+surf = ax.plot_surface(x,y,N4,cmap=cm.jet, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
+
 
 
 fig = plt.figure(2)
 ax = fig.add_subplot(321, projection='3d')
-surf = ax.plot_surface(x,y,N1_)
+surf = ax.plot_surface(x,y,N1_,cmap=cm.jet, alpha = 1,vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
 
 ax = fig.add_subplot(322, projection='3d')
-surf = ax.plot_surface(x,y,N2_)
+surf = ax.plot_surface(x,y,N2_,cmap=cm.jet, alpha = 1, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
 
 ax = fig.add_subplot(323, projection='3d')
-surf = ax.plot_surface(x,y,N3_)
+surf = ax.plot_surface(x,y,N3_,cmap=cm.jet, alpha = 1, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
 
 ax = fig.add_subplot(324, projection='3d')
-surf = ax.plot_surface(x,y,N4_)
+surf = ax.plot_surface(x,y,N4_,cmap=cm.jet, alpha = 1, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
 
 ax = fig.add_subplot(325, projection='3d')
-surf = ax.plot_surface(x,y,N5_)
+surf = ax.plot_surface(x,y,N5_,cmap=cm.jet, alpha = 1, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
+plt.colorbar(surf, ax=ax)
 
 ax = fig.add_subplot(326, projection='3d')
-surf = ax.plot_surface(x,y,N6_)
+surf = ax.plot_surface(x,y,N6_,cmap=cm.jet, alpha = 1, vmin = 0, vmax =1)
 ax.set_xlabel(r'$L_1$')
 ax.set_ylabel(r'$L_2$')
-        
+plt.colorbar(surf, ax=ax)
+
+
+# fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+# surf = ax.plot_surface(x,y,N1,cmap=cm.hot)
+# fig.colorbar(surf, shrink=0.1, aspect=5)
             

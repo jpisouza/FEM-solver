@@ -343,7 +343,8 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary_list):
             point.vyd = vyd[point.ID]
            
             continue
-        if not point.centroide and not point.edge:
+        # if not point.centroide and not point.edge:
+        if not point.centroide:
             xd[point.ID] = point.x - vx[point.ID]*dt
             yd[point.ID] = point.y - vy[point.ID]*dt
             point.xd = xd[point.ID]
@@ -359,6 +360,8 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary_list):
             p_ant = 0
             p_2ant = 0
             while count < 100:
+                if count>=70:
+                    print(count)
                 count += 1
                 flag_break = False
                 for e in p.lista_elem:
@@ -382,7 +385,7 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary_list):
                     if dist < dist_min:
                         dist_min = dist
                         p = nodes[vizinho]
-                if p == p_2ant and boundary_list:
+                if p == p_2ant and p.ID in boundary_list:
                     # print('caiu aqui ---' + str(point.ID))
                     # print('p = ' + str(p.ID))
                     # print('p_ant = ' + str(p_ant.ID))
@@ -419,15 +422,15 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary_list):
         vyd[len(T):] = vyd_.sum(axis=1)/3.0
         Td[len(T):] = Td_.sum(axis=1)/3.0
 
-    elif IENbound.shape[1] == 3:
+    # elif IENbound.shape[1] == 3:
 
-        for i in range (3,6):
-            j=i-2
-            if i == 5:
-                j = 0
-            vxd[nodes[0].IEN[:,i]] = (vxd[nodes[0].IEN[:,j]] + vxd[nodes[0].IEN[:,i-3]])/2.0
-            vyd[nodes[0].IEN[:,i]] = (vyd[nodes[0].IEN[:,j]] + vyd[nodes[0].IEN[:,i-3]])/2.0
-            Td[nodes[0].IEN[:,i]] = (Td[nodes[0].IEN[:,j]] + Td[nodes[0].IEN[:,i-3]])/2.0
+    #     for i in range (3,6):
+    #         j=i-2
+    #         if i == 5:
+    #             j = 0
+    #         vxd[nodes[0].IEN[:,i]] = (vxd[nodes[0].IEN[:,j]] + vxd[nodes[0].IEN[:,i-3]])/2.0
+    #         vyd[nodes[0].IEN[:,i]] = (vyd[nodes[0].IEN[:,j]] + vyd[nodes[0].IEN[:,i-3]])/2.0
+    #         Td[nodes[0].IEN[:,i]] = (Td[nodes[0].IEN[:,j]] + Td[nodes[0].IEN[:,i-3]])/2.0
 
 
     # num = 0
