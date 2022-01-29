@@ -109,19 +109,19 @@ class Linear:
    for i in range(0,_self.NUMGLEC):
     for j in range(0,_self.NUMGLEC):
      _self.mass[i][j] += _self.phiJ[k][i]*_self.phiJ[k][j]\
-                         *jacobian*_self.gqWeights[k];
+                         *jacob[k]*_self.gqWeights[k];
      _self.kxx[i][j]  += dphiJdx[k][i]*dphiJdx[k][j]\
-                         *jacobian*_self.gqWeights[k];
+                         *jacob[k]*_self.gqWeights[k];
      _self.kyy[i][j]  += dphiJdy[k][i]*dphiJdy[k][j]\
-                         *jacobian*_self.gqWeights[k];
+                         *jacob[k]*_self.gqWeights[k];
      _self.gx[i][j]   += _self.gqPoints[k][j]*dphiJdx[k][i]\
-                         *jacobian*_self.gqWeights[k];
+                         *jacob[k]*_self.gqWeights[k];
      _self.gy[i][j]   += _self.gqPoints[k][j]*dphiJdy[k][i]\
-                         *jacobian*_self.gqWeights[k];
+                         *jacob[k]*_self.gqWeights[k];
      _self.dx[j][i]   += _self.gqPoints[k][j]*dphiJdx[k][i]\
-                         *jacobian*_self.gqWeights[k];
+                         *jacob[k]*_self.gqWeights[k];
      _self.dy[j][i]   += _self.gqPoints[k][j]*dphiJdy[k][i]\
-                         *jacobian*_self.gqWeights[k];
+                         *jacob[k]*_self.gqWeights[k];
 
    # compute area 
    _self.area += (1.0/2.0)*jacob[k]*_self.gqWeights[k]
@@ -390,10 +390,6 @@ class Mini:
 
  def getM(_self,v):
 
-  jacobian = _self.X[v[2]]*( _self.Y[v[0]]-_self.Y[v[1]]) \
-           + _self.X[v[0]]*( _self.Y[v[1]]-_self.Y[v[2]]) \
-           + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
-
   localx = [0.0]*_self.NUMRULE
   localy = [0.0]*_self.NUMRULE
   for k in range(0,_self.NUMRULE):
@@ -405,21 +401,24 @@ class Mini:
   dxdl2 = [0.0]*_self.NUMRULE
   dydl1 = [0.0]*_self.NUMRULE
   dydl2 = [0.0]*_self.NUMRULE
+  jacob = [0.0]*_self.NUMRULE
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU): 
     dxdl1[k] += _self.X[v[i]]*_self.dphiJdl1[k][i]
     dxdl2[k] += _self.X[v[i]]*_self.dphiJdl2[k][i]
     dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
     dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
+   # compute det(jacobian)
+   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
 
   dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
   dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     dphiJdx[k][i] = (  _self.dphiJdl1[k][i]*dydl2[k]-
-	                   _self.dphiJdl2[k][i]*dydl1[k] )/jacobian;
+	                   _self.dphiJdl2[k][i]*dydl1[k] )/jacob[k];
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
-	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacobian;
+	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
   _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
   _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
@@ -437,32 +436,116 @@ class Mini:
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
      _self.mass[i][j] += _self.phiJ[k][i]*_self.phiJ[k][j]*\
-                         jacobian*_self.gqWeights[k];
+                         jacob[k]*_self.gqWeights[k];
      _self.kxx[i][j] += dphiJdx[k][i]*dphiJdx[k][j]*\
-                        jacobian*_self.gqWeights[k];
+                        jacob[k]*_self.gqWeights[k];
      _self.kxy[i][j] += dphiJdx[k][i]*dphiJdy[k][j]*\
-                        jacobian*_self.gqWeights[k];
+                        jacob[k]*_self.gqWeights[k];
      _self.kyx[i][j] += dphiJdy[k][i]*dphiJdx[k][j]*\
-                        jacobian*_self.gqWeights[k];
+                        jacob[k]*_self.gqWeights[k];
      _self.kyy[i][j] += dphiJdy[k][i]*dphiJdy[k][j]*\
-                        jacobian*_self.gqWeights[k];
+                        jacob[k]*_self.gqWeights[k];
      _self.gvx[i][j] += _self.phiJ[k][i]*dphiJdx[k][j]*\
-                        jacobian*_self.gqWeights[k];
+                        jacob[k]*_self.gqWeights[k];
      _self.gvy[i][j] += _self.phiJ[k][i]*dphiJdy[k][j]*\
-                        jacobian*_self.gqWeights[k];
+                        jacob[k]*_self.gqWeights[k];
 
     for j in range(0,_self.NUMGLEP):
      _self.gx[i][j] += _self.gqPoints[k][j]*dphiJdx[k][i]*\
-                       jacobian*_self.gqWeights[k];
+                       jacob[k]*_self.gqWeights[k];
      _self.gy[i][j] += _self.gqPoints[k][j]*dphiJdy[k][i]*\
-                       jacobian*_self.gqWeights[k];
+                       jacob[k]*_self.gqWeights[k];
      _self.dx[j][i] += _self.gqPoints[k][j]*dphiJdx[k][i]*\
-                       jacobian*_self.gqWeights[k];
+                       jacob[k]*_self.gqWeights[k];
      _self.dy[j][i] += _self.gqPoints[k][j]*dphiJdy[k][i]*\
-                       jacobian*_self.gqWeights[k];
+                       jacob[k]*_self.gqWeights[k];
 
 
- 
+ def getMass_porous(_self,v,porous_nodes):
+
+  localx = [0.0]*_self.NUMRULE
+  localy = [0.0]*_self.NUMRULE
+  for k in range(0,_self.NUMRULE):
+   for i in range(0,_self.NUMGLEU):
+    localx[k] += _self.X[v[i]] * _self.phiJ[k][i]
+    localy[k] += _self.Y[v[i]] * _self.phiJ[k][i]
+
+  dxdl1 = [0.0]*_self.NUMRULE
+  dxdl2 = [0.0]*_self.NUMRULE
+  dydl1 = [0.0]*_self.NUMRULE
+  dydl2 = [0.0]*_self.NUMRULE
+  jacob = [0.0]*_self.NUMRULE # area for each Gauss point
+  for k in range(0,_self.NUMRULE): 
+   for i in range(0,_self.NUMGLEU): 
+    dxdl1[k] += _self.X[v[i]]*_self.dphiJdl1[k][i]
+    dxdl2[k] += _self.X[v[i]]*_self.dphiJdl2[k][i]
+    dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
+    dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
+   # compute det(jacobian)
+   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+
+  dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+  dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+  for k in range(0,_self.NUMRULE): 
+   for i in range(0,_self.NUMGLEU):
+    dphiJdx[k][i] = (  _self.dphiJdl1[k][i]*dydl2[k]-
+	                   _self.dphiJdl2[k][i]*dydl1[k] )/jacob[k];
+    dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
+	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
+
+  _self.mass_porous = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
+  
+  for k in range(0,_self.NUMRULE): 
+   for i in range(0,_self.NUMGLEU):
+    for j in range(0,_self.NUMGLEU):
+     _self.mass_porous[i][j] += _self.phiJ[k][i]*_self.phiJ[k][j]*_self.GQ_porous_values[k]*\
+                         jacob[k]*_self.gqWeights[k];
+                         
+ def getMass_Forchheimer(_self,v,porous_nodes,vx,vy):
+
+    localx = [0.0]*_self.NUMRULE
+    localy = [0.0]*_self.NUMRULE
+    for k in range(0,_self.NUMRULE):
+     for i in range(0,_self.NUMGLEU):
+      localx[k] += _self.X[v[i]] * _self.phiJ[k][i]
+      localy[k] += _self.Y[v[i]] * _self.phiJ[k][i]
+    
+    dxdl1 = [0.0]*_self.NUMRULE
+    dxdl2 = [0.0]*_self.NUMRULE
+    dydl1 = [0.0]*_self.NUMRULE
+    dydl2 = [0.0]*_self.NUMRULE
+    jacob = [0.0]*_self.NUMRULE # area for each Gauss point
+    for k in range(0,_self.NUMRULE): 
+     for i in range(0,_self.NUMGLEU): 
+      dxdl1[k] += _self.X[v[i]]*_self.dphiJdl1[k][i]
+      dxdl2[k] += _self.X[v[i]]*_self.dphiJdl2[k][i]
+      dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
+      dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
+     # compute det(jacobian)
+     jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+    
+    dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+    dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+    for k in range(0,_self.NUMRULE): 
+     for i in range(0,_self.NUMGLEU):
+      dphiJdx[k][i] = (  _self.dphiJdl1[k][i]*dydl2[k]-
+     	                   _self.dphiJdl2[k][i]*dydl1[k] )/jacob[k];
+      dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
+     	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
+    
+    _self.mass_forchheimer = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+    _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
+    # _self.GQ_velocity_mod = _self.phiJ@vx[v]
+    _self.GQ_velocity_mod = np.zeros((len(vx)),dtype='float')
+    
+    for k in range(0,_self.NUMRULE): 
+     _self.GQ_velocity_mod[k] = np.sqrt(((_self.phiJ@vx[v])[k])**2 + ((_self.phiJ@vy[v])[k])**2)
+     for i in range(0,_self.NUMGLEU):
+      for j in range(0,_self.NUMGLEU):
+       _self.mass_forchheimer[i][j] += _self.phiJ[k][i]*_self.phiJ[k][j]*_self.GQ_porous_values[k]*_self.GQ_velocity_mod[k]*\
+                           jacob[k]*_self.gqWeights[k];
+                         
  def getMSlip(_self,v):
 
   jacobian = _self.X[v[2]]*( _self.Y[v[0]]-_self.Y[v[1]]) \
@@ -982,6 +1065,93 @@ class Quad:
 
    # compute area 
    _self.area += (1.0/2.0)*jacob[k]*_self.gqWeights[k]
+   
+ def getMass_porous(_self,v,porous_nodes):
+
+  localx = [0.0]*_self.NUMRULE
+  localy = [0.0]*_self.NUMRULE
+  for k in range(0,_self.NUMRULE):
+   for i in range(0,_self.NUMGLEU):
+    localx[k] += _self.X[v[i]] * _self.phiJ[k][i]
+    localy[k] += _self.Y[v[i]] * _self.phiJ[k][i]
+
+  dxdl1 = [0.0]*_self.NUMRULE
+  dxdl2 = [0.0]*_self.NUMRULE
+  dydl1 = [0.0]*_self.NUMRULE
+  dydl2 = [0.0]*_self.NUMRULE
+  jacob = [0.0]*_self.NUMRULE # area for each Gauss point
+  for k in range(0,_self.NUMRULE): 
+   for i in range(0,_self.NUMGLEU): 
+    dxdl1[k] += _self.X[v[i]]*_self.dphiJdl1[k][i]
+    dxdl2[k] += _self.X[v[i]]*_self.dphiJdl2[k][i]
+    dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
+    dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
+   # compute det(jacobian)
+   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+
+  dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+  dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+  for k in range(0,_self.NUMRULE): 
+   for i in range(0,_self.NUMGLEU):
+    dphiJdx[k][i] = (  _self.dphiJdl1[k][i]*dydl2[k]-
+	                   _self.dphiJdl2[k][i]*dydl1[k] )/jacob[k];
+    dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
+	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
+
+  _self.mass_porous = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
+  
+  for k in range(0,_self.NUMRULE): 
+   for i in range(0,_self.NUMGLEU):
+    for j in range(0,_self.NUMGLEU):
+     _self.mass_porous[i][j] += _self.phiJ[k][i]*_self.phiJ[k][j]*_self.GQ_porous_values[k]*\
+                         jacob[k]*_self.gqWeights[k];
+
+ def getMass_Forchheimer(_self,v,porous_nodes,vx,vy):
+
+    localx = [0.0]*_self.NUMRULE
+    localy = [0.0]*_self.NUMRULE
+    for k in range(0,_self.NUMRULE):
+     for i in range(0,_self.NUMGLEU):
+      localx[k] += _self.X[v[i]] * _self.phiJ[k][i]
+      localy[k] += _self.Y[v[i]] * _self.phiJ[k][i]
+    
+    dxdl1 = [0.0]*_self.NUMRULE
+    dxdl2 = [0.0]*_self.NUMRULE
+    dydl1 = [0.0]*_self.NUMRULE
+    dydl2 = [0.0]*_self.NUMRULE
+    jacob = [0.0]*_self.NUMRULE # area for each Gauss point
+    for k in range(0,_self.NUMRULE): 
+     for i in range(0,_self.NUMGLEU): 
+      dxdl1[k] += _self.X[v[i]]*_self.dphiJdl1[k][i]
+      dxdl2[k] += _self.X[v[i]]*_self.dphiJdl2[k][i]
+      dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
+      dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
+     # compute det(jacobian)
+     jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+    
+    dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+    dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+    for k in range(0,_self.NUMRULE): 
+     for i in range(0,_self.NUMGLEU):
+      dphiJdx[k][i] = (  _self.dphiJdl1[k][i]*dydl2[k]-
+     	                   _self.dphiJdl2[k][i]*dydl1[k] )/jacob[k];
+      dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
+     	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
+    
+    _self.mass_forchheimer = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+    _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
+    # _self.GQ_velocity_mod = _self.phiJ@vel[v]
+    _self.GQ_velocity_mod = np.zeros((len(vx)),dtype='float')
+    
+    for k in range(0,_self.NUMRULE): 
+     _self.GQ_velocity_mod[k] = np.sqrt(((_self.phiJ@vx[v])[k])**2 + ((_self.phiJ@vy[v])[k])**2)
+     for i in range(0,_self.NUMGLEU):
+      for j in range(0,_self.NUMGLEU):
+       _self.mass_forchheimer[i][j] += _self.phiJ[k][i]*_self.phiJ[k][j]*_self.GQ_porous_values[k]*_self.GQ_velocity_mod[k]*\
+                           jacob[k]*_self.gqWeights[k];
+
+
 
  def getMSlip(_self,v):
 
@@ -1148,6 +1318,7 @@ class Quad:
                      *jacob[k]*_self.gqWeights[k];
      _self.kyy[i][j] += dphiJdy[k][i]*dphiJdy[k][j]\
                      *jacob[k]*_self.gqWeights[k];
+
 
 
 class QuadBubble:
