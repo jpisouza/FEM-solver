@@ -353,7 +353,7 @@ def semi_lagrange2(nodes,elements,vx,vy,T,dt,IENbound,boundary_list):
             count = 0
 
             if point.edge:
-                p = nodes[elements[point.lista_elem[0]].edges_dict[point.ID]]
+                p = nodes[elements[point.lista_elem[0]].edges_dict[point.ID][0]]
             else:
                 p = point
             
