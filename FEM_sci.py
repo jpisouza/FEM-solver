@@ -263,9 +263,9 @@ class FEM:
                           cls.M_forchheimer[iglobal,jglobal] = cls.M_forchheimer[iglobal,jglobal] + melem_forchheimer[ilocal,jlocal]
                      
             
-            v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))
-        
+            v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))       
             v_diag = v_diag.power(0.5)
+            
             A1 = (1.0/(cls.Re*cls.Da))*cls.M_porous.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(cls.M_porous.tocsr(),v_diag)# + (cls.Fo/(cls.Re*cls.Da))*cls.M_forchheimer
             
             block_DF = sp.sparse.bmat([[A1, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],

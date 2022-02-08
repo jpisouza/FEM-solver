@@ -50,7 +50,8 @@ type_ = ''
 output_dir = os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/Results')
 
 mesh_kind = Case.set_kind(root)
-MESH = mesh(msh,mesh_kind,porous_list = Case.set_porous_region(root))
+porous_list, limit_name, smooth_value = Case.set_porous_region(root)
+MESH = mesh(msh,mesh_kind,porous_list, limit_name, smooth_value)
 
 Case.read(case,MESH)
 

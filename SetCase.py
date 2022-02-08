@@ -119,10 +119,16 @@ class Case:
     @classmethod
     def set_porous_region(cls,root):
         porous_list = []
+        limit_name = ''
+        smooth_value = 1.0
         if root.find('Porous') is not None:
             for child in root.find('Porous'):
                 porous_list.append(child.attrib['name'])
-        return porous_list
+                if 'limit_name' in child.attrib:
+                    limit_name = child.attrib['limit_name']
+                if 'smooth_value' in child.attrib:
+                    smooth_value = float(child.attrib['smooth_value'])
+        return porous_list, limit_name, smooth_value
     
     @classmethod
     def set_particles(cls,i):

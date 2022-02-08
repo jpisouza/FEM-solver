@@ -94,3 +94,5 @@ Physical Surface("free", 20) = {1, 3, 5};
 Physical Surface("porous", 21) = {2, 4};
 //+
 Physical Curve("symmetry", 22) = {6, 8};
+//+
+Physical Curve("limit", 23) = {12, 9, 11, 15};

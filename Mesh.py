@@ -6,12 +6,14 @@ import os
 
 class mesh:
 
-    def __init__(self,case,kind='mini',porous_list = []):
+    def __init__(self,case,kind='mini', porous_list = [], limit_name = '', smooth_value = 1.0):
 
         self.mesh_kind = kind
         path = os.path.abspath( case + '.msh')
         
         self.porous_list = porous_list
+        self.limit_name = limit_name
+        self.smooth_value = smooth_value
         self.msh = meshio.read(path)
         
         self.dict_boundary = {}
@@ -58,6 +60,21 @@ class mesh:
                     else:
                         self.porous_elem.append(0)
             
+            #Removing non-boundary interfaces
+            self.X_interf = []
+            self.Y_interf = []
+            if len(limit_name) > 0:
+                self.boundNames.remove(limit_name)
+                i = 0
+                while i < len(self.IENboundElem):
+                    if self.IENboundElem[i] == limit_name:
+                        self.IENboundElem.pop(i)
+                        self.IENboundTypeElem.pop(i)
+                        self.IENbound = np.delete(self.IENbound, i, 0)
+                        self.X_interf+=list(self.X[self.IENbound[i]])
+                        self.Y_interf+=list(self.Y[self.IENbound[i]])
+                    i+=1
+                  
             self.boundary = []
             
 
@@ -86,6 +103,21 @@ class mesh:
                         self.porous_elem.append(1)
                     else:
                         self.porous_elem.append(0)
+            
+            #Removing non-boundary interfaces
+            self.X_interf = []
+            self.Y_interf = []
+            if len(limit_name) > 0:
+                self.boundNames.remove(limit_name)
+                i = 0
+                while i < len(self.IENboundElem):
+                    if self.IENboundElem[i] == limit_name:
+                        self.IENboundElem.pop(i)
+                        self.IENboundTypeElem.pop(i)
+                        self.IENbound = np.delete(self.IENbound, i, 0)
+                        self.X_interf+=list(self.X[self.IENbound[i]])
+                        self.Y_interf+=list(self.Y[self.IENbound[i]])
+                    i+=1
             
             self.boundary = []
             

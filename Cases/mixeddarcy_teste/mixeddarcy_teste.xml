@@ -10,7 +10,7 @@
     <OF name="out_flow"/>
   </OutFlow>
   <Porous>
-    <Region name="porous"/>
+    <Region name="porous" limit_name = "limit" smooth_value = "0.5"/>
   </Porous>
   <InitialCondition vx="0" vy="0" p="0" T="0"/>
 </Case>

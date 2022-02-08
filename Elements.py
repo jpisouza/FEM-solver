@@ -409,7 +409,7 @@ class Mini:
     dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
     dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
    # compute det(jacobian)
-   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+   jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
 
   dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
   dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
@@ -482,7 +482,7 @@ class Mini:
     dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
     dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
    # compute det(jacobian)
-   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+   jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
 
   dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
   dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
@@ -523,7 +523,7 @@ class Mini:
       dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
       dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
      # compute det(jacobian)
-     jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+     jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
     
     dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
     dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
@@ -1012,7 +1012,7 @@ class Quad:
     dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
     dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
    # compute det(jacobian)
-   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+   jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
 
   dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
   dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
@@ -1087,7 +1087,7 @@ class Quad:
     dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
     dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
    # compute det(jacobian)
-   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+   jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
 
   dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
   dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
@@ -1128,7 +1128,7 @@ class Quad:
       dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
       dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
      # compute det(jacobian)
-     jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+     jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
     
     dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
     dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
@@ -1292,7 +1292,7 @@ class Quad:
    dydl1[k] = valyl1
    dydl2[k] = valyl2
    # compute det(jacobian)
-   jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
+   jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
 
   dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
   dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)

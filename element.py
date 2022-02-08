@@ -17,8 +17,10 @@ class Element:
         if self.IEN.shape[1] > 4:
             self.quad = True
             self.edges, self.edges_dict = self.nodes_edges()
-            for i in range (len(self.edges)):
-                self.mesh.porous_nodes[self.edges[i].ID] = (self.mesh.porous_nodes[self.edges_dict[self.edges[i].ID][0]] + self.mesh.porous_nodes[self.edges_dict[self.edges[i].ID][1]])/2.0                 
+            if len(self.mesh.porous_list) > 0:
+                if self.mesh.porous_elem[self.ID] ==1:
+                    for i in range (len(self.edges)):
+                        self.mesh.porous_nodes[self.edges[i].ID] = (self.mesh.porous_nodes[self.edges_dict[self.edges[i].ID][0]] + self.mesh.porous_nodes[self.edges_dict[self.edges[i].ID][1]])/2.0                 
         else:
             x_c = 0.0
             y_c = 0.0
@@ -31,7 +33,7 @@ class Element:
             
             self.centroide = Node(IEN[ID,3],IEN,IEN_orig,x_c,y_c)
             if len(self.mesh.porous_list) > 0:
-                if self.mesh.porous_elem[self.ID] == 1:
+                if self.mesh.porous_elem[self.ID] ==1:
                     self.mesh.porous_nodes[IEN[ID,3]] = np.sum(self.mesh.porous_nodes[IEN[ID]])/3.0
         
         Element.elem_list.append(self)
@@ -43,8 +45,8 @@ class Element:
             if len(self.mesh.porous_list) > 0:
                 if self.mesh.porous_elem[self.ID] == 1:
                     self.mesh.porous_nodes[self.IEN_orig[self.ID,i]] = 1
-                    if self.mesh.X[self.IEN_orig[self.ID,i]] == 0.0:
-                        self.mesh.porous_nodes[self.IEN_orig[self.ID,i]] = 0.5
+                    if len(self.mesh.limit_name)>0 and self.mesh.X[self.IEN[self.ID,i]] in self.mesh.X_interf and self.mesh.Y[self.IEN[self.ID,i]] in self.mesh.Y_interf:
+                        self.mesh.porous_nodes[self.IEN_orig[self.ID,i]] = self.mesh.smooth_value
                     
         return lista
     
@@ -58,7 +60,7 @@ class Element:
             if len(self.mesh.porous_list) > 0:
                 if self.mesh.porous_elem[self.ID] == 1:
                     self.mesh.porous_nodes[self.IEN[self.ID,i]] = 1
-                    if self.mesh.X[self.IEN[self.ID,i]] == 0.0:
-                        self.mesh.porous_nodes[self.IEN[self.ID,i]] = 0.5
+                    if len(self.mesh.limit_name)>0 and self.mesh.X[self.IEN[self.ID,i]] in self.mesh.X_interf and self.mesh.Y[self.IEN[self.ID,i]] in self.mesh.Y_interf:
+                        self.mesh.porous_nodes[self.IEN[self.ID,i]] = self.mesh.smooth_value
         return lista, dic
         
