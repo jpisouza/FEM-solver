@@ -44,6 +44,7 @@ class FEM:
         cls.Dy = lil_matrix( (mesh.npoints_p,mesh.npoints),dtype='float' )
         
         cls.M_porous = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
+        cls.M_porous_elem = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
         cls.M_forchheimer = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
         
         if cls.mesh.mesh_kind == 'mini':
@@ -55,7 +56,7 @@ class FEM:
         
         if cls.mesh.mesh_kind == 'mini':
             if porous:
-                cls.build_mini_GQ()
+                cls.build_mini()
             else:
                 cls.build_mini()
         elif cls.mesh.mesh_kind == 'quad':
@@ -78,9 +79,9 @@ class FEM:
             kelem = quad.kxx + quad.kyy
             melem = quad.mass
             
-            if len(cls.mesh.porous_list) > 0:
-                quad.getMass_porous([v1,v2,v3,v4,v5,v6], cls.mesh.porous_nodes)
-                melem_porous = quad.mass_porous
+            # if len(cls.mesh.porous_list) > 0:
+            #     quad.getMass_porous([v1,v2,v3,v4,v5,v6], cls.mesh.porous_nodes)
+            #     melem_porous = quad.mass_porous
             kelem_T = quad.kxx + quad.kyy
             melem_T = quad.mass
             for ilocal in range(0,6):
@@ -94,7 +95,8 @@ class FEM:
                      cls.K_T[iglobal,jglobal] = cls.K_T[iglobal,jglobal] + kelem_T[ilocal,jlocal]
                      
                      if len(cls.mesh.porous_list) > 0:
-                         cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
+                         # cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]
                      
                  for jlocal in range(0,3):
                      jglobal = cls.mesh.IEN[e,jlocal]
@@ -119,9 +121,9 @@ class FEM:
             kelem = mini.kxx + mini.kyy
             melem = mini.mass
             
-            if len(cls.mesh.porous_list) > 0:
-                mini.getMass_porous([v1,v2,v3,v4], cls.mesh.porous_nodes)
-                melem_porous = mini.mass_porous
+            # if len(cls.mesh.porous_list) > 0:
+            #     mini.getMass_porous([v1,v2,v3,v4], cls.mesh.porous_nodes)
+            #     melem_porous = mini.mass_porous
                 
             kelem_T = lin.kxx + lin.kyy
             melem_T = lin.mass
@@ -133,7 +135,8 @@ class FEM:
                      cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]             
                      cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
                      if len(cls.mesh.porous_list) > 0:
-                         cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
+                         # cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]
                      
                      
                  for jlocal in range(0,3):
@@ -224,6 +227,10 @@ class FEM:
             
                      cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]             
                      cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
+                     if len(cls.mesh.porous_list) > 0:
+                         # cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]
+                     
                      
                  for jlocal in range(0,3):
                      jglobal = cls.mesh.IEN[e,jlocal]
@@ -243,49 +250,42 @@ class FEM:
         
 
         if len(cls.mesh.porous_list) > 0:
-            # vel = cls.calc_v_modulus()
-            for e in range(0,cls.mesh.ne):
-                nodes = cls.mesh.IEN[e]
-                if len(nodes) > 4:
-                    quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
-                    quad.getMass_Forchheimer(nodes, cls.mesh.porous_nodes,cls.fluid.vx,cls.fluid.vy)
-                    melem_forchheimer = quad.mass_forchheimer
-                else:
-                    mini = Elements.Mini(cls.mesh.X,cls.mesh.Y) 
-                    mini.getMass_Forchheimer(nodes, cls.mesh.porous_nodes,cls.fluid.vx,cls.fluid.vy)
-                    melem_forchheimer = mini.mass_forchheimer
+            # # vel = cls.calc_v_modulus()
+            # for e in range(0,cls.mesh.ne):
+            #     nodes = cls.mesh.IEN[e]
+            #     if len(nodes) > 4:
+            #         quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
+            #         quad.getMass_Forchheimer(nodes, cls.mesh.porous_nodes,cls.fluid.vx,cls.fluid.vy)
+            #         melem_forchheimer = quad.mass_forchheimer
+            #     else:
+            #         mini = Elements.Mini(cls.mesh.X,cls.mesh.Y) 
+            #         mini.getMass_Forchheimer(nodes, cls.mesh.porous_nodes,cls.fluid.vx,cls.fluid.vy)
+            #         melem_forchheimer = mini.mass_forchheimer
                 
-                for ilocal in range(0,cls.mesh.IEN.shape[1]):
-                      iglobal = cls.mesh.IEN[e,ilocal]
-                      for jlocal in range(0,cls.mesh.IEN.shape[1]):
-                          jglobal = cls.mesh.IEN[e,jlocal]
+            #     for ilocal in range(0,cls.mesh.IEN.shape[1]):
+            #           iglobal = cls.mesh.IEN[e,ilocal]
+            #           for jlocal in range(0,cls.mesh.IEN.shape[1]):
+            #               jglobal = cls.mesh.IEN[e,jlocal]
                          
-                          cls.M_forchheimer[iglobal,jglobal] = cls.M_forchheimer[iglobal,jglobal] + melem_forchheimer[ilocal,jlocal]
+            #               cls.M_forchheimer[iglobal,jglobal] = cls.M_forchheimer[iglobal,jglobal] + melem_forchheimer[ilocal,jlocal]
                      
             
             v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))       
             v_diag = v_diag.power(0.5)
             
-            A1 = (1.0/(cls.Re*cls.Da))*cls.M_porous.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(cls.M_porous.tocsr(),v_diag)# + (cls.Fo/(cls.Re*cls.Da))*cls.M_forchheimer
+            A1 = (1.0/(cls.Re*cls.Da))*cls.M_porous_elem.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(v_diag,cls.M_porous_elem.tocsr())# + (cls.Fo/(cls.Re*cls.Da))*cls.M_forchheimer
             
             block_DF = sp.sparse.bmat([[A1, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
                                        [None, A1,None],
                                        [None,None,sp.sparse.csr_matrix((cls.mesh.npoints_p, cls.mesh.npoints_p), dtype= 'float')]])
          
         
-        # if len(cls.mesh.porous_list) > 0:
-        #     A2 = sp.sparse.diags(cls.mesh.porous_nodes)
-        #     block_porous = sp.sparse.bmat([[A2, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
-        #                                    [None, A2,None],
-        #                                    [None,None,sp.sparse.csr_matrix((cls.mesh.npoints_p, cls.mesh.npoints_p), dtype= 'float')]])
-         
-        #     cls.Matriz = cls.Matriz_orig + sp.sparse.csr_matrix.dot(block_porous,block_DF)
         
         else:
             v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))
         
             v_diag = v_diag.power(0.5)
-            A1 = (1.0/(cls.Re*cls.Da))*cls.M.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(cls.M.tocsr(),v_diag)
+            A1 = (1.0/(cls.Re*cls.Da))*cls.M.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(v_diag,cls.M.tocsr())
             
             block_DF = sp.sparse.bmat([[A1, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
                                        [None, A1,None],
@@ -299,7 +299,7 @@ class FEM:
         v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))
         v_diag = v_diag.power(0.5)
         
-        A1 = (1.0/(cls.Re*cls.Da))*cls.M.tocsr()# + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(cls.M.tocsr(),v_diag)
+        A1 = (1.0/(cls.Re*cls.Da))*cls.M.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(v_diag,cls.M.tocsr())
         
         block_DF = sp.sparse.bmat([[A1, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
                                    [None, A1,None],
@@ -552,17 +552,24 @@ class FEM:
         cls.Matriz_T = cls.Matriz_T.tocsr()
     
     @classmethod
-    def solve_fields(cls,forces,SLG=False,neighborElem=[[]],oface=[]):
+    def solve_fields(cls,forces,SL_matrix=False,neighborElem=[[]],oface=[]):
 
-        if SLG:
+        if SL_matrix:
             start = timer()
-            sl = SL.Linear(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy)
-            sl.compute(cls.dt)
-            cls.fluid.vxd = sl.conv*cls.fluid.vx[0:cls.mesh.npoints_p]
-            cls.fluid.vyd = sl.conv*cls.fluid.vy[0:cls.mesh.npoints_p]
-            cls.fluid.Td = sl.conv*cls.fluid.T
-            # interpolando no centroid
-            [cls.fluid.vxd,cls.fluid.vyd] = sl.setCentroid(cls.fluid.vxd,cls.fluid.vyd)
+            if cls.mesh.IEN.shape[1]==4:
+                sl = SL.Linear(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy)
+                sl.compute(cls.dt)
+                cls.fluid.vxd = sl.conv*cls.fluid.vx[0:cls.mesh.npoints_p]
+                cls.fluid.vyd = sl.conv*cls.fluid.vy[0:cls.mesh.npoints_p]
+                cls.fluid.Td = sl.conv*cls.fluid.T
+                # interpolating for the centroid
+                [cls.fluid.vxd,cls.fluid.vyd] = sl.setCentroid(cls.fluid.vxd,cls.fluid.vyd)
+            else:
+                sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy)
+                sl.compute(cls.dt)
+                cls.fluid.vxd = sl.conv*cls.fluid.vx
+                cls.fluid.vyd = sl.conv*cls.fluid.vy
+                cls.fluid.Td = sl.conv*cls.fluid.T
             end = timer()
             print('time --> SL calculation = ' + str(end-start) + ' [s]')
 

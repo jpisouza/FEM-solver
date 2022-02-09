@@ -26,7 +26,7 @@ class Node:
             self.centroide = False
             self.edge = False
             self.lista_pontos, self.lista_elem = self.vizinhos()
-            # self.opostos, self.aresta_correspondente = self.elem_opostos()
+            self.opostos, self.aresta_correspondente = self.elem_opostos()
         elif self.IEN.shape[1] == 4:
             self.centroide = True
             self.edge = False

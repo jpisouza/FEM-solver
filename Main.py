@@ -74,24 +74,34 @@ if particles_flag:
 
 
 FEM.set_matrices(MESH,fluid,dt,BC,porous)
-
-#----------------------------------------SL Gustavo ----------------------------------------------------------------
-# neighborElem = [[]]
-# neighborElem = [[] for k in range(MESH.npoints_p)]
-# for k in range(0,MESH.IEN_orig.shape[0]):
-#  for j in range(0,MESH.IEN_orig.shape[1]):
-#   v = MESH.IEN_orig[k][j]
-#   neighborElem[v].append(k)
-  
-# oface = -1*np.ones( (MESH.ne,3),dtype='int' )
-
-# for e in range(len(MESH.IEN_orig)):
-#     for iter in range(3):
-#         ID = MESH.IEN_orig[e,iter]
-#         point = MESH.node_list[ID]
-#         for op in range (len(point.opostos)):
-#             if point.aresta_correspondente[op][0] in MESH.IEN_orig[e] and  point.aresta_correspondente[op][1] in MESH.IEN_orig[e]:
-#                 oface[e,iter] = point.opostos[op]
+neighborElem=[[]]
+SL_matrix=True
+oface=[]
+#----------------------------------------SL Matrix ----------------------------------------------------------------
+if SL_matrix:
+    if MESH.IEN.shape[1] > 4: #for quad elements
+        neighborElem = [[] for k in range(MESH.npoints)]
+        for k in range(0,MESH.IEN.shape[0]):
+          for j in range(0,MESH.IEN.shape[1]):
+              v = MESH.IEN[k][j]
+              neighborElem[v].append(k)
+    
+    else:
+        neighborElem = [[] for k in range(MESH.npoints_p)]
+        for k in range(0,MESH.IEN_orig.shape[0]):
+          for j in range(0,MESH.IEN_orig.shape[1]):
+              v = MESH.IEN_orig[k][j]
+              neighborElem[v].append(k)
+      
+    oface = -1*np.ones( (MESH.ne,3),dtype='int' )
+    
+    for e in range(len(MESH.IEN_orig)):
+        for iter in range(3):
+            ID = MESH.IEN_orig[e,iter]
+            point = MESH.node_list[ID]
+            for op in range (len(point.opostos)):
+                if point.aresta_correspondente[op][0] in MESH.IEN_orig[e] and  point.aresta_correspondente[op][1] in MESH.IEN_orig[e]:
+                    oface[e,iter] = point.opostos[op]
  #----------------------------------------------------------------------------------------------------------------------------------
 print('Output directory ---> ' + output_dir)
 if not os.path.isdir(output_dir):
@@ -103,7 +113,7 @@ while i < end:
     
     # fluid = FEM.solve_fields(True,neighborElem,oface)
     if particles_flag:
-        fluid = FEM.solve_fields(particleCloud.forces)
+        fluid = FEM.solve_fields(particleCloud.forces,SL_matrix,neighborElem,oface)
         particleCloud.solve(dt,nLoop,fluid.Re,1.0/np.sqrt(fluid.Ga))
         if type_ == "continuous":
             if i == 0:
@@ -113,7 +123,7 @@ while i < end:
             f.write(str(particleCloud.count_exit) + '\n')
             f.close()
     else:
-        fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'))
+        fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'),SL_matrix,neighborElem,oface)
         particleCloud = 0
         
     
