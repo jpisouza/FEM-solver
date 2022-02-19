@@ -32,3 +32,4 @@ class Fluid:
         self.vxd = np.zeros((mesh.npoints), dtype='float')
         self.vyd = np.zeros((mesh.npoints), dtype='float')
         self.Td = np.zeros((mesh.npoints), dtype='float')
+        

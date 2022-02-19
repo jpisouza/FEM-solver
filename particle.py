@@ -53,6 +53,7 @@ class Particle:
         
     def calc_vf(self):
         self.v_f = baricentric_v(self.pos,self.element)
+
         
 def baricentric_v(point,element):
     point1 = element.nodes[0]
@@ -71,6 +72,7 @@ def baricentric_v(point,element):
     
     vx = (A1*point1.vx + A2*point2.vx + A3*point3.vx)/A
     vy = (A1*point1.vy + A2*point2.vy + A3*point3.vy)/A
+
     
     v_f = np.array([vx,vy])
     return v_f

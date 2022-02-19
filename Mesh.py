@@ -6,7 +6,7 @@ import os
 
 class mesh:
 
-    def __init__(self,case,kind='mini', porous_list = [], limit_name = '', smooth_value = 1.0):
+    def __init__(self,case,kind='mini', porous_list = [], limit_name = '', smooth_value = 1.0, porosity = 1.0):
 
         self.mesh_kind = kind
         path = os.path.abspath( case + '.msh')
@@ -14,6 +14,7 @@ class mesh:
         self.porous_list = porous_list
         self.limit_name = limit_name
         self.smooth_value = smooth_value
+        self.porosity = porosity
         self.msh = meshio.read(path)
         
         self.dict_boundary = {}
@@ -52,13 +53,18 @@ class mesh:
             self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
             self.IENElem = []
             self.porous_elem = []
+            self.porosity_array = []
             if len(self.porous_list) > 0:
                 for elem in self.IENTypeElem:
                     self.IENElem.append(self.boundNames[self.dict_element[elem]])
                     if self.boundNames[self.dict_element[elem]] in porous_list:
                         self.porous_elem.append(1)
+                        self.porosity_array.append(self.porosity)
                     else:
                         self.porous_elem.append(0)
+                        self.porosity_array.append(1.0)
+            else:
+                self.porosity_array = self.ne*[1.0]
             
             #Removing non-boundary interfaces
             self.X_interf = []
@@ -96,13 +102,18 @@ class mesh:
             self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
             self.IENElem = []
             self.porous_elem = []
+            self.porosity_array = []
             if len(self.porous_list) > 0:
                 for elem in self.IENTypeElem:
                     self.IENElem.append(self.boundNames[self.dict_element[elem]])
                     if self.boundNames[self.dict_element[elem]] in porous_list:
                         self.porous_elem.append(1)
+                        self.porosity_array.append(self.porosity)
                     else:
                         self.porous_elem.append(0)
+                        self.porosity_array.append(1.0)
+            else:
+                self.porosity_array = self.ne*[1.0]
             
             #Removing non-boundary interfaces
             self.X_interf = []

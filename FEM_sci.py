@@ -38,6 +38,7 @@ class FEM:
         
         cls.K = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
         cls.M = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
+        # cls.M_full = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
         cls.Gx = lil_matrix( (mesh.npoints,mesh.npoints_p),dtype='float' )
         cls.Gy = lil_matrix( (mesh.npoints,mesh.npoints_p),dtype='float' )
         cls.Dx = lil_matrix( (mesh.npoints_p,mesh.npoints),dtype='float' )
@@ -45,7 +46,8 @@ class FEM:
         
         cls.M_porous = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
         cls.M_porous_elem = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
-        cls.M_forchheimer = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
+        cls.M_porous_elem_F = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
+        # cls.M_forchheimer = lil_matrix( (mesh.npoints,mesh.npoints),dtype='float' )
         
         if cls.mesh.mesh_kind == 'mini':
             cls.M_T = lil_matrix( (mesh.npoints_p,mesh.npoints_p),dtype='float' )
@@ -89,14 +91,19 @@ class FEM:
                  for jlocal in range(0,6):
                      jglobal = cls.mesh.IEN[e,jlocal]
             
-                     cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]             
+                     cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]           
+                     # cls.M_full[iglobal,jglobal] = cls.M_full[iglobal,jglobal] + melem[ilocal,jlocal]
                      cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
                      cls.M_T[iglobal,jglobal] = cls.M_T[iglobal,jglobal] + melem_T[ilocal,jlocal]
                      cls.K_T[iglobal,jglobal] = cls.K_T[iglobal,jglobal] + kelem_T[ilocal,jlocal]
                      
                      if len(cls.mesh.porous_list) > 0:
                          # cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
-                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]
+                         cls.M_porous_elem_F[iglobal,jglobal] = cls.M_porous_elem_F[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]**2
+                     else:
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porosity_array[e]
+                         cls.M_porous_elem_F[iglobal,jglobal] = cls.M_porous_elem_F[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porosity_array[e]**2
                      
                  for jlocal in range(0,3):
                      jglobal = cls.mesh.IEN[e,jlocal]
@@ -132,12 +139,16 @@ class FEM:
                  for jlocal in range(0,4):
                      jglobal = cls.mesh.IEN[e,jlocal]
             
-                     cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]             
+                     cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]           
+                     # cls.M_full[iglobal,jglobal] = cls.M_full[iglobal,jglobal] + melem[ilocal,jlocal]
                      cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
                      if len(cls.mesh.porous_list) > 0:
                          # cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
-                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]
-                     
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]
+                         cls.M_porous_elem_F[iglobal,jglobal] = cls.M_porous_elem_F[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]**2
+                     else:
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porosity_array[e]
+                         cls.M_porous_elem_F[iglobal,jglobal] = cls.M_porous_elem_F[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porosity_array[e]**2
                      
                  for jlocal in range(0,3):
                      jglobal = cls.mesh.IEN[e,jlocal]
@@ -225,12 +236,16 @@ class FEM:
                  for jlocal in range(0,4):
                      jglobal = cls.mesh.IEN[e,jlocal]
             
-                     cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]             
+                     cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]            
+                     # cls.M_full[iglobal,jglobal] = cls.M_full[iglobal,jglobal] + melem[ilocal,jlocal]
                      cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
                      if len(cls.mesh.porous_list) > 0:
                          # cls.M_porous[iglobal,jglobal] = cls.M_porous[iglobal,jglobal] + melem_porous[ilocal,jlocal]
-                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]
-                     
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]
+                         cls.M_porous_elem_F[iglobal,jglobal] = cls.M_porous_elem_F[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]**2
+                     else:
+                         cls.M_porous_elem[iglobal,jglobal] = cls.M_porous_elem[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porosity_array[e]
+                         cls.M_porous_elem_F[iglobal,jglobal] = cls.M_porous_elem_F[iglobal,jglobal] + melem[ilocal,jlocal]*cls.mesh.porosity_array[e]**2
                      
                  for jlocal in range(0,3):
                      jglobal = cls.mesh.IEN[e,jlocal]
@@ -273,7 +288,7 @@ class FEM:
             v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))       
             v_diag = v_diag.power(0.5)
             
-            A1 = (1.0/(cls.Re*cls.Da))*cls.M_porous_elem.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(v_diag,cls.M_porous_elem.tocsr())# + (cls.Fo/(cls.Re*cls.Da))*cls.M_forchheimer
+            A1 = (1.0/(cls.Re*cls.Da))*cls.M_porous_elem.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(v_diag,cls.M_porous_elem_F.tocsr())# + (cls.Fo/(cls.Re*cls.Da))*cls.M_forchheimer
             
             block_DF = sp.sparse.bmat([[A1, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
                                        [None, A1,None],
@@ -285,7 +300,7 @@ class FEM:
             v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))
         
             v_diag = v_diag.power(0.5)
-            A1 = (1.0/(cls.Re*cls.Da))*cls.M.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(v_diag,cls.M.tocsr())
+            A1 = (1.0/(cls.Re*cls.Da))*cls.M_porous_elem.tocsr() + (cls.Fo/(cls.Re*cls.Da))*sp.sparse.csr_matrix.dot(v_diag,cls.M_porous_elem_F.tocsr())
             
             block_DF = sp.sparse.bmat([[A1, None,sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
                                        [None, A1,None],
@@ -395,6 +410,7 @@ class FEM:
     @classmethod
     def set_block_vectors(cls,forces):
         cls.M = cls.M.tocsr()
+        # cls.M_full = cls.M_full.tocsr()
         cls.M_T = cls.M_T.tocsr()
         cls.vetor_vx = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vxd) + sp.sparse.csr_matrix.dot(cls.M,forces[:,0])
 
@@ -570,6 +586,11 @@ class FEM:
                 cls.fluid.vxd = sl.conv*cls.fluid.vx
                 cls.fluid.vyd = sl.conv*cls.fluid.vy
                 cls.fluid.Td = sl.conv*cls.fluid.T
+            for i in range(cls.mesh.npoints):
+                cls.mesh.node_list[i].vx = cls.fluid.vx[i]
+                cls.mesh.node_list[i].vy = cls.fluid.vy[i]
+                cls.mesh.node_list[i].T = cls.fluid.T[i]
+                
             end = timer()
             print('time --> SL calculation = ' + str(end-start) + ' [s]')
 
@@ -627,6 +648,7 @@ class FEM:
         # cls.fluid.T = MathWrapper.linSolve(cls.Matriz_T,cls.vetor_T,cls.dll)
         end = timer()
         print('time --> Temperatute solution = ' + str(end-start) + ' [s]')
+        
 
         return cls.fluid
     
