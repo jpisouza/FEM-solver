@@ -16,7 +16,7 @@ import Elements
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC,porous = False):
+    def set_matrices(cls,mesh,fluid,dt,BC,porous = False, turb = False):
 
         start = timer()
 
@@ -30,6 +30,7 @@ class FEM:
         cls.dt = dt
         cls.mesh = mesh
         cls.BC = BC
+        cls.turb = turb
         cls.porous = porous
         if len(cls.mesh.porous_elem)>0:
             cls.porous = True
@@ -48,6 +49,10 @@ class FEM:
     @classmethod
     def build_quad_GQ(cls):
         cls.K = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        cls.Kx = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        cls.Ky = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        cls.Kxy = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        cls.Kyx = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         cls.M = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         # cls.M_full = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         cls.Gx = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints_p),dtype='float' )
@@ -68,7 +73,10 @@ class FEM:
             v1,v2,v3,v4,v5,v6 = cls.mesh.IEN[e]
             quad.getM([v1,v2,v3,v4,v5,v6])
             lin.getM([cls.mesh.converter[v1],cls.mesh.converter[v2],cls.mesh.converter[v3]])
-            kelem = quad.kxx + quad.kyy
+            kx_elem = quad.kxx
+            ky_elem = quad.kyy
+            k_elem = quad.kxx + quad.kyy
+            kxy_elem = quad.kxy
             melem = quad.mass
             
             # if len(cls.mesh.porous_list) > 0:
@@ -81,7 +89,10 @@ class FEM:
                   for jlocal in range(0,6):
                       jglobal = cls.mesh.IEN[e,jlocal]
             
-                      cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + kelem[ilocal,jlocal]           
+                      cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + k_elem[ilocal,jlocal]
+                      cls.Kx[iglobal,jglobal] = cls.Kx[iglobal,jglobal] + kx_elem[ilocal,jlocal] 
+                      cls.Ky[iglobal,jglobal] = cls.Ky[iglobal,jglobal] + ky_elem[ilocal,jlocal]
+                      cls.Kxy[iglobal,jglobal] = cls.Kxy[iglobal,jglobal] + kxy_elem[ilocal,jlocal]  
                       # cls.M_full[iglobal,jglobal] = cls.M_full[iglobal,jglobal] + melem[ilocal,jlocal]
                       cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
                       cls.M_T[iglobal,jglobal] = cls.M_T[iglobal,jglobal] + melem_T[ilocal,jlocal]
@@ -549,30 +560,28 @@ class FEM:
 
         cls.Dx = cls.Gx.transpose()
         cls.Dy = cls.Gy.transpose()
+        
+    @classmethod
+    def set_Turb(cls):
+        
+        A11 = (1.0/cls.Re)*cls.Kx
+        A22 = (1.0/cls.Re)*cls.Ky
+        A12 = (1.0/cls.Re)*cls.Kxy
+        
+        block_Turb = sp.sparse.bmat([ [ A11, A12, sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
+                                      [ A12, A22, None],
+                                      [ None, None, sp.sparse.csr_matrix((cls.mesh.npoints_p, cls.mesh.npoints_p), dtype= 'float')]])
+        
+        if cls.porous:
+            cls.Matriz = cls.Matriz + block_Turb #in order to account set_Darcy_Forchheimer modifications in the main matrix
+        else:
+            cls.Matriz = cls.Matriz_orig + block_Turb 
     
     @classmethod
     def set_Darcy_Forchheimer(cls):
         
 
         if len(cls.mesh.porous_list) > 0:
-            # # vel = cls.calc_v_modulus()
-            # for e in range(0,cls.mesh.ne):
-            #     nodes = cls.mesh.IEN[e]
-            #     if len(nodes) > 4:
-            #         quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
-            #         quad.getMass_Forchheimer(nodes, cls.mesh.porous_nodes,cls.fluid.vx,cls.fluid.vy)
-            #         melem_forchheimer = quad.mass_forchheimer
-            #     else:
-            #         mini = Elements.Mini(cls.mesh.X,cls.mesh.Y) 
-            #         mini.getMass_Forchheimer(nodes, cls.mesh.porous_nodes,cls.fluid.vx,cls.fluid.vy)
-            #         melem_forchheimer = mini.mass_forchheimer
-                
-            #     for ilocal in range(0,cls.mesh.IEN.shape[1]):
-            #           iglobal = cls.mesh.IEN[e,ilocal]
-            #           for jlocal in range(0,cls.mesh.IEN.shape[1]):
-            #               jglobal = cls.mesh.IEN[e,jlocal]
-                         
-            #               cls.M_forchheimer[iglobal,jglobal] = cls.M_forchheimer[iglobal,jglobal] + melem_forchheimer[ilocal,jlocal]
                      
             
             v_diag = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vx),sp.sparse.diags(cls.fluid.vx)) + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.vy),sp.sparse.diags(cls.fluid.vy))       
@@ -596,6 +605,7 @@ class FEM:
                                        [None, A1,None],
                                        [None,None,sp.sparse.csr_matrix((cls.mesh.npoints_p, cls.mesh.npoints_p), dtype= 'float')]])
          
+
         cls.Matriz = cls.Matriz_orig + block_DF
     
     @classmethod
@@ -634,10 +644,18 @@ class FEM:
     @classmethod
     def set_block_matrices(cls,BC):
         
-        A1 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K 
+        # A1 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K 
         
-        cls.Matriz = sp.sparse.bmat([ [ A1, None, -cls.Gx],
-                                      [ None, A1, -cls.Gy],
+        # cls.Matriz = sp.sparse.bmat([ [ A1, None, -cls.Gx],
+        #                               [ None, A1, -cls.Gy],
+        #                               [ cls.Dx, cls.Dy, None]])
+        
+        A11 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K
+        A22 = A11
+        A12 = None
+        
+        cls.Matriz = sp.sparse.bmat([ [ A11, A12, -cls.Gx],
+                                      [ A12, A22, -cls.Gy],
                                       [ cls.Dx, cls.Dy, None]])
         
         cls.Matriz_T=(1.0/cls.dt)*cls.M_T + (1.0/(cls.Re*cls.Pr))*cls.K_T
@@ -648,7 +666,7 @@ class FEM:
         cls.Matriz_T = cls.Matriz_T.tocsr()
         
                        
-        if not cls.porous:
+        if not cls.porous and not cls.turb:
             for i in range(len(BC)):
                 for j in cls.mesh.boundary[i]:
                     if BC[i]['vx'] != 'None':
@@ -763,7 +781,7 @@ class FEM:
         cls.vetor_T = cls.vetor_T.tocsr()
     
     @classmethod
-    def set_BC_darcy(cls,BC):
+    def set_BC_dynamic(cls,BC):
         for i in range(len(BC)):
             
             for j in cls.mesh.boundary[i]:
@@ -910,10 +928,16 @@ class FEM:
             end = timer()
             print('time --> Set Darcy/Forchheimer parcel = ' + str(end-start) + ' [s]')
         
+        if cls.turb:
+            start = timer()
+            cls.set_Turb()
+            end = timer()
+            print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
+        
         start = timer()
         cls.set_block_vectors(forces)
-        if cls.porous:
-            cls.set_BC_darcy(cls.BC)
+        if cls.porous or cls.turb:
+            cls.set_BC_dynamic(cls.BC)
         else:
             cls.set_BC(cls.BC)
         end = timer()

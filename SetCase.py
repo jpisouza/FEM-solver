@@ -20,9 +20,14 @@ class Case:
         par = cls.root.find('Parameters')
         
         porous = False
+        turb = False
         if 'porous' in par.attrib:
             if par.attrib['porous'] == "True":
                 porous = True
+                
+        if 'turb' in par.attrib:
+            if par.attrib['turb'] == "True":
+                turb = True
             
         if 'Da' in par.attrib:
             Da = float(par.attrib['Da'])
@@ -58,7 +63,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb
     
     @classmethod
     def set_BC(cls):
