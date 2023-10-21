@@ -149,6 +149,11 @@ class Case:
         else:
             type_ = 'fixed'
             
+        if 'num_method' in part:
+            num_method = part['num_method']
+        else:
+            num_method = 'Euler'
+            
         if i == 0 and type_ == 'continuous':
             freq = int(part['frequency'])
             lims = np.zeros((2), dtype='float')
@@ -249,7 +254,7 @@ class Case:
               
         rho_part = rho*np.ones( (x_part.shape[0]),dtype='float' )
         
-        return x_part, v_part, d_part, rho_part, nLoop, inlet, lims, mean, sigma, factor, type_, freq, dist, rho, max_part
+        return x_part, v_part, d_part, rho_part, nLoop, inlet, lims, mean, sigma, factor, type_, freq, dist, rho, max_part, num_method
         
     @classmethod
     def set_kind(cls, root):

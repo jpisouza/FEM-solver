@@ -5,7 +5,7 @@ from timeit import default_timer as timer
 
 class ParticleCloud:
     
-    def __init__(self,elements,nodes,pos_vector,v_vector,d_vector,rho_vector,forces,two_way=True):
+    def __init__(self,elements,nodes,pos_vector,v_vector,d_vector,rho_vector,forces,two_way=True,num_method = 'Euler'):
         
         self.x = pos_vector
         self.v = v_vector
@@ -34,8 +34,9 @@ class ParticleCloud:
         for i in range(self.x.shape[0]):
             particle = Particle(i,self.d[i],self.rho[i],self.x[i],self.v[i])
             self.particle_list.append(particle)
-
-           
+        
+        self.num_method = num_method
+                   
     
     def set_element(self):
         
@@ -165,7 +166,10 @@ class ParticleCloud:
             self.set_element()
             for particle in self.particle_list:
                 if not particle.stop:
-                    particle.calc_v(Re,Fr,dt_)
+                    if self.num_method == 'Euler':
+                        particle.calc_v(Re,Fr,dt_)
+                    elif self.num_method == 'RK4':
+                        particle.calc_RK4(Re,Fr,dt_)
                     particle.calc_pos(dt_)
                 if particle.delete:
                     particle.pos = [float('NaN'),float('NaN')]

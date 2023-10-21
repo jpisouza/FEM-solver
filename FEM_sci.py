@@ -37,7 +37,7 @@ class FEM:
         if cls.mesh.mesh_kind == 'mini':
             cls.build_mini()
         elif cls.mesh.mesh_kind == 'quad':
-            cls.build_quad_GQ_COO()
+            cls.build_quad_GQ()
         
                
         cls.set_block_matrices(BC)

@@ -66,9 +66,9 @@ MESH.set_boundary_prior(BC,outflow)
 fluid = Fluid(MESH,Re,Pr,Ga,Gr,IC,Da,Fo)
 
 if particles_flag:
-    x_part, v_part, d_part, rho_part, nLoop, inlet, lims, mean, sigma, factor, type_, freq, dist, rho, max_part = Case.set_particles(i)
+    x_part, v_part, d_part, rho_part, nLoop, inlet, lims, mean, sigma, factor, type_, freq, dist, rho, max_part, num_method = Case.set_particles(i)
     
-    particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces,two_way)
+    particleCloud = ParticleCloud(MESH.elem_list,MESH.node_list,x_part,v_part,d_part,rho_part,forces,two_way,num_method)
 
     particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
 
@@ -122,6 +122,13 @@ while i < end:
                 f = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/exhaust.txt'), 'a')
             f.write(str(particleCloud.count_exit) + '\n')
             f.close()
+        # else:
+        #     if i == 0:
+        #         f2 = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/position.txt'), 'w')
+        #     else:
+        #         f2 = open(os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/position.txt'), 'a')
+        #     f2.write(str(particleCloud.particle_list[0].pos[0]) + ' ' + str(particleCloud.particle_list[0].pos[1]) + '\n')
+        #     f2.close()
     else:
         fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'),SL_matrix,neighborElem,oface)
         particleCloud = 0

@@ -45,8 +45,23 @@ class Particle:
         self.calc_Drag()
         self.calc_E(Fr)
         self.F = self.D + self.E
-  
+        
         self.v = self.v + (self.F)*dt/self.m
+    
+    def calc_RK4(self,Re,Fr,dt):
+        self.calc_vf()
+        self.calc_Cd(Re)
+        self.calc_Drag()
+        self.calc_E(Fr)
+        self.F = self.D + self.E
+        
+        self.k1 = self.v
+        self.k2 = self.v + (self.F)*0.5*dt/self.m
+        self.k3 = self.k2
+        self.k4 = self.v + (self.F)*dt/self.m
+        
+        self.v = (self.k1 + 2*self.k2 + 2*self.k3 + self.k4)/6.0
+        
     def calc_pos(self,dt):
         self.pos = self.pos + self.v*dt
 
