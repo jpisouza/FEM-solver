@@ -9,12 +9,14 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
     if MESH.mesh_kind == 'mini':
         point_data = {'p' : fluid.p[0:MESH.npoints_p]}
         data_T  = {'T' : fluid.T}
+        data_nut  = {'nu_t' : fluid.nu_t[0:MESH.npoints_p]}
         data_v = {'v' : np.transpose(np.block([[fluid.vx[0:MESH.npoints_p]],[fluid.vy[0:MESH.npoints_p]],[np.zeros((MESH.npoints_p),dtype='float')]]))}
         if particleCloud != 0:
             data_F = {'forces' : np.block([particleCloud.forces[0:MESH.npoints_p],np.zeros((MESH.npoints_p,1),dtype='float')])}
         else:
             data_F = {'forces' : np.zeros((MESH.npoints_p,3),dtype='float')}
         point_data.update(data_T)
+        point_data.update(data_nut)
         point_data.update(data_v)
         point_data.update(data_F)
         if particleCloud != 0:
@@ -38,6 +40,7 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
 
         point_data = {'p' : fluid.p_quad}
         data_T  = {'T' : fluid.T}
+        data_nut  = {'nu_t' : fluid.nu_t}
         data_v = {'v' : np.transpose(np.block([[fluid.vx],[fluid.vy],[np.zeros((MESH.npoints),dtype='float')]]))}
         if particleCloud != 0:
             data_F = {'forces' : np.block([particleCloud.forces,np.zeros((MESH.npoints,1),dtype='float')])}
@@ -46,6 +49,7 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
         point_data.update(data_T)
         point_data.update(data_v)
         point_data.update(data_F)
+        point_data.update(data_nut)
         meshio.write_points_cells(
         output_dir + '/sol-'+str(i)+'.vtk',
         points,

@@ -9,6 +9,7 @@ import scipy.sparse.linalg
 from semi_lagrangiano import semi_lagrange2
 import SL
 import Elements
+from Turbulence import Turbulence
 # import solveSys
 # from julia import Main
 
@@ -40,7 +41,7 @@ class FEM:
         elif cls.mesh.mesh_kind == 'quad':
             cls.build_quad_GQ()
         
-               
+        Turbulence.set_model(cls)     
         cls.set_block_matrices(BC)
         
         end = timer()
@@ -564,9 +565,11 @@ class FEM:
     @classmethod
     def set_Turb(cls):
         
-        A11 = (1.0/cls.Re)*cls.Kx
-        A22 = (1.0/cls.Re)*cls.Ky
-        A12 = (1.0/cls.Re)*cls.Kxy
+        Turbulence.calc_turb()
+        
+        A11 = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.nu_t),2.0*cls.Kx + cls.Ky)
+        A22 = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.nu_t),cls.Kx + 2.0*cls.Ky)
+        A12 = sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.fluid.nu_t),cls.Kxy)
         
         block_Turb = sp.sparse.bmat([ [ A11, A12, sp.sparse.csr_matrix((cls.mesh.npoints, cls.mesh.npoints_p), dtype= 'float')],
                                       [ A12, A22, None],
@@ -576,6 +579,8 @@ class FEM:
             cls.Matriz = cls.Matriz + block_Turb #in order to account set_Darcy_Forchheimer modifications in the main matrix
         else:
             cls.Matriz = cls.Matriz_orig + block_Turb 
+        
+        Turbulence.calc_turb()
     
     @classmethod
     def set_Darcy_Forchheimer(cls):

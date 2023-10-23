@@ -25,7 +25,7 @@ class Fluid:
             self.p = IC['p']
             self.T = IC['T']
 
-
+        self.nu_t = np.zeros((mesh.npoints), dtype='float')
         self.T_mini = np.zeros((mesh.npoints), dtype='float')
         self.p_quad = np.zeros((mesh.npoints), dtype='float')
 
