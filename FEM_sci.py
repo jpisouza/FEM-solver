@@ -55,7 +55,9 @@ class FEM:
         cls.Kxy = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         cls.Kyx = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         cls.M = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
-        # cls.M_full = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        cls.Gvx = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        cls.Gvy = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+
         cls.Gx = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints_p),dtype='float' )
         cls.Gy = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints_p),dtype='float' )
         cls.Dx = lil_matrix( (cls.mesh.npoints_p,cls.mesh.npoints),dtype='float' )
@@ -68,21 +70,21 @@ class FEM:
         cls.K_T = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
             
         quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
-        lin = Elements.Linear(cls.mesh.X[list(cls.mesh.converter.keys())],cls.mesh.Y[list(cls.mesh.converter.keys())])
+        # lin = Elements.Linear(cls.mesh.X[list(cls.mesh.converter.keys())],cls.mesh.Y[list(cls.mesh.converter.keys())])
+        
         # loop de elementos finitos
         for e in range(0,cls.mesh.ne):
             v1,v2,v3,v4,v5,v6 = cls.mesh.IEN[e]
             quad.getM([v1,v2,v3,v4,v5,v6])
-            lin.getM([cls.mesh.converter[v1],cls.mesh.converter[v2],cls.mesh.converter[v3]])
+            # lin.getM([cls.mesh.converter[v1],cls.mesh.converter[v2],cls.mesh.converter[v3]])
             kx_elem = quad.kxx
             ky_elem = quad.kyy
             k_elem = quad.kxx + quad.kyy
             kxy_elem = quad.kxy
             melem = quad.mass
-            
-            # if len(cls.mesh.porous_list) > 0:
-            #     quad.getMass_porous([v1,v2,v3,v4,v5,v6], cls.mesh.porous_nodes)
-            #     melem_porous = quad.mass_porous
+            gvx_elem = quad.gvx
+            gvy_elem = quad.gvy
+
             kelem_T = quad.kxx + quad.kyy
             melem_T = quad.mass
             for ilocal in range(0,6):
@@ -94,6 +96,8 @@ class FEM:
                       cls.Kx[iglobal,jglobal] = cls.Kx[iglobal,jglobal] + kx_elem[ilocal,jlocal] 
                       cls.Ky[iglobal,jglobal] = cls.Ky[iglobal,jglobal] + ky_elem[ilocal,jlocal]
                       cls.Kxy[iglobal,jglobal] = cls.Kxy[iglobal,jglobal] + kxy_elem[ilocal,jlocal]  
+                      cls.Gvx[iglobal,jglobal] = cls.Gvx[iglobal,jglobal] + gvx_elem[ilocal,jlocal]
+                      cls.Gvy[iglobal,jglobal] = cls.Gvy[iglobal,jglobal] + gvy_elem[ilocal,jlocal]
                       # cls.M_full[iglobal,jglobal] = cls.M_full[iglobal,jglobal] + melem[ilocal,jlocal]
                       cls.M[iglobal,jglobal] = cls.M[iglobal,jglobal] + melem[ilocal,jlocal]
                       cls.M_T[iglobal,jglobal] = cls.M_T[iglobal,jglobal] + melem_T[ilocal,jlocal]
@@ -580,7 +584,6 @@ class FEM:
         else:
             cls.Matriz = cls.Matriz_orig + block_Turb 
         
-        Turbulence.calc_turb()
     
     @classmethod
     def set_Darcy_Forchheimer(cls):
@@ -935,7 +938,7 @@ class FEM:
         
         if cls.turb:
             start = timer()
-            cls.set_Turb()
+            cls.calc_turb(neighborElem,oface)
             end = timer()
             print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
         

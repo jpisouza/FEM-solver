@@ -26,10 +26,14 @@ class Fluid:
             self.T = IC['T']
 
         self.nu_t = np.zeros((mesh.npoints), dtype='float')
+        self.kappa = np.zeros((mesh.npoints), dtype='float')
+        self.eps = np.zeros((mesh.npoints), dtype='float')
         self.T_mini = np.zeros((mesh.npoints), dtype='float')
         self.p_quad = np.zeros((mesh.npoints), dtype='float')
 
         self.vxd = np.zeros((mesh.npoints), dtype='float')
         self.vyd = np.zeros((mesh.npoints), dtype='float')
         self.Td = np.zeros((mesh.npoints), dtype='float')
+        self.kappad = np.zeros((mesh.npoints), dtype='float')
+        self.epsd = np.zeros((mesh.npoints), dtype='float')
         
