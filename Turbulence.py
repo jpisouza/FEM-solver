@@ -20,11 +20,12 @@ class Turbulence:
         
     @classmethod
     def calc_turb(cls, neighborElem, oface):
-         cls.solver.fluid.nu_t = 0.1*np.ones((cls.solver.mesh.npoints), dtype='float') 
+        cls.calc_system(neighborElem, oface)
+        cls.solver.fluid.nu_t = 0.1*np.ones((cls.solver.mesh.npoints), dtype='float') 
       
     @classmethod
-    def calc_system(cls):
-        cls.calc_SL()
+    def calc_system(cls,neighborElem, oface):
+        cls.calc_SL(neighborElem, oface)
         P = cls.calc_production()
         cls.Matriz = cls.solver.M.tocsr() + sp.sparse.csr_matrix.dot(sp.sparse.diags(cls.solver.fluid.nu_t),cls.solver.K)
         cls.Matriz = cls.Matriz.tocsr()
