@@ -51,17 +51,18 @@ output_dir = os.path.abspath(os.path.dirname(os.path.abspath(case)) + '/Results'
 
 mesh_kind = Case.set_kind(root)
 porous_list, limit_name, smooth_value, porosity = Case.set_porous_region(root)
-MESH = mesh(msh,mesh_kind,porous_list, limit_name, smooth_value, porosity)
+solid_list = Case.set_solid_region(root)
+MESH = mesh(msh,mesh_kind,porous_list,solid_list, limit_name, smooth_value, porosity)
 
 Case.read(case,MESH)
 
 IC,forces = Case.set_IC(i)
-Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb = Case.set_parameters()
-BC = Case.set_BC()
+Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb,U,L,rho,mu = Case.set_parameters()
+BC,FSI = Case.set_BC()
 
 outflow = Case.set_OutFlow()
    
-MESH.set_boundary_prior(BC,outflow)
+MESH.set_boundary_prior(BC,outflow,FSI)
 
 fluid = Fluid(MESH,Re,Pr,Ga,Gr,IC,Da,Fo)
 

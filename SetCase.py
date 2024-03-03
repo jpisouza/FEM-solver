@@ -42,8 +42,34 @@ class Case:
             Re = float(par.attrib['Re'])
         else:
             Re = 1.0
-        Pr = float(par.attrib['Pr']) 
-        Gr = float(par.attrib['Gr'])
+        
+        if 'Pr' in par.attrib:
+            Pr = float(par.attrib['Pr'])
+        else:
+            Pr = 1.0
+            
+        if 'Gr' in par.attrib:
+            Gr = float(par.attrib['Gr'])
+        else:
+            Gr = 1.0
+        
+        if 'U' in par.attrib:
+            U = float(par.attrib['U'])
+        else:
+            U = 1.0
+        if 'L' in par.attrib:
+            L = float(par.attrib['L'])
+        else:
+            L = 1.0
+        if 'rho' in par.attrib:
+            rho = float(par.attrib['rho'])
+        else:
+            rho = 1.0
+        if 'mu' in par.attrib:
+            mu = float(par.attrib['mu'])
+        else:
+            mu = 1.0
+            
         particles = par.attrib['particles']
         if particles == 'True':
             particles = True
@@ -63,16 +89,28 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb,U,L,rho,mu
     
     @classmethod
     def set_BC(cls):
         BC_list = []
+        FSI_list = []
         for child in cls.root.find('BoundaryCondition'):
             BC_list.append(child.attrib)
         BC_list.reverse() 
-
-        return BC_list
+        
+        par = cls.root.find('SolidInterface')
+        if par != None:
+            for child in cls.root.find('SolidInterface'):
+                FSI_bound = child.attrib
+                FSI_bound['vx'] = '0.0'
+                FSI_bound['vy'] = '0.0'
+                FSI_bound['p'] = 'None'
+                FSI_bound['T'] = 'None'
+                FSI_list.append(FSI_bound)
+            BC_list = BC_list + FSI_list
+            
+        return BC_list, FSI_list
     
     @classmethod       
     def set_IC(cls,i):
@@ -120,6 +158,14 @@ class Case:
             for child in cls.root.find('OutFlow'):
                 OF_list.append(child.attrib['name'])
         return OF_list
+    
+    @classmethod
+    def set_solid_region(cls,root):
+        solid_list = []
+        if root.find('Solid') is not None:
+            for child in root.find('Solid'):
+                solid_list.append(child.attrib['name'])
+        return solid_list
     
     @classmethod
     def set_porous_region(cls,root):

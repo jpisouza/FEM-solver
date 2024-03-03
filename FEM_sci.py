@@ -1,6 +1,6 @@
 import numpy as np
 from timeit import default_timer as timer
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import scipy as sp
 from scipy.sparse import lil_matrix, csr_matrix, csc_matrix, coo_matrix, dok_matrix
 import scipy.linalg  
@@ -12,6 +12,7 @@ import Elements
 from Turbulence import Turbulence
 # import solveSys
 # from julia import Main
+
 
 
 class FEM:
@@ -41,7 +42,7 @@ class FEM:
         elif cls.mesh.mesh_kind == 'quad':
             cls.build_quad_GQ()
         
-        Turbulence.set_model(cls)     
+        # Turbulence.set_model(cls)     
         cls.set_block_matrices(BC)
         
         end = timer()
@@ -91,8 +92,12 @@ class FEM:
                   iglobal = cls.mesh.IEN[e,ilocal]
                   for jlocal in range(0,6):
                       jglobal = cls.mesh.IEN[e,jlocal]
-            
-                      cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + k_elem[ilocal,jlocal]
+                      
+                      if e in cls.mesh.solid_elem:
+                          cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + 10000*cls.Re*k_elem[ilocal,jlocal]
+                      else:
+                          cls.K[iglobal,jglobal] = cls.K[iglobal,jglobal] + k_elem[ilocal,jlocal]
+                          
                       cls.Kx[iglobal,jglobal] = cls.Kx[iglobal,jglobal] + kx_elem[ilocal,jlocal] 
                       cls.Ky[iglobal,jglobal] = cls.Ky[iglobal,jglobal] + ky_elem[ilocal,jlocal]
                       cls.Kxy[iglobal,jglobal] = cls.Kxy[iglobal,jglobal] + kxy_elem[ilocal,jlocal]  
@@ -675,6 +680,7 @@ class FEM:
         
                        
         if not cls.porous and not cls.turb:
+                
             for i in range(len(BC)):
                 for j in cls.mesh.boundary[i]:
                     if BC[i]['vx'] != 'None':
@@ -742,8 +748,8 @@ class FEM:
 
     @classmethod
     def set_BC(cls,BC):
+                   
         for i in range(len(BC)):
-            
             for j in cls.mesh.boundary[i]:
                 if 'Profile' in BC[i]['vx']:                    
                     u_0 = float(BC[i]['vx'].split('-')[1])
@@ -885,6 +891,23 @@ class FEM:
         cls.Matriz_T = cls.Matriz_T.tocsr()
     
     @classmethod
+    def calcFSIForces(cls, FSInode_list, norm, U = 1, rho = 1, mu = 1, L = 1):
+        dudx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.vx))
+        dudy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.vx))
+        
+        dvdx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.vy))
+        dvdy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.vy))
+        
+        cls.T11 = -rho*U**2*cls.fluid.p_quad + 2*mu*(U/L)*dudx
+        cls.T22 = -rho*U**2*cls.fluid.p_quad + 2*mu*(U/L)*dvdy
+        cls.T12 = mu*(U/L)*(dudy + dvdx)
+        cls.T21 = mu*(U/L)*(dudy + dvdx)
+        
+        cls.FSIForces_x = np.multiply(cls.T11[FSInode_list], norm[:,1]) + np.multiply(cls.T12[FSInode_list], norm[:,2])
+        cls.FSIForces_y = np.multiply(cls.T21[FSInode_list], norm[:,1]) + np.multiply(cls.T22[FSInode_list], norm[:,2])
+        
+    
+    @classmethod
     def solve_fields(cls,forces,SL_matrix=False,neighborElem=[[]],oface=[]):
 
         if SL_matrix:
@@ -952,6 +975,8 @@ class FEM:
         print('time --> Set boundaries = ' + str(end-start) + ' [s]')
         
         start = timer()
+        # plt.spy(cls.Matriz)
+        plt.show()
         sol = sp.sparse.linalg.spsolve(cls.Matriz,cls.vetor.transpose())
         # sol = solveSys.solveSystem(cls.vetor)
         # sol = Main.solve(cls.Matriz,cls.vetor)

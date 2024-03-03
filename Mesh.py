@@ -6,12 +6,13 @@ import os
 
 class mesh:
 
-    def __init__(self,case,kind='mini', porous_list = [], limit_name = '', smooth_value = 1.0, porosity = 1.0):
+    def __init__(self,case,kind='mini', porous_list = [], solid_list = [], limit_name = '', smooth_value = 1.0, porosity = 1.0):
 
         self.mesh_kind = kind
         path = os.path.abspath( case + '.msh')
         
         self.porous_list = porous_list
+        self.solid_list = solid_list
         self.limit_name = limit_name
         self.smooth_value = smooth_value
         self.porosity = porosity
@@ -65,6 +66,18 @@ class mesh:
                         self.porosity_array.append(1.0)
             else:
                 self.porosity_array = self.ne*[1.0]
+                
+            #Detecting solid elements
+            self.solid_elem = []
+            self.solid_nodes = []
+            if len(self.solid_list) > 0:
+                for elem in range (len(self.IEN)):
+                    if self.boundNames[self.dict_element[self.IENTypeElem[elem]]] in self.solid_list:
+                        self.solid_elem.append(elem)
+                        for i in self.IEN[elem]:
+                            if i not in self.solid_nodes:
+                               self.solid_nodes.append(i) 
+             
             
             #Removing non-boundary interfaces
             self.X_interf = []
@@ -262,20 +275,32 @@ class mesh:
             print('Element ' + str(ID + 1) + ' --------> generated')       
         print('\n')
 
+
         self.node_list = Node.node_list
         self.elem_list = Element.elem_list
 
-    def set_boundary_prior(self,BC,outflow):
+    def set_boundary_prior(self,BC,outflow,FSI):
         
         self.BC = BC
+        self.FSI = FSI
         k = 0
         bound_list = []
+        self.FSI_list = []
+        self.FSI_dict_list = []
         outflow_bound_list = []
         for bound in BC:
             bound_list.append([])
             for i in range (len(self.IENboundElem)):
                 if self.IENboundElem[i] == bound['name']:
+                    if bound in self.FSI:
+                        self.FSI_dict_list.append({'bound_elem':i})
+                        self.FSI_dict_list[-1]['nodes'] = self.IENbound[i]
+                        self.FSI_dict_list[-1]['norm'] = np.array([0,0])
+                        self.FSI_dict_list[-1]['fluid_interface'] = bound['fluid_interface']
                     for l in range (len(self.IENbound[i])):
+                        if bound in self.FSI:
+                            if self.IENbound[i,l] not in self.FSI_list:
+                                self.FSI_list.append(self.IENbound[i,l])
                         if self.IENbound[i,l] not in bound_list[k]:
                             bound_list[k].append(self.IENbound[i,l])
                             if bound['name'] in outflow:
