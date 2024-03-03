@@ -57,7 +57,7 @@ MESH = mesh(msh,mesh_kind,porous_list,solid_list, limit_name, smooth_value, poro
 Case.read(case,MESH)
 
 IC,forces = Case.set_IC(i)
-Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb,U,L,rho,mu = Case.set_parameters()
+Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb,U,L,rho = Case.set_parameters()
 BC,FSI = Case.set_BC()
 
 outflow = Case.set_OutFlow()
@@ -74,7 +74,7 @@ if particles_flag:
     particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
 
 
-FEM.set_matrices(MESH,fluid,dt,BC,porous,turb)
+FEM.set_matrices(MESH,fluid,dt,BC,porous,turb,U,L,rho)
 neighborElem=[[]]
 SL_matrix=True
 oface=[]

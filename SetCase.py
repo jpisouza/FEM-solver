@@ -65,10 +65,6 @@ class Case:
             rho = float(par.attrib['rho'])
         else:
             rho = 1.0
-        if 'mu' in par.attrib:
-            mu = float(par.attrib['mu'])
-        else:
-            mu = 1.0
             
         particles = par.attrib['particles']
         if particles == 'True':
@@ -89,7 +85,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb,U,L,rho,mu
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb,U,L,rho
     
     @classmethod
     def set_BC(cls):

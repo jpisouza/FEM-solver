@@ -313,8 +313,33 @@ class mesh:
         for r in range(len(self.boundary)):
             self.boundary_list = self.boundary_list + self.boundary[r]
         self.outflow_boundary = outflow_bound_list
+        
 
-
-
+    def calc_normal(self):
+        
+        self.normal_vect = np.zeros((len(self.X),2), dtype='float')
+        for edge in self.FSI_dict_list:
+            if edge['fluid_interface'] == 'True':
+                if (self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]]) != 0.0:
+                    if (self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]]) > 0.0:
+                        edge['norm'][1] = -1.0                    
+                    else:
+                        edge['norm'][1] = 1.0
+                    edge['norm'][0] = edge['norm'][1]*(self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]])/(self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]])
+                else:
+                    if (self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]]) < 0.0:
+                        edge['norm'][0] = -1.0
+                        edge['norm'][1] = 0.0
+                    else:
+                        edge['norm'][0] = 1.0
+                        edge['norm'][1] = 0.0
+            
+                mod = np.sqrt(edge['norm'][1]**2 + edge['norm'][0]**2)
+                edge['norm'][1] = edge['norm'][1]/mod
+                edge['norm'][0] = edge['norm'][0]/mod
+                self.normal_vect[edge['nodes'][0],:] = edge['norm']
+                self.normal_vect[edge['nodes'][1],:] = edge['norm']
+                self.normal_vect[edge['nodes'][2],:] = edge['norm']
+            
 
 

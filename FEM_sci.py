@@ -18,7 +18,7 @@ from Turbulence import Turbulence
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC,porous = False, turb = False):
+    def set_matrices(cls,mesh,fluid,dt,BC,porous = False, turb = False, U = 1, L = 1, rho = 1):
 
         start = timer()
 
@@ -30,12 +30,18 @@ class FEM:
         cls.Da = fluid.Da
         cls.Fo = fluid.Fo
         cls.dt = dt
+        cls.rho = rho
+        cls.L = L
+        cls.U = U
+        cls.mu = rho*U*L/cls.Re
         cls.mesh = mesh
         cls.BC = BC
         cls.turb = turb
         cls.porous = porous
         if len(cls.mesh.porous_elem)>0:
             cls.porous = True
+        
+        cls.fluid.FSIForces = np.zeros((cls.mesh.npoints,2), dtype='float')
         
         if cls.mesh.mesh_kind == 'mini':
             cls.build_mini()
@@ -891,22 +897,24 @@ class FEM:
         cls.Matriz_T = cls.Matriz_T.tocsr()
     
     @classmethod
-    def calcFSIForces(cls, FSInode_list, norm, U = 1, rho = 1, mu = 1, L = 1):
+    def calcFSIForces(cls, norm):
         dudx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.vx))
         dudy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.vx))
         
         dvdx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.vy))
         dvdy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.vy))
         
-        cls.T11 = -rho*U**2*cls.fluid.p_quad + 2*mu*(U/L)*dudx
-        cls.T22 = -rho*U**2*cls.fluid.p_quad + 2*mu*(U/L)*dvdy
-        cls.T12 = mu*(U/L)*(dudy + dvdx)
-        cls.T21 = mu*(U/L)*(dudy + dvdx)
+        cls.T11 = -cls.rho*cls.U**2*cls.fluid.p_quad + 2*cls.mu*(cls.U/cls.L)*dudx
+        cls.T22 = -cls.rho*cls.U**2*cls.fluid.p_quad + 2*cls.mu*(cls.U/cls.L)*dvdy
+        cls.T12 = cls.mu*(cls.U/cls.L)*(dudy + dvdx)
+        cls.T21 = cls.mu*(cls.U/cls.L)*(dudy + dvdx)
         
-        cls.FSIForces_x = np.multiply(cls.T11[FSInode_list], norm[:,1]) + np.multiply(cls.T12[FSInode_list], norm[:,2])
-        cls.FSIForces_y = np.multiply(cls.T21[FSInode_list], norm[:,1]) + np.multiply(cls.T22[FSInode_list], norm[:,2])
+        cls.FSIForces_x = np.multiply(cls.T11, norm[:,0]) + np.multiply(cls.T12, norm[:,1])
+        cls.FSIForces_y = np.multiply(cls.T21, norm[:,0]) + np.multiply(cls.T22, norm[:,1])
         
-    
+        cls.fluid.FSIForces[:,0] = cls.FSIForces_x 
+        cls.fluid.FSIForces[:,1] = cls.FSIForces_y
+        
     @classmethod
     def solve_fields(cls,forces,SL_matrix=False,neighborElem=[[]],oface=[]):
 
@@ -1002,6 +1010,8 @@ class FEM:
         end = timer()
         print('time --> Temperatute solution = ' + str(end-start) + ' [s]')
         
+        cls.mesh.calc_normal()
+        cls.calcFSIForces(cls.mesh.normal_vect)
 
         return cls.fluid
     
