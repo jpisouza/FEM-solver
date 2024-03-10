@@ -4,8 +4,10 @@ import sys
 import xml.etree.ElementTree as ET
 import getopt
 import Export
+import ExportSolid
 from Mesh import mesh
 from FEM_sci import FEM
+from SolidFEM import FEM as SolidFEM
 from Fluid import Fluid
 from particleCloud import ParticleCloud
 from SetCase import Case
@@ -57,7 +59,7 @@ MESH = mesh(msh,mesh_kind,porous_list,solid_list, limit_name, smooth_value, poro
 Case.read(case,MESH)
 
 IC,forces = Case.set_IC(i)
-Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb,U,L,rho = Case.set_parameters()
+Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb, SolidProp = Case.set_parameters()
 BC,FSI = Case.set_BC()
 
 outflow = Case.set_OutFlow()
@@ -74,7 +76,7 @@ if particles_flag:
     particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
 
 
-FEM.set_matrices(MESH,fluid,dt,BC,porous,turb,U,L,rho)
+FEM.set_matrices(MESH,fluid,dt,BC, SolidProp, porous,turb)
 neighborElem=[[]]
 SL_matrix=True
 oface=[]
@@ -133,9 +135,19 @@ while i < end:
     else:
         fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'),SL_matrix,neighborElem,oface)
         particleCloud = 0
-        
     
-    Export.export_data(i,output_dir,fluid,MESH,particleCloud)
+    if len(FEM.mesh.FSI) > 0:
+        if i>=1:
+            u = SolidFEM.solve(i)
+        else:
+            u = SolidFEM.u
+        ExportSolid.export_data(FEM.solidMesh, output_dir,u,i)
+        Export.export_data(i,output_dir,fluid,FEM.solidMesh.fluidmesh,particleCloud)
+        
+    else:    
+        Export.export_data(i,output_dir,fluid,MESH,particleCloud)
+    
+        
 
     i+=1
 

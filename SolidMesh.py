@@ -6,6 +6,7 @@ class SolidMesh:
         
         self.msh = meshio.read(meshname)
         self.BC = BC
+        self.FSI_flag = False
         
         self.dict_boundary = {}
         self.dict_element = {}

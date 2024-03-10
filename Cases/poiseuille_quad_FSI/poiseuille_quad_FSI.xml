@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <Case name="poiseuille">
-  <Parameters Fr="100" Re="228" Gr="0" Pr="0.7" Fr_flag="True" particles="False" two_way="False" turb="False"/>
+  <Parameters Fr="100" Re="10" Gr="0" Pr="0.7" Fr_flag="True" particles="False" two_way="False" turb="False"/>
   <BoundaryCondition>
     <Boundary name="wall" vx="0" vy="0" p="None" T="0"/>
     <Boundary name="outFlow" vx="None" vy="None" p="0" T="None"/>
@@ -12,11 +12,11 @@
   <Solid>
     <Region name="solid"/>
   </Solid>
-  <SolidInterface>
-	<Boundary name="wallSolidTop" fluid_interface = "False"/>
-	<Boundary name="wallSolidBottom" fluid_interface = "True"/>
-	<Boundary name="wallSolidLeft" fluid_interface = "True"/>
-	<Boundary name="wallSolidRight" fluid_interface = "True"/>
+  <SolidInterface E = "1000.0" nu="0.3" rho="7.8" h="0.1">
+	<Boundary name="wallSolidTop" fluid_interface = "False" ux="0" uy="0"/>
+	<Boundary name="wallSolidBottom" fluid_interface = "True" ux="None" uy="None" />
+	<Boundary name="wallSolidLeft" fluid_interface = "True" ux="None" uy="None"/>
+	<Boundary name="wallSolidRight" fluid_interface = "True" ux="None" uy="None" />
   </SolidInterface>
   <InitialCondition vx="0" vy="0" p="0" T="0"/>
 </Case>

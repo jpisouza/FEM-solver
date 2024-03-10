@@ -29,7 +29,7 @@ BC = {'upper_bound': ['None', 'None', 0, -1.0], 'left_bound': [0, 0, 'None', 'No
 
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
-FEM.set_parameters(h, mesh, rho, E, nu, BC, dt)
+FEM.set_parameters(mesh, BC, h, E, dt, rho, nu)
 
 umax = [0]
 t = [0]

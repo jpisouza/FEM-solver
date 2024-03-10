@@ -10,6 +10,8 @@ from semi_lagrangiano import semi_lagrange2
 import SL
 import Elements
 from Turbulence import Turbulence
+from FSISolidMesh import FSISolidMesh
+from SolidFEM import FEM as SolidFEM
 # import solveSys
 # from julia import Main
 
@@ -18,9 +20,7 @@ from Turbulence import Turbulence
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC,porous = False, turb = False, U = 1, L = 1, rho = 1):
-
-        start = timer()
+    def set_matrices(cls,mesh,fluid,dt,BC,SolidProp,porous = False, turb = False):
 
         cls.fluid = fluid
         cls.Re = fluid.Re
@@ -30,29 +30,32 @@ class FEM:
         cls.Da = fluid.Da
         cls.Fo = fluid.Fo
         cls.dt = dt
-        cls.rho = rho
-        cls.L = L
-        cls.U = U
-        cls.mu = rho*U*L/cls.Re
         cls.mesh = mesh
         cls.BC = BC
         cls.turb = turb
         cls.porous = porous
+        cls.SolidProp = SolidProp
         if len(cls.mesh.porous_elem)>0:
             cls.porous = True
         
         cls.fluid.FSIForces = np.zeros((cls.mesh.npoints,2), dtype='float')
+                
+        if len(cls.mesh.FSI) > 0:
+            cls.solidMesh = FSISolidMesh(cls.mesh, cls.fluid)
+            cls.BC_solid = cls.solidMesh.build_BCdict(cls.fluid.FSIForces)
+            SolidFEM.set_parameters(cls.solidMesh, cls.BC_solid, float(SolidProp['h']), float(SolidProp['E']), dt, float(SolidProp['rho']), float(SolidProp['nu']))
         
-        if cls.mesh.mesh_kind == 'mini':
-            cls.build_mini()
-        elif cls.mesh.mesh_kind == 'quad':
-            cls.build_quad_GQ()
+        if len(cls.mesh.FSI) == 0:
+            start = timer()
+            if cls.mesh.mesh_kind == 'mini':
+                cls.build_mini()
+            elif cls.mesh.mesh_kind == 'quad':
+                cls.build_quad_GQ()
+       
+            cls.set_block_matrices(BC)
         
-        # Turbulence.set_model(cls)     
-        cls.set_block_matrices(BC)
-        
-        end = timer()
-        print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')
+            end = timer()
+            print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')
 
     @classmethod
     def build_quad_GQ(cls):
@@ -685,7 +688,7 @@ class FEM:
         cls.Matriz_T = cls.Matriz_T.tocsr()
         
                        
-        if not cls.porous and not cls.turb:
+        if not cls.porous and not cls.turb and not len(cls.mesh.FSI) > 0:
                 
             for i in range(len(BC)):
                 for j in cls.mesh.boundary[i]:
@@ -821,7 +824,10 @@ class FEM:
                         cls.Matriz[j,col] = 0
                     cls.Matriz[j,j] = 1.0
                     
-                    cls.vetor_vx[j] = float(BC[i]['vx'])
+                    if len(cls.mesh.FSI) > 0 and BC[i] in cls.mesh.FSI:
+                        cls.vetor_vx[j] = cls.fluid.vx[j]
+                    else:
+                        cls.vetor_vx[j] = float(BC[i]['vx'])
 
                 if 'Profile' in BC[i]['vy']:
                     row = cls.Matriz.getrow(j + cls.mesh.npoints)
@@ -840,7 +846,10 @@ class FEM:
                         cls.Matriz[j + cls.mesh.npoints,col] = 0
                     cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
                     
-                    cls.vetor_vy[j] = float(BC[i]['vy']) 
+                    if len(cls.mesh.FSI) > 0 and BC[i] in cls.mesh.FSI:
+                        cls.vetor_vy[j] = cls.fluid.vy[j]
+                    else:
+                        cls.vetor_vy[j] = float(BC[i]['vy']) 
                 
                 if cls.mesh.mesh_kind == 'quad':
                                                 
@@ -904,10 +913,10 @@ class FEM:
         dvdx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.vy))
         dvdy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.vy))
         
-        cls.T11 = -cls.rho*cls.U**2*cls.fluid.p_quad + 2*cls.mu*(cls.U/cls.L)*dudx
-        cls.T22 = -cls.rho*cls.U**2*cls.fluid.p_quad + 2*cls.mu*(cls.U/cls.L)*dvdy
-        cls.T12 = cls.mu*(cls.U/cls.L)*(dudy + dvdx)
-        cls.T21 = cls.mu*(cls.U/cls.L)*(dudy + dvdx)
+        cls.T11 = -cls.fluid.p_quad + 2*(1.0/cls.Re)*dudx
+        cls.T22 = -cls.fluid.p_quad + 2*(1.0/cls.Re)*dvdy
+        cls.T12 = (1.0/cls.Re)*(dudy + dvdx)
+        cls.T21 = (1.0/cls.Re)*(dudy + dvdx)
         
         cls.FSIForces_x = np.multiply(cls.T11, norm[:,0]) + np.multiply(cls.T12, norm[:,1])
         cls.FSIForces_y = np.multiply(cls.T21, norm[:,0]) + np.multiply(cls.T22, norm[:,1])
@@ -974,21 +983,27 @@ class FEM:
             print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
         
         start = timer()
-        cls.set_block_vectors(forces)
-        if cls.porous or cls.turb:
+        
+        if len(cls.mesh.FSI) > 0:
+            cls.build_quad_GQ()
+            cls.set_block_matrices(cls.BC)
+            cls.set_block_vectors(forces)
             cls.set_BC_dynamic(cls.BC)
-        else:
+        if cls.porous or cls.turb:
+            cls.set_block_vectors(forces)
+            cls.set_BC_dynamic(cls.BC)
+        elif len(cls.mesh.FSI) == 0:
+            cls.set_block_vectors(forces)
             cls.set_BC(cls.BC)
+        
+        
         end = timer()
         print('time --> Set boundaries = ' + str(end-start) + ' [s]')
         
         start = timer()
-        # plt.spy(cls.Matriz)
-        plt.show()
+
         sol = sp.sparse.linalg.spsolve(cls.Matriz,cls.vetor.transpose())
-        # sol = solveSys.solveSystem(cls.vetor)
-        # sol = Main.solve(cls.Matriz,cls.vetor)
-        # sol = MathWrapper.linSolve(cls.Matriz,cls.vetor,cls.dll)
+
         end = timer()  
         print('time --> Flow solution = ' + str(end-start) + ' [s]')
         
@@ -1004,6 +1019,7 @@ class FEM:
                     j = 0
                 cls.fluid.p_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.p_quad[cls.mesh.IEN[:,j]] + cls.fluid.p_quad[cls.mesh.IEN[:,i-3]])/2.0     
         
+        
         start = timer()
         cls.fluid.T = sp.sparse.linalg.spsolve(cls.Matriz_T,cls.vetor_T.transpose())
         # cls.fluid.T = MathWrapper.linSolve(cls.Matriz_T,cls.vetor_T,cls.dll)
@@ -1012,7 +1028,9 @@ class FEM:
         
         cls.mesh.calc_normal()
         cls.calcFSIForces(cls.mesh.normal_vect)
-
+        if len(cls.mesh.FSI) > 0:
+            cls.solidMesh.update_forces(cls.fluid.FSIForces, cls.BC_solid)
+            
         return cls.fluid
     
    

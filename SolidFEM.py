@@ -9,7 +9,7 @@ import Elements
 class FEM:
     
     @classmethod
-    def set_parameters(cls, h, mesh, rho, E, nu, BC, dt):
+    def set_parameters(cls, mesh, BC, h, E, dt, rho, nu):
         
         cls.E = E
         cls.rho = rho
@@ -64,12 +64,12 @@ class FEM:
         
         for e in range(0,len(cls.mesh.IENbound)):
             for bound in cls.BC:
-                if (cls.mesh.bound_dict[bound][2] != 'None' or cls.mesh.bound_dict[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
+                if (cls.BC[bound][2] != 'None' or cls.BC[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
                     v1,v2,v3 = cls.mesh.IENbound[e]
                     
                     L = ((cls.mesh.X[v1] - cls.mesh.X[v2])**2 + (cls.mesh.Y[v1] - cls.mesh.Y[v2])**2)**0.5;
                     
-                    Mbe = -(L/30)* np.array([[4, 0, 2, 0, -1, 0],
+                    Mbe = (L/30)* np.array([[4, 0, 2, 0, -1, 0],
                                                [0, 4, 0, 2, 0, -1],
                                                [2, 0, 16, 0, 2, 0],
                                                [0, 2, 0, 16, 0, 2],
@@ -99,11 +99,17 @@ class FEM:
     def set_BC(cls):
         #Calculates force vector
         for bound in cls.BC:
-            for node in cls.mesh.bound_dict[bound]:
+            for i in range(len(cls.mesh.bound_dict[bound])):
                 if cls.BC[bound][2] != 'None':
-                    cls.forces[2*node] = cls.BC[bound][2]
+                    if type(cls.BC[bound][2]) == np.ndarray:
+                        cls.forces[2*cls.mesh.bound_dict[bound][i]] = cls.BC[bound][2][i]
+                    else:
+                        cls.forces[2*cls.mesh.bound_dict[bound][i]] = cls.BC[bound][2]
                 if cls.BC[bound][3] != 'None':
-                    cls.forces[2*node+1] = cls.BC[bound][3]
+                    if type(cls.BC[bound][2]) == np.ndarray:
+                        cls.forces[2*cls.mesh.bound_dict[bound][i]+1] = cls.BC[bound][3][i]
+                    else:
+                        cls.forces[2*cls.mesh.bound_dict[bound][i]+1] = cls.BC[bound][3]
 
         cls.b = cls.b + sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces)
         
@@ -142,6 +148,15 @@ class FEM:
         cls.mesh.Y = cls.Y_orig + cls.uy
         
         cls.u_prime = (cls.u - cls.u_minus)/cls.dt
+        
+        if cls.mesh.FSI_flag:
+            cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
+            cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
+            
+            u_prime_x =  np.array([cls.u_prime[2*n] for n in range(cls.mesh.npoints)])
+            u_prime_y = np.array([cls.u_prime[2*n+1] for n in range(cls.mesh.npoints)])
+            cls.mesh.fluid.vx[cls.mesh.IEN_orig] = u_prime_x[cls.mesh.IEN]
+            cls.mesh.fluid.vy[cls.mesh.IEN_orig] = u_prime_y[cls.mesh.IEN]
         
         return cls.u
         

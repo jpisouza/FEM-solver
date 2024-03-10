@@ -295,7 +295,7 @@ class mesh:
                     if bound in self.FSI:
                         self.FSI_dict_list.append({'bound_elem':i})
                         self.FSI_dict_list[-1]['nodes'] = self.IENbound[i]
-                        self.FSI_dict_list[-1]['norm'] = np.array([0,0])
+                        self.FSI_dict_list[-1]['norm'] = np.array(([0,0]), dtype='float')
                         self.FSI_dict_list[-1]['fluid_interface'] = bound['fluid_interface']
                     for l in range (len(self.IENbound[i])):
                         if bound in self.FSI:
@@ -322,10 +322,11 @@ class mesh:
             if edge['fluid_interface'] == 'True':
                 if (self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]]) != 0.0:
                     if (self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]]) > 0.0:
-                        edge['norm'][1] = -1.0                    
+                        edge['norm'][1] = -1.0        
                     else:
                         edge['norm'][1] = 1.0
-                    edge['norm'][0] = edge['norm'][1]*(self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]])/(self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]])
+                    edge['norm'][0] = -edge['norm'][1]*(self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]])/(self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]])
+
                 else:
                     if (self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]]) < 0.0:
                         edge['norm'][0] = -1.0
@@ -335,11 +336,14 @@ class mesh:
                         edge['norm'][1] = 0.0
             
                 mod = np.sqrt(edge['norm'][1]**2 + edge['norm'][0]**2)
+                
                 edge['norm'][1] = edge['norm'][1]/mod
                 edge['norm'][0] = edge['norm'][0]/mod
+               
                 self.normal_vect[edge['nodes'][0],:] = edge['norm']
                 self.normal_vect[edge['nodes'][1],:] = edge['norm']
                 self.normal_vect[edge['nodes'][2],:] = edge['norm']
+
             
 
 

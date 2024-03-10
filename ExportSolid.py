@@ -3,7 +3,7 @@ import meshio
 
 def export_data(mesh, output_dir, u, i):
     
-    print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
+    print ('--------Time step = ' + str(i) + ' --> saving solid solution (VTK)--------\n')
     if mesh.mesh_kind == 'quad':
         
         #deformed solid
@@ -17,7 +17,7 @@ def export_data(mesh, output_dir, u, i):
         data_uy = {'uy' : uy}
         point_data.update(data_uy)
         meshio.write_points_cells(
-        output_dir + '/sol-'+str(i)+'.vtk',
+        output_dir + '/solid_sol-'+str(i)+'.vtk',
         points,
         cells,
         point_data=point_data

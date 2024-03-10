@@ -53,18 +53,13 @@ class Case:
         else:
             Gr = 1.0
         
-        if 'U' in par.attrib:
-            U = float(par.attrib['U'])
-        else:
-            U = 1.0
-        if 'L' in par.attrib:
-            L = float(par.attrib['L'])
-        else:
-            L = 1.0
-        if 'rho' in par.attrib:
-            rho = float(par.attrib['rho'])
-        else:
-            rho = 1.0
+        SolidProp = {}
+        parSolid = cls.root.find('SolidInterface')
+        if parSolid != None:
+            SolidProp['E'] = parSolid.attrib['E']
+            SolidProp['rho'] = parSolid.attrib['rho']
+            SolidProp['nu'] = parSolid.attrib['nu']
+            SolidProp['h'] = parSolid.attrib['h']
             
         particles = par.attrib['particles']
         if particles == 'True':
@@ -85,7 +80,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb,U,L,rho
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb, SolidProp
     
     @classmethod
     def set_BC(cls):
