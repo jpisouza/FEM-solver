@@ -141,8 +141,8 @@ while i < end:
             u = SolidFEM.solve(i)
         else:
             u = SolidFEM.u
-        ExportSolid.export_data(FEM.solidMesh, output_dir,u,i)
-        Export.export_data(i,output_dir,fluid,FEM.solidMesh.fluidmesh,particleCloud)
+        ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.sigma_VM,i)
+        Export.export_data(i,output_dir,fluid,MESH,particleCloud)
         
     else:    
         Export.export_data(i,output_dir,fluid,MESH,particleCloud)

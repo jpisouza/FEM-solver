@@ -27,8 +27,13 @@ class FEM:
         cls.u = np.zeros((2*cls.mesh.npoints), dtype='float')
         cls.u_prime = np.zeros((2*cls.mesh.npoints), dtype='float')
         
-        cls.u_minus = cls.u - cls.u_prime*cls.dt
+        cls.sigma_x = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.sigma_y = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.tau_xy = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.sigma_VM = np.zeros((cls.mesh.npoints), dtype='float')
         
+        cls.u_minus = cls.u - cls.u_prime*cls.dt
+                
         cls.X_orig = cls.mesh.X.copy()
         cls.Y_orig = cls.mesh.Y.copy()
 
@@ -38,19 +43,30 @@ class FEM:
         cls.M = lil_matrix( (2*cls.mesh.npoints,2*cls.mesh.npoints),dtype='float' )
         cls.Mb = lil_matrix( (2*cls.mesh.npoints,2*cls.mesh.npoints),dtype='float' )
         
+        #matrices for stress calculation
+        cls.Ms = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' ) 
+        cls.Gxs = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        cls.Gys = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+        
         quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
         
         for e in range(0,cls.mesh.ne):
             v1,v2,v3,v4,v5,v6 = cls.mesh.IEN[e]
             quad.getMSolid([v1,v2,v3,v4,v5,v6],cls.D)
-            k_elem = quad.k
-            m_elem = quad.mass
+            quad.getM([v1,v2,v3,v4,v5,v6])
+            k_elem = quad.k_solid
+            m_elem = quad.mass_solid
+            m_stress = quad.mass
+            gradx_stress = quad.gvx
+            grady_stress = quad.gvy
             for ilocal in range(0,6):
                   iglobal_x = 2*cls.mesh.IEN[e,ilocal]
-                  iglobal_y = 2*cls.mesh.IEN[e,ilocal]+1
+                  iglobal_y = 2*cls.mesh.IEN[e,ilocal]+1                 
+                  iglobal_s = cls.mesh.IEN[e,ilocal] #for stress calculation
                   for jlocal in range(0,6):
                       jglobal_x = 2*cls.mesh.IEN[e,jlocal]
                       jglobal_y = 2*cls.mesh.IEN[e,jlocal]+1
+                      jglobal_s = cls.mesh.IEN[e,jlocal]
             
                       cls.K[iglobal_x,jglobal_x] = cls.K[iglobal_x,jglobal_x] + k_elem[2*ilocal,2*jlocal]
                       cls.K[iglobal_x,jglobal_y] = cls.K[iglobal_x,jglobal_y] + k_elem[2*ilocal,2*jlocal+1]
@@ -61,6 +77,11 @@ class FEM:
                       cls.M[iglobal_x,jglobal_y] = cls.M[iglobal_x,jglobal_y] + m_elem[2*ilocal,2*jlocal+1]
                       cls.M[iglobal_y,jglobal_y] = cls.M[iglobal_y,jglobal_y] + m_elem[2*ilocal+1,2*jlocal+1]
                       cls.M[iglobal_y,jglobal_x] = cls.M[iglobal_y,jglobal_x] + m_elem[2*ilocal+1,2*jlocal]
+                      
+                      cls.Ms[iglobal_s,jglobal_s] = cls.Ms[iglobal_s,jglobal_s] + m_stress[ilocal,jlocal]
+                      cls.Gxs[iglobal_s,jglobal_s] = cls.Gxs[iglobal_s,jglobal_s] + gradx_stress[ilocal,jlocal]
+                      cls.Gys[iglobal_s,jglobal_s] = cls.Gys[iglobal_s,jglobal_s] + grady_stress[ilocal,jlocal]
+                      
         
         for e in range(0,len(cls.mesh.IENbound)):
             for bound in cls.BC:
@@ -129,7 +150,29 @@ class FEM:
                     cls.A[2*node+1,2*node+1] = 1.0
                     cls.b[2*node+1] = cls.BC[bound][1]
                                 
-            
+     
+    @classmethod   
+    def calc_stress(cls):
+        
+        duxdx = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gxs,cls.ux))
+        duxdy = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gys,cls.ux))
+        
+        duydx = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gxs,cls.uy))
+        duydy = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gys,cls.uy))
+        
+        cls.eps_x = duxdx
+        cls.eps_y = duydy
+        cls.eps_xy = duxdy + duydx
+        
+        eps = np.array([cls.eps_x,cls.eps_y,cls.eps_xy])
+        sigma = np.transpose(cls.D@eps)
+        
+        cls.sigma_x = sigma[:,0]
+        cls.sigma_y = sigma[:,1]
+        cls.tau_xy = sigma[:,2]
+        
+        cls.sigma_VM = np.power(np.power(cls.sigma_x,2) + np.power(cls.sigma_y,2) - np.multiply(cls.sigma_x, cls.sigma_y) + 3.0*np.power(cls.tau_xy,2),0.5)
+        
     @classmethod   
     def solve(cls,i):
         
@@ -148,6 +191,8 @@ class FEM:
         cls.mesh.Y = cls.Y_orig + cls.uy
         
         cls.u_prime = (cls.u - cls.u_minus)/cls.dt
+        
+        cls.calc_stress()
         
         if cls.mesh.FSI_flag:
             cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]

@@ -38,7 +38,7 @@ while i < end:
     
     u = FEM.solve(i)
 
-    export_data(mesh, output_dir, u, i)
+    export_data(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
     
     i+=1
     umax.append(np.max(np.abs(FEM.uy)))

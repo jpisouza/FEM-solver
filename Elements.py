@@ -1068,10 +1068,6 @@ class Quad:
    
  def getMSolid(_self,v,D):
 
-   jacobian = _self.X[v[2]]*( _self.Y[v[0]]-_self.Y[v[1]]) \
-            + _self.X[v[0]]*( _self.Y[v[1]]-_self.Y[v[2]]) \
-            + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
-
    localx = [0.0]*_self.NUMRULE
    localy = [0.0]*_self.NUMRULE
    for k in range(0,_self.NUMRULE):
@@ -1102,20 +1098,20 @@ class Quad:
      dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
  	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-   _self.mass = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
-   _self.k  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+   _self.mass_solid = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+   _self.k_solid  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
 
    for k in range(0,_self.NUMRULE): 
     B = np.array([[dphiJdx[k][0], 0, dphiJdx[k][1], 0, dphiJdx[k][2], 0, dphiJdx[k][3], 0, dphiJdx[k][4], 0, dphiJdx[k][5], 0],
             [0, dphiJdy[k][0], 0, dphiJdy[k][1], 0, dphiJdy[k][2], 0, dphiJdy[k][3], 0, dphiJdy[k][4], 0, dphiJdy[k][5]],
             [dphiJdy[k][0], dphiJdx[k][0], dphiJdy[k][1], dphiJdx[k][1], dphiJdy[k][2], dphiJdx[k][2], dphiJdy[k][3], dphiJdx[k][3], dphiJdy[k][4], dphiJdx[k][4], dphiJdy[k][5], dphiJdx[k][5]]]);
     
-    _self.k = _self.k + 0.5*np.transpose(B)@D@B*jacob[k]*_self.gqWeights[k]
+    _self.k_solid = _self.k_solid + 0.5*np.transpose(B)@D@B*jacob[k]*_self.gqWeights[k]
     
     N = np.array([[_self.phiJ[k][0], 0, _self.phiJ[k][1], 0, _self.phiJ[k][2], 0, _self.phiJ[k][3], 0, _self.phiJ[k][4], 0, _self.phiJ[k][5], 0],
            [0, _self.phiJ[k][0], 0, _self.phiJ[k][1], 0, _self.phiJ[k][2], 0, _self.phiJ[k][3], 0, _self.phiJ[k][4], 0, _self.phiJ[k][5]]])
     
-    _self.mass = _self.mass + 0.5*np.transpose(N)@N*jacob[k]*_self.gqWeights[k]
+    _self.mass_solid = _self.mass_solid + 0.5*np.transpose(N)@N*jacob[k]*_self.gqWeights[k]
 
     # compute area 
     _self.area += (1.0/2.0)*jacob[k]*_self.gqWeights[k]
