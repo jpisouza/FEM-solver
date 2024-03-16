@@ -46,6 +46,9 @@ class mesh:
             points_p = np.arange(0,self.npoints_p,1)
             points_p_real = np.unique(self.IEN[:,:3])
             
+            self.mesh_velocity = np.zeros((self.npoints,2), dtype = 'float')
+            self.mesh_displacement = np.zeros((self.npoints,2), dtype = 'float')
+            
             self.converter = dict(zip(points_p_real,points_p))
             
             self.IENboundTypeElem = list(self.msh.cell_data['line3']['gmsh:physical'])
@@ -160,109 +163,6 @@ class mesh:
             self.npoints = len(self.X)
 
         
-        # elif self.mesh_kind == 'quad':
-
-        #     self.X = self.msh.points[:,0]
-        #     self.Y = self.msh.points[:,1]
-
-        #     self.IEN = self.msh.cells['triangle']
-        #     self.IEN_orig = self.IEN.copy()
-        #     self.ne=len(self.IEN)
-
-        #     self.npoints_p = len(self.X)
-
-        #     self.IENbound = self.msh.cells['line']
-        #     self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
-        #     self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
-        #     self.boundNames = list(self.msh.field_data.keys())
-        #     self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
-        #     self.IENElem = []
-        #     self.porous_elem = []
-        #     if len(self.porous_list) > 0:
-        #         for elem in self.IENTypeElem:
-        #             self.IENElem.append(self.boundNames[self.dict_element[elem]])
-        #             if self.boundNames[self.dict_element[elem]] in porous_list:
-        #                 self.porous_elem.append(1)
-        #             else:
-        #                 self.porous_elem.append(0)
-            
-        #     self.boundary = []
-
-        #     #Modificar a IEN
-
-        #     self.IEN = np.zeros((self.ne,6), dtype='int')
-        #     self.IEN[:,:3] = self.IEN_orig
-            
-        #     num = self.npoints_p
-        #     for e1 in range(len(self.IEN_orig)):
-        #         for e2 in range(len(self.IEN_orig)):
-        #             p = np.where(np.isin(self.IEN_orig[e1],self.IEN_orig[e2]))[0]
-        #             p2 = np.where(np.isin(self.IEN_orig[e2],self.IEN_orig[e1]))[0]
-        #             flag_plus1 = False
-        #             if len(p) == 2:
-        #                 if (np.abs(p[0] - p[1])) > 1:
-        #                     if self.IEN[e1,5] == 0:
-        #                         self.IEN[e1,5] = num
-        #                         flag_plus1 = True
-        #                 else:
-        #                     if self.IEN[e1,np.min(p)+3] == 0:
-        #                         self.IEN[e1,np.min(p)+3] = num
-        #                         flag_plus1 = True
-        #                 if (np.abs(p2[0] - p2[1])) > 1:
-        #                     if self.IEN[e2,5] == 0:
-        #                         self.IEN[e2,5] = num
-        #                         flag_plus1 = True   
-        #                 else:
-        #                     if self.IEN[e2,np.min(p2)+3] == 0:
-        #                         self.IEN[e2,np.min(p2)+3] = num
-        #                         flag_plus1 = True
-        #                 if flag_plus1:
-        #                     num+=1
-                        
-
-
-        #     L = np.where(self.IEN[:,3:]==0)
-            
-        #     self.IEN[:,3:][L[0],L[1]] = np.arange(num,num+len(L[0]),1)
-            
-        #     X_ = np.zeros((np.max(self.IEN)+1), dtype='float')
-        #     Y_ = np.zeros((np.max(self.IEN)+1), dtype='float')
-
-
-        #     X_[self.IEN_orig] = self.X[self.IEN_orig]
-        #     Y_[self.IEN_orig] = self.Y[self.IEN_orig]
-        #     for i in range (3,6):
-        #         j=i-2
-        #         if i == 5:
-        #             j = 0
-        #         X_[self.IEN[:,i]]  = (self.X[self.IEN[:,j]] + self.X[self.IEN[:,i-3]])/2.0
-        #         Y_[self.IEN[:,i]]  = (self.Y[self.IEN[:,j]] + self.Y[self.IEN[:,i-3]])/2.0
-        #     self.X = X_
-        #     self.Y = Y_
-
-        #     # print(self.X[self.IEN])
-        #     # print(self.Y[self.IEN])
-        #     # print('\n')
-
-        #     # L=np.isin(self.IEN_orig,self.IENbound)
-        #     # index = np.where(L.sum(axis=1) == 2)[0]
-        #     self.IENbound_orig = self.IENbound.copy()
-        #     self.IENbound = np.zeros((self.IENbound_orig.shape[0],3), dtype='int')
-        #     self.IENbound[:,:2] = self.IENbound_orig
-
-        #     for i in range(len(self.IEN)):
-        #         for j in range(len(self.IENbound_orig)):
-        #             p = np.isin(self.IEN_orig[i],self.IENbound_orig[j])
-        #             if np.sum(p) == 2:
-        #                 p = np.where(p)[0]
-        #                 if (np.abs(p[0] - p[1])) > 1:
-        #                     self.IENbound[j,2] = self.IEN[i,5]
-        #                 else:
-        #                     self.IENbound[j,2] = self.IEN[i,np.min(p)+3]
-
-
-        #     self.npoints = np.max(self.IEN) + 1
-        
         Node.node_list = []
         Element.elem_list = []
         
@@ -313,6 +213,17 @@ class mesh:
         for r in range(len(self.boundary)):
             self.boundary_list = self.boundary_list + self.boundary[r]
         self.outflow_boundary = outflow_bound_list
+        
+        #calculate distances to moving boundaries-----------------------------------------
+        if len(self.FSI_list) > 0:
+            for node in self.node_list:
+                dist_min = 1e5
+                for i in self.FSI_list:
+                    dist = ((node.x - self.X[i])**2 + (node.y - self.Y[i])**2)**0.5
+                    if dist < dist_min:
+                        dist_min = dist
+                        ID = i
+                node.FSI_dist = [ID,dist_min]
         
 
     def calc_normal(self):

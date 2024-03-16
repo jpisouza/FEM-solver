@@ -52,6 +52,14 @@ class Case:
             Gr = float(par.attrib['Gr'])
         else:
             Gr = 1.0
+        if 'fluid_steps' in par.attrib:
+            fluid_steps = int(par.attrib['fluid_steps'])
+        else:
+            fluid_steps = 1
+        if 'mesh_factor' in par.attrib:
+            mesh_factor = float(par.attrib['mesh_factor'])
+        else:
+            mesh_factor = False
         
         SolidProp = {}
         parSolid = cls.root.find('SolidInterface')
@@ -80,7 +88,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb, SolidProp
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps
     
     @classmethod
     def set_BC(cls):

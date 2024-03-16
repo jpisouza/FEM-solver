@@ -925,8 +925,8 @@ class FEM:
         cls.fluid.FSIForces[:,1] = cls.FSIForces_y
         
     @classmethod
-    def solve_fields(cls,forces,SL_matrix=False,neighborElem=[[]],oface=[]):
-
+    def solve_fields(cls,forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[]):
+        cls.dt = dt
         if SL_matrix:
             start = timer()
             if cls.mesh.IEN.shape[1]==4:
@@ -943,7 +943,7 @@ class FEM:
                 for i in range(cls.mesh.npoints_p):
                     cls.mesh.node_list[i].T = cls.fluid.T[i]
             else:
-                sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy)
+                sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy, cls.mesh.mesh_displacement)
                 sl.compute(cls.dt)
                 cls.fluid.vxd = sl.conv*cls.fluid.vx
                 cls.fluid.vyd = sl.conv*cls.fluid.vy
@@ -1030,6 +1030,7 @@ class FEM:
         cls.calcFSIForces(cls.mesh.normal_vect)
         if len(cls.mesh.FSI) > 0:
             cls.solidMesh.update_forces(cls.fluid.FSIForces, cls.BC_solid)
+        cls.mesh.mesh_displacement = np.zeros((cls.mesh.npoints,2), dtype = 'float')
             
         return cls.fluid
     

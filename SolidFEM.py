@@ -174,7 +174,7 @@ class FEM:
         cls.sigma_VM = np.power(np.power(cls.sigma_x,2) + np.power(cls.sigma_y,2) - np.multiply(cls.sigma_x, cls.sigma_y) + 3.0*np.power(cls.tau_xy,2),0.5)
         
     @classmethod   
-    def solve(cls,i):
+    def solve(cls,i, mesh_factor):
         
         cls.build_quad_GQ()
         cls.build_blocks()
@@ -195,6 +195,9 @@ class FEM:
         cls.calc_stress()
         
         if cls.mesh.FSI_flag:
+            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,0] = cls.ux[cls.mesh.IEN]
+            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,1] = cls.uy[cls.mesh.IEN]
+            
             cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
             cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
             
@@ -202,6 +205,18 @@ class FEM:
             u_prime_y = np.array([cls.u_prime[2*n+1] for n in range(cls.mesh.npoints)])
             cls.mesh.fluid.vx[cls.mesh.IEN_orig] = u_prime_x[cls.mesh.IEN]
             cls.mesh.fluid.vy[cls.mesh.IEN_orig] = u_prime_y[cls.mesh.IEN]
+            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = u_prime_x[cls.mesh.IEN]
+            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,1] = u_prime_y[cls.mesh.IEN]
+            
+            for node in cls.mesh.fluidmesh.node_list:
+                if node.ID not in cls.mesh.IEN_orig and node.ID not in cls.mesh.fluidmesh.IENbound:
+                    factor = -mesh_factor*node.FSI_dist[1]
+                    cls.mesh.fluidmesh.mesh_velocity[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],0]*np.exp(factor)
+                    cls.mesh.fluidmesh.mesh_velocity[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],1]*np.exp(factor)
+                    cls.mesh.fluidmesh.mesh_displacement[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.ID,0]*cls.dt
+                    cls.mesh.fluidmesh.mesh_displacement[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.ID,1]*cls.dt
+                    cls.mesh.fluidmesh.X[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,0]
+                    cls.mesh.fluidmesh.Y[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,1]
         
         return cls.u
         

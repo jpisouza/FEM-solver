@@ -59,7 +59,7 @@ MESH = mesh(msh,mesh_kind,porous_list,solid_list, limit_name, smooth_value, poro
 Case.read(case,MESH)
 
 IC,forces = Case.set_IC(i)
-Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb, SolidProp = Case.set_parameters()
+Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps = Case.set_parameters()
 BC,FSI = Case.set_BC()
 
 outflow = Case.set_OutFlow()
@@ -133,12 +133,14 @@ while i < end:
         #     f2.write(str(particleCloud.particle_list[0].pos[0]) + ' ' + str(particleCloud.particle_list[0].pos[1]) + '\n')
         #     f2.close()
     else:
-        fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'),SL_matrix,neighborElem,oface)
+
+        for j in range(fluid_steps):
+            fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'), dt/fluid_steps, SL_matrix,neighborElem,oface)
         particleCloud = 0
     
     if len(FEM.mesh.FSI) > 0:
         if i>=1:
-            u = SolidFEM.solve(i)
+            u = SolidFEM.solve(i,mesh_factor)
         else:
             u = SolidFEM.u
         ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.sigma_VM,i)

@@ -152,7 +152,7 @@ class Linear:
   return _vd
 
 class Quad:
- def __init__(_self,_IEN,_X,_Y,_neighborElem,_oface,_velU,_velV):
+ def __init__(_self,_IEN,_X,_Y,_neighborElem,_oface,_velU,_velV, mesh_disp):
 
   _self.X = _X
   _self.Y = _Y
@@ -164,6 +164,7 @@ class Quad:
   _self.oface = _oface
   _self.velU = _velU
   _self.velV = _velV
+  _self.mesh_disp = mesh_disp
 
   _self.l1 = 0.0
   _self.l2 = 0.0
@@ -177,8 +178,8 @@ class Quad:
  def getDepartElem(_self,_dt):
   for i in range(0,_self.numNodes):
    mele = _self.neighborElem[i][0]
-   xp = _self.X[i] - _self.velU[i]*_dt
-   yp = _self.Y[i] - _self.velV[i]*_dt
+   xp = _self.X[i] - (_self.velU[i]*_dt - _self.mesh_disp[i,0])
+   yp = _self.Y[i] - (_self.velV[i]*_dt - _self.mesh_disp[i,1])
    
    _self.jumpToElem(mele,i,xp,yp)
 
