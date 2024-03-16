@@ -112,7 +112,7 @@ class FEM:
     @classmethod   
     def build_blocks(cls):
         
-        cls.A = cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2)
+        cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2)
         # cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
         cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2),2.0*cls.u - cls.u_minus)
         
@@ -182,7 +182,7 @@ class FEM:
                 
         cls.u_minus = cls.u.copy()
         
-        cls.u = sp.sparse.linalg.spsolve(cls.h*cls.A.tocsr(),cls.b)
+        cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
         
         cls.ux = np.array([cls.u[2*n] for n in range(cls.mesh.npoints)])
         cls.uy = np.array([cls.u[2*n+1] for n in range(cls.mesh.npoints)])
