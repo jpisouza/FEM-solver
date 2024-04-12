@@ -140,7 +140,7 @@ while i < end:
     
     if len(FEM.mesh.FSI) > 0:
         if i>=1:
-            u = SolidFEM.solve(i,mesh_factor)
+            u, u_w = SolidFEM.solve(i,mesh_factor)
         else:
             u = SolidFEM.u
         ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.sigma_VM,i)

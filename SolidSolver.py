@@ -9,16 +9,19 @@ import meshio
 from SolidMesh import SolidMesh
 from SolidFEM import FEM
 from ExportSolid import export_data
+from ExportSolid import export_nat
+from ExportSolid import export_static
 import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**5
+E = 10**6
 nu = 0.3
 h = 1.0
-rho = 10.0
+rho = 100.0
 dt = 0.1
-end = 200
+end = 5
+dynamic = False
 
 case = './Cases/Solid/'
 output_dir = case + 'Results'
@@ -34,14 +37,32 @@ FEM.set_parameters(mesh, BC, h, E, dt, rho, nu)
 umax = [0]
 t = [0]
 i = 0
-while i < end:
-    
-    u = FEM.solve(i)
 
-    export_data(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
+n_freq = 10
+
+if dynamic:
+    while i < end:
+        
+        u, u_w = FEM.solve(i,0,True)
     
-    i+=1
-    umax.append(np.max(np.abs(FEM.uy)))
-    t.append(i*dt)
- 
-plt.plot(np.array(t),np.array(umax))
+        export_data(mesh, output_dir, u, u_w, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
+        
+        i+=1
+        umax.append(np.max(np.abs(FEM.uy)))
+        t.append(i*dt)
+     
+    plt.plot(np.array(t),np.array(umax))
+
+else:
+    u, u_w = FEM.solve_static()
+    export_static(mesh, output_dir, u, u_w, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM)
+
+print('--------------------'+str(n_freq)+' First Natural Frequencies [Hz]--------------------------------')
+for i in range(n_freq):
+    export_nat(mesh, output_dir, u_w, i)
+    print(np.sqrt(FEM.omega_sort[i])/(2*np.pi))
+print('--------------------------------------------------------------------------------------------------')
+    
+    
+    
+    

@@ -923,7 +923,8 @@ class FEM:
         
         cls.fluid.FSIForces[:,0] = cls.FSIForces_x 
         cls.fluid.FSIForces[:,1] = cls.FSIForces_y
-        
+    
+    
     @classmethod
     def solve_fields(cls,forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[]):
         cls.dt = dt

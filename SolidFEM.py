@@ -36,6 +36,12 @@ class FEM:
                 
         cls.X_orig = cls.mesh.X.copy()
         cls.Y_orig = cls.mesh.Y.copy()
+        
+        cls.mesh.X_orig = cls.mesh.X.copy()
+        cls.mesh.Y_orig = cls.mesh.Y.copy()
+        
+        cls.calc_dof()
+        cls.u_w = np.zeros((2*cls.mesh.npoints), dtype = 'float')
 
     @classmethod   
     def build_quad_GQ(cls):
@@ -113,8 +119,13 @@ class FEM:
     def build_blocks(cls):
         
         cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2)
-        # cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
         cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2),2.0*cls.u - cls.u_minus)
+        
+    @classmethod   
+    def build_blocks_static(cls):
+        
+        cls.A = cls.h*cls.K.tocsr()
+        cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
         
     @classmethod   
     def set_BC(cls):
@@ -172,13 +183,55 @@ class FEM:
         cls.tau_xy = sigma[:,2]
         
         cls.sigma_VM = np.power(np.power(cls.sigma_x,2) + np.power(cls.sigma_y,2) - np.multiply(cls.sigma_x, cls.sigma_y) + 3.0*np.power(cls.tau_xy,2),0.5)
+      
+    @classmethod 
+    def calc_freq(cls):
+        for bound in cls.BC:
+            for node in cls.mesh.bound_dict[bound]:
+                if cls.BC[bound][0] != 'None':
+                    cls.dof.remove(2*node)
+                if cls.BC[bound][1] != 'None':
+                    cls.dof.remove(2*node + 1)
+                    
+        cls.M_freq = lil_matrix( (len(cls.dof),len(cls.dof)),dtype='float' )
+        cls.K_freq = lil_matrix( (len(cls.dof),len(cls.dof)),dtype='float' )
+        for i in range(len(cls.dof)):
+            for j in range(len(cls.dof)):
+                cls.M_freq[i,j] = cls.M[cls.dof[i],cls.dof[j]]
+                cls.K_freq[i,j] = cls.K[cls.dof[i],cls.dof[j]]
+                
+        # omega, modes = scipy.sparse.linalg.eigs(scipy.sparse.linalg.inv(cls.rho*cls.h*cls.M_freq.tocsc())*cls.h*cls.K_freq.tocsc(),6,None,None,'SM')
+        omega, modes = np.linalg.eig((scipy.sparse.linalg.inv(cls.rho*cls.h*cls.M_freq.tocsc())*cls.h*cls.K_freq.tocsc()).toarray())        
+        #omega, modes = scipy.sparse.linalg.eigs(cls.h*cls.K_freq.tocsc(),6,cls.rho*cls.h*cls.M_freq.tocsc(),None,'SM')
+        
+        indexes_omega = np.argsort(omega)
+        cls.omega_sort = omega[indexes_omega]
+        
+        # print('---------------------Natural Frequencies--------------------------------')
+        # print(cls.omega_sort)
+        # print('------------------------------------------------------------------------')
+        
+        cls.u_w = np.zeros((2*cls.mesh.npoints,len(indexes_omega)), dtype = 'float')
+        cls.u1 = modes[:,indexes_omega]
+        cls.u_w[cls.dof,:] = 10*cls.u1
+
+        
+    @classmethod 
+    def calc_dof(cls):
+        cls.dof = []
+        for i in range(cls.mesh.npoints):
+            cls.dof.append(2*i)
+            cls.dof.append(2*i + 1)
         
     @classmethod   
-    def solve(cls,i, mesh_factor):
+    def solve(cls,i, mesh_factor=0, nat_freq=False):
         
         cls.build_quad_GQ()
         cls.build_blocks()
         cls.set_BC()
+        
+        if i==0 and nat_freq:
+            cls.calc_freq()
                 
         cls.u_minus = cls.u.copy()
         
@@ -218,9 +271,27 @@ class FEM:
                     cls.mesh.fluidmesh.X[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,0]
                     cls.mesh.fluidmesh.Y[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,1]
         
-        return cls.u
+        return cls.u, cls.u_w
+    
+    @classmethod   
+    def solve_static(cls):
+        cls.build_quad_GQ()
+        cls.build_blocks_static()
+        cls.set_BC()
         
+        cls.calc_freq()
         
+        cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+        
+        cls.ux = np.array([cls.u[2*n] for n in range(cls.mesh.npoints)])
+        cls.uy = np.array([cls.u[2*n+1] for n in range(cls.mesh.npoints)])
+        
+        cls.mesh.X = cls.X_orig + cls.ux
+        cls.mesh.Y = cls.Y_orig + cls.uy
+        
+        cls.calc_stress()
+        
+        return cls.u, cls.u_w
         
         
         

@@ -1,4 +1,6 @@
 import numpy as np
+# from numba import int32, float32    
+# from numba.experimental import jitclass
 
 class Linear:
  def __init__(_self,_X,_Y):
@@ -863,7 +865,10 @@ class Mini:
   _self.gvy[3,0:3]   = [(9/40)*c1,(9/40)*c2,(9/40)*c3]
   _self.gvy[3,3]     = 0.0
   
-
+# spec = [
+#     ('X', float32[:]),               # a simple scalar field
+#     ('Y', float32[:]),          # an array field
+# ]
 class Quad:
  def __init__(_self,_X,_Y):
 
@@ -986,7 +991,7 @@ class Quad:
                          [0, 1, -1],
                          [0, 1, -1] ]
 
- 
+
  def getM(_self,v):
 
   jacobian = _self.X[v[2]]*( _self.Y[v[0]]-_self.Y[v[1]]) \
