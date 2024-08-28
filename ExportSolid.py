@@ -1,7 +1,7 @@
 import numpy as np
 import meshio
 
-def export_data(mesh, output_dir, u, u_w, sigma_x, sigma_y, tau_xy, sigma_VM, i):
+def export_data(mesh, output_dir, u, sigma_x, sigma_y, tau_xy, sigma_VM, i):
     
     print ('--------Time step = ' + str(i) + ' --> saving solid solution (VTK)--------\n')
     if mesh.mesh_kind == 'quad':
@@ -29,7 +29,7 @@ def export_data(mesh, output_dir, u, u_w, sigma_x, sigma_y, tau_xy, sigma_VM, i)
         point_data=point_data
         )
 
-def export_static(mesh, output_dir, u, u_w, sigma_x, sigma_y, tau_xy, sigma_VM):
+def export_static(mesh, output_dir, u, sigma_x, sigma_y, tau_xy, sigma_VM):
     
     print ('-------- saving solid solution (VTK)--------\n')
     if mesh.mesh_kind == 'quad':

@@ -15,15 +15,15 @@ import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**6
+E = 10**5
 nu = 0.3
 h = 1.0
 rho = 100.0
-dt = 0.1
-end = 5
+dt = 0.0025
+end = 1000
 dynamic = False
 
-case = './Cases/Solid/'
+case = './Cases/Solid_converg/'
 output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
@@ -38,30 +38,36 @@ umax = [0]
 t = [0]
 i = 0
 
+nat_freq = False
 n_freq = 10
 
 if dynamic:
     while i < end:
         
-        u, u_w = FEM.solve(i,0,True)
+        u, u_w = FEM.solve(i,0,nat_freq)
     
         export_data(mesh, output_dir, u, u_w, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
         
         i+=1
         umax.append(np.max(np.abs(FEM.uy)))
         t.append(i*dt)
-     
+    
+    plt.rc('font', family='serif', size=14)
     plt.plot(np.array(t),np.array(umax))
+    plt.xlabel(r'Time [s]')
+    plt.ylabel(r'Maximum displacement [m]')
+    plt.show()
 
 else:
-    u, u_w = FEM.solve_static()
-    export_static(mesh, output_dir, u, u_w, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM)
+    u, u_w = FEM.solve_static(nat_freq)
+    export_static(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM)
 
-print('--------------------'+str(n_freq)+' First Natural Frequencies [Hz]--------------------------------')
-for i in range(n_freq):
-    export_nat(mesh, output_dir, u_w, i)
-    print(np.sqrt(FEM.omega_sort[i])/(2*np.pi))
-print('--------------------------------------------------------------------------------------------------')
+if nat_freq:
+    print('--------------------'+str(n_freq)+' First Natural Frequencies [Hz]--------------------------------')
+    for i in range(n_freq):
+        export_nat(mesh, output_dir, u_w, i)
+        print(np.sqrt(FEM.omega_sort[i])/(2*np.pi))
+    print('--------------------------------------------------------------------------------------------------')
     
     
     

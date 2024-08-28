@@ -274,12 +274,13 @@ class FEM:
         return cls.u, cls.u_w
     
     @classmethod   
-    def solve_static(cls):
+    def solve_static(cls, nat_freq):
         cls.build_quad_GQ()
         cls.build_blocks_static()
         cls.set_BC()
         
-        cls.calc_freq()
+        if nat_freq:
+            cls.calc_freq()
         
         cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
         
