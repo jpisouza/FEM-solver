@@ -15,7 +15,7 @@ import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**5
+E = 10**7
 nu = 0.3
 h = 1.0
 rho = 100.0
@@ -23,12 +23,12 @@ dt = 0.0025
 end = 1000
 dynamic = False
 
-case = './Cases/Solid_converg/'
+case = './Cases/SolidHE_traction/'
 output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
-BC = {'upper_bound': ['None', 'None', 0, -1.0], 'left_bound': [0, 0, 'None', 'None']}
+BC = {'right_bound': ['None', 'None', 1000000, 0], 'left_bound': [0, 0, 'None', 'None']}
 
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
@@ -40,6 +40,7 @@ i = 0
 
 nat_freq = False
 n_freq = 10
+HE = True
 
 if dynamic:
     while i < end:
@@ -59,10 +60,14 @@ if dynamic:
     plt.show()
 
 else:
-    u, u_w = FEM.solve_static(nat_freq)
+    
+    if HE:
+        u = FEM.solve_staticHE() 
+    else:
+        u, u_w = FEM.solve_static(nat_freq)
     export_static(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM)
 
-if nat_freq:
+if nat_freq and not HE:
     print('--------------------'+str(n_freq)+' First Natural Frequencies [Hz]--------------------------------')
     for i in range(n_freq):
         export_nat(mesh, output_dir, u_w, i)

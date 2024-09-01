@@ -1120,7 +1120,112 @@ class Quad:
 
     # compute area 
     _self.area += (1.0/2.0)*jacob[k]*_self.gqWeights[k]
-   
+ 
+ def getMSolidHE(_self,v,D,ux,uy,S):
+
+    localx = [0.0]*_self.NUMRULE
+    localy = [0.0]*_self.NUMRULE
+    for k in range(0,_self.NUMRULE):
+     for i in range(0,_self.NUMGLEU):
+      localx[k] += _self.X[v[i]] * _self.phiJ[k][i]
+      localy[k] += _self.Y[v[i]] * _self.phiJ[k][i]
+
+    dxdl1 = [0.0]*_self.NUMRULE
+    dxdl2 = [0.0]*_self.NUMRULE
+    dydl1 = [0.0]*_self.NUMRULE
+    dydl2 = [0.0]*_self.NUMRULE
+    jacob = [0.0]*_self.NUMRULE # area for each Gauss point
+    sigma_x = [0.0]*_self.NUMRULE
+    sigma_y = [0.0]*_self.NUMRULE
+    sigma_xy = [0.0]*_self.NUMRULE
+    duxdx = [0.0]*_self.NUMRULE
+    duxdy = [0.0]*_self.NUMRULE
+    duydx = [0.0]*_self.NUMRULE
+    duydy = [0.0]*_self.NUMRULE
+    
+    for k in range(0,_self.NUMRULE): 
+     for i in range(0,_self.NUMGLEU): 
+      dxdl1[k] += _self.X[v[i]]*_self.dphiJdl1[k][i]
+      dxdl2[k] += _self.X[v[i]]*_self.dphiJdl2[k][i]
+      dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
+      dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
+     # compute det(jacobian)
+     jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
+
+    dphiJdx = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+    dphiJdy = [[0.0]*_self.NUMGLEU for i in range(_self.NUMRULE)]
+    for k in range(0,_self.NUMRULE): 
+     for i in range(0,_self.NUMGLEU):
+      dphiJdx[k][i] = (  _self.dphiJdl1[k][i]*dydl2[k]-
+  	                   _self.dphiJdl2[k][i]*dydl1[k] )/jacob[k];
+      dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
+  	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
+      
+      # sigma_x[k] = sigma_x[k] + _self.phiJ[k][i]*S[v[i],0]
+      # sigma_y[k] = sigma_x[k] + _self.phiJ[k][i]*S[v[i],1]
+      # sigma_xy[k] = sigma_x[k] + _self.phiJ[k][i]*S[v[i],2]
+      
+      duxdx[k] = duxdx[k] + dphiJdx[k][i]*ux[v[i]]
+      duxdy[k] = duxdy[k] + dphiJdy[k][i]*ux[v[i]]
+      duydx[k] = duydx[k] + dphiJdx[k][i]*uy[v[i]]
+      duydy[k] = duydy[k] + dphiJdy[k][i]*uy[v[i]]
+     
+     E_x = duxdx[k] +(1.0/2.0)*(duxdx[k]**2 + duydx[k]**2)
+     E_y = duydy[k] + (1.0/2.0)*(duxdy[k]**2 + duydy[k]**2)
+     E_xy = duxdy[k] + duydx[k] + duxdy[k]*duxdx[k] + duydx[k]*duydy[k]
+     
+     sigma = D@np.array([E_x,E_y,E_xy])
+     sigma_x[k] = sigma[0]
+     sigma_y[k] = sigma[1]
+     sigma_xy[k] = sigma[2]
+
+    _self.mass_solid = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+    _self.mass_stress = np.zeros((2*_self.NUMGLEU,3*_self.NUMGLEU), dtype=np.float)
+    _self.res_stress = np.zeros((2*_self.NUMGLEU), dtype=np.float)
+    _self.kN  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+    _self.kG  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+    _self.k_solid  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+
+    for k in range(0,_self.NUMRULE): 
+     F11 = 1.0 + np.array([dphiJdx[k][0], dphiJdx[k][1], dphiJdx[k][2], dphiJdx[k][3], dphiJdx[k][4], dphiJdx[k][5]])@ux[v]
+     F12 = np.array([dphiJdy[k][0], dphiJdy[k][1], dphiJdy[k][2], dphiJdy[k][3], dphiJdy[k][4], dphiJdy[k][5]])@ux[v]
+     F21 = np.array([dphiJdx[k][0], dphiJdx[k][1], dphiJdx[k][2], dphiJdx[k][3], dphiJdx[k][4], dphiJdx[k][5]])@uy[v]
+     F22 = 1.0 + np.array([dphiJdy[k][0], dphiJdy[k][1], dphiJdy[k][2], dphiJdy[k][3], dphiJdy[k][4], dphiJdy[k][5]])@uy[v]
+     
+     BN = np.array([[F11*dphiJdx[k][0], F21*dphiJdx[k][0], F11*dphiJdx[k][1], F21*dphiJdx[k][1], F11*dphiJdx[k][2], F21*dphiJdx[k][2], F11*dphiJdx[k][3], F21*dphiJdx[k][3], F11*dphiJdx[k][4], F21*dphiJdx[k][4], F11*dphiJdx[k][5], F21*dphiJdx[k][5]],
+             [F12*dphiJdy[k][0], F22*dphiJdy[k][0], F12*dphiJdy[k][1], F22*dphiJdy[k][1], F12*dphiJdy[k][2], F22*dphiJdy[k][2], F12*dphiJdy[k][3], F22*dphiJdy[k][3], F12*dphiJdy[k][4], F22*dphiJdy[k][4], F12*dphiJdy[k][5], F22*dphiJdy[k][5]],
+             [F11*dphiJdy[k][0] + F12*dphiJdx[k][0], F21*dphiJdy[k][0] + F22*dphiJdx[k][0], F11*dphiJdy[k][1] + F12*dphiJdx[k][1], F21*dphiJdy[k][1] + F22*dphiJdx[k][1], F11*dphiJdy[k][2] + F12*dphiJdx[k][2], F21*dphiJdy[k][2] + F22*dphiJdx[k][2], F11*dphiJdy[k][3] + F12*dphiJdx[k][3], F21*dphiJdy[k][3] + F22*dphiJdx[k][3], F11*dphiJdy[k][4] + F12*dphiJdx[k][4], F21*dphiJdy[k][4] + F22*dphiJdx[k][4], F11*dphiJdy[k][5] + F12*dphiJdx[k][5], F21*dphiJdy[k][5] + F22*dphiJdx[k][5]]]);
+     
+     
+     _self.kN = _self.kN + 0.5*np.transpose(BN)@D@BN*jacob[k]*_self.gqWeights[k]
+     
+     SIGMA = np.array([[sigma_x[k], sigma_xy[k], 0, 0], [sigma_xy[k], sigma_y[k], 0, 0], [0 , 0 , sigma_x[k], sigma_xy[k]], [0 , 0 , sigma_xy[k], sigma_y[k]]])
+     
+     BG = np.array([[dphiJdx[k][0], 0,  dphiJdx[k][1], 0, dphiJdx[k][2], 0, dphiJdx[k][3], 0, dphiJdx[k][4], 0, dphiJdx[k][5], 0],
+                    [dphiJdy[k][0], 0,  dphiJdy[k][1], 0, dphiJdy[k][2], 0, dphiJdy[k][3], 0, dphiJdy[k][4], 0, dphiJdy[k][5], 0],
+                    [0, dphiJdx[k][0], 0,  dphiJdx[k][1], 0, dphiJdx[k][2], 0, dphiJdx[k][3], 0, dphiJdx[k][4], 0, dphiJdx[k][5]],
+                    [0, dphiJdy[k][0], 0,  dphiJdy[k][1], 0, dphiJdy[k][2], 0, dphiJdy[k][3], 0, dphiJdy[k][4], 0, dphiJdy[k][5]]])
+     
+     
+     _self.kG = _self.kG + 0.5*np.transpose(BG)@SIGMA@BG*jacob[k]*_self.gqWeights[k]
+     
+     _self.k_solid = _self.kN + _self.kG
+     
+     N = np.array([[_self.phiJ[k][0], 0, _self.phiJ[k][1], 0, _self.phiJ[k][2], 0, _self.phiJ[k][3], 0, _self.phiJ[k][4], 0, _self.phiJ[k][5], 0],
+            [0, _self.phiJ[k][0], 0, _self.phiJ[k][1], 0, _self.phiJ[k][2], 0, _self.phiJ[k][3], 0, _self.phiJ[k][4], 0, _self.phiJ[k][5]]])
+     
+     _self.mass_solid = _self.mass_solid + 0.5*np.transpose(N)@N*jacob[k]*_self.gqWeights[k]
+     
+     N_S = np.array([[_self.phiJ[k][0], 0, 0, _self.phiJ[k][1], 0, 0, _self.phiJ[k][2], 0, 0, _self.phiJ[k][3], 0, 0, _self.phiJ[k][4], 0, 0, _self.phiJ[k][5], 0, 0],
+                     [0, _self.phiJ[k][0], 0, 0, _self.phiJ[k][1], 0, 0, _self.phiJ[k][2], 0, 0, _self.phiJ[k][3], 0, 0, _self.phiJ[k][4], 0, 0, _self.phiJ[k][5], 0],
+                     [0, 0, _self.phiJ[k][0], 0, 0, _self.phiJ[k][1], 0, 0, _self.phiJ[k][2], 0, 0, _self.phiJ[k][3], 0, 0, _self.phiJ[k][4], 0, 0, _self.phiJ[k][5]]])
+     
+     stress = np.array([sigma_x[k],sigma_y[k],sigma_xy[k]])
+     _self.mass_stress = _self.mass_stress + 0.5*np.transpose(BN)@N_S*jacob[k]*_self.gqWeights[k]
+     _self.res_stress = _self.res_stress + 0.5*np.transpose(BN)@stress*jacob[k]*_self.gqWeights[k]
+     # compute area 
+     _self.area += (1.0/2.0)*jacob[k]*_self.gqWeights[k]
+     
  def getMass_porous(_self,v,porous_nodes):
 
   localx = [0.0]*_self.NUMRULE
