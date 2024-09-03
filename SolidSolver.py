@@ -28,7 +28,8 @@ output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
-BC = {'right_bound': ['None', 'None', 1000000, 0], 'left_bound': [0, 0, 'None', 'None']}
+
+BC = {'upper_bound': ['None', 'None', 0, -100], 'left_bound': [0, 0, 'None', 'None']}
 
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
@@ -66,14 +67,13 @@ else:
     else:
         u, u_w = FEM.solve_static(nat_freq)
     export_static(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM)
-
+    
 if nat_freq and not HE:
     print('--------------------'+str(n_freq)+' First Natural Frequencies [Hz]--------------------------------')
     for i in range(n_freq):
         export_nat(mesh, output_dir, u_w, i)
         print(np.sqrt(FEM.omega_sort[i])/(2*np.pi))
     print('--------------------------------------------------------------------------------------------------')
-    
-    
-    
-    
+
+ 
+

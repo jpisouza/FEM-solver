@@ -39,7 +39,7 @@ class FEM:
         cls.tau_xy = np.zeros((cls.mesh.npoints), dtype='float')
         cls.PK_stress_xy = np.zeros((cls.mesh.npoints), dtype='float')
         cls.sigma_VM = np.zeros((cls.mesh.npoints), dtype='float')
-        
+                
         cls.u_minus = cls.u - cls.u_prime*cls.dt
                 
         cls.X_orig = cls.mesh.X.copy()
@@ -313,6 +313,7 @@ class FEM:
         
         duydx = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gxs,cls.uy))
         duydy = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gys,cls.uy))
+        cls.duxdx = duxdx
         
         cls.E_x = duxdx +(1.0/2.0)*(duxdx**2 + duydx**2)
         cls.E_y = duydy + (1.0/2.0)*(duxdy**2 + duydy**2)
@@ -358,7 +359,7 @@ class FEM:
         
         duydx = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gxs,cls.uy))
         duydy = sp.sparse.linalg.spsolve(cls.Ms,sp.sparse.csr_matrix.dot(cls.Gys,cls.uy))
-        
+               
         cls.eps_x = duxdx
         cls.eps_y = duydy
         cls.eps_xy = duxdy + duydx
@@ -477,8 +478,8 @@ class FEM:
         cls.ux = np.array([cls.u[2*n] for n in range(cls.mesh.npoints)])
         cls.uy = np.array([cls.u[2*n+1] for n in range(cls.mesh.npoints)])
         
-        # cls.mesh.X = cls.X_orig + cls.ux
-        # cls.mesh.Y = cls.Y_orig + cls.uy
+        cls.mesh.X = cls.X_orig + cls.ux
+        cls.mesh.Y = cls.Y_orig + cls.uy
         
         cls.calc_stress()
         
@@ -487,48 +488,38 @@ class FEM:
     @classmethod   
     def solve_staticHE(cls):
         
-        tol = 0.003
+        tol = 0.001
         error = 1.0
-        cls.build_quad_GQHE()
-        cls.build_blocks_static()
-        cls.calc_bound_force()
-        
-        # Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.M_stress.tocsr(), cls.PK_stress_vect)
-        Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.h*cls.Res_stress
-        cls.set_BCHE(Res)
-        du = np.ones((2*cls.mesh.npoints), dtype='float')
+
+        du = np.zeros((2*cls.mesh.npoints), dtype='float')
         
         i = 1
         while error > tol and i<=30:
-            
-            du_ant = du
-            du = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+  
             cls.u = cls.u + du
             
             cls.ux = np.array([cls.u[2*n] for n in range(cls.mesh.npoints)])
             cls.uy = np.array([cls.u[2*n+1] for n in range(cls.mesh.npoints)])
-            
-            cls.calc_stressHE()
-            
+                        
             cls.build_quad_GQHE()
             cls.build_blocks_static()
             cls.calc_bound_force()
             
-            Res_ant = Res
-            # Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.M_stress.tocsr(), cls.PK_stress_vect)
             Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.h*cls.Res_stress          
             cls.set_BCHE(Res)
             
+            du = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
             
-            error = np.sqrt(sum((du - du_ant)**2))/np.sqrt(sum((du_ant)**2))
-            error = np.sqrt(sum((Res)**2))/np.sqrt(sum((Res_ant)**2))
-
+            cls.calc_stressHE()
             
-            print ('Iteration ' + str(i) + '-----Error = ' + str(error))
+            error = np.sqrt(sum((Res)**2))
+            Res_mod = np.sqrt(sum((Res)**2))
+            
+            print ('Iteration ' + str(i) + '-----Error = ' + str(error) + '---------Res = ' + str(Res_mod))
             i+=1
             
-        # cls.mesh.X = cls.X_orig + cls.ux
-        # cls.mesh.Y = cls.Y_orig + cls.uy
+        cls.mesh.X = cls.X_orig + cls.ux
+        cls.mesh.Y = cls.Y_orig + cls.uy
             
             
         
