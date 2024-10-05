@@ -15,21 +15,21 @@ import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**7
+E = 10**5
 nu = 0.3
 h = 1.0
 rho = 100.0
-dt = 0.0025
-end = 1000
-dynamic = False
+dt = 0.1
+end = 4000
+dynamic = True
 
-case = './Cases/SolidHE_traction/'
+case = './Cases/Solid_Newmark/'
 output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
 
-BC = {'upper_bound': ['None', 'None', 0, -100], 'left_bound': [0, 0, 'None', 'None']}
+BC = {'upper_bound': ['None', 'None', 0, -1], 'left_bound': [0, 0, 'None', 'None']}
 
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
@@ -41,14 +41,14 @@ i = 0
 
 nat_freq = False
 n_freq = 10
-HE = True
+HE = False
 
 if dynamic:
     while i < end:
         
         u, u_w = FEM.solve(i,0,nat_freq)
     
-        export_data(mesh, output_dir, u, u_w, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
+        export_data(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
         
         i+=1
         umax.append(np.max(np.abs(FEM.uy)))

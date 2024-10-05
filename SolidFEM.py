@@ -18,6 +18,8 @@ class FEM:
         cls.BC = BC
         cls.h = h
         cls.dt = dt
+        cls.gamma = 0.7
+        cls.beta = ((2.0*cls.gamma + 1.0)**2)/16.0
         
         cls.D = (E/(1.0-nu**2))*np.array([[1.0,   nu,  0.0],
                                      [nu,  1.0,   0.0],
@@ -28,6 +30,7 @@ class FEM:
         cls.ux = np.zeros((cls.mesh.npoints), dtype='float')
         cls.uy = np.zeros((cls.mesh.npoints), dtype='float')
         cls.u_prime = np.zeros((2*cls.mesh.npoints), dtype='float')
+        cls.u_doubleprime = np.zeros((2*cls.mesh.npoints), dtype='float')
         
         cls.sigma = np.zeros((cls.mesh.npoints,3), dtype='float')
         cls.PK_stress = np.zeros((cls.mesh.npoints,3), dtype='float')
@@ -39,9 +42,7 @@ class FEM:
         cls.tau_xy = np.zeros((cls.mesh.npoints), dtype='float')
         cls.PK_stress_xy = np.zeros((cls.mesh.npoints), dtype='float')
         cls.sigma_VM = np.zeros((cls.mesh.npoints), dtype='float')
-                
-        cls.u_minus = cls.u - cls.u_prime*cls.dt
-                
+                                
         cls.X_orig = cls.mesh.X.copy()
         cls.Y_orig = cls.mesh.Y.copy()
         
@@ -50,6 +51,8 @@ class FEM:
         
         cls.calc_dof()
         cls.u_w = np.zeros((2*cls.mesh.npoints), dtype = 'float')
+        
+        cls.int_i = 0 #internal count of iteration
 
     @classmethod   
     def build_quad_GQHE(cls):
@@ -227,8 +230,11 @@ class FEM:
     @classmethod   
     def build_blocks(cls):
         
-        cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2)
-        cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2),2.0*cls.u - cls.u_minus)
+        cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.beta*cls.dt**2)
+        cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/(cls.beta*cls.dt**2) + cls.u_prime/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime)
+        
+        # cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2)
+        # cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2),2.0*cls.u - cls.u_minus)
         
     @classmethod   
     def build_blocks_static(cls):
@@ -411,11 +417,21 @@ class FEM:
         for i in range(cls.mesh.npoints):
             cls.dof.append(2*i)
             cls.dof.append(2*i + 1)
+    
+    @classmethod 
+    def calc_init_accel(cls):
+        cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.K.tocsr(),cls.u))
         
     @classmethod   
     def solve(cls,i, mesh_factor=0, nat_freq=False):
         
-        cls.build_quad_GQ()
+        if cls.int_i == 0:          
+            cls.build_quad_GQ()
+            cls.calc_bound_force()
+            cls.calc_init_accel()
+            
+        cls.int_i += 1
+        
         cls.build_blocks()
         cls.calc_bound_force()
         cls.set_BC()
@@ -424,16 +440,18 @@ class FEM:
             cls.calc_freq()
                 
         cls.u_minus = cls.u.copy()
-        
         cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+        
+        cls.u_doubleprime_minus = cls.u_doubleprime.copy()
+        cls.u_doubleprime = (cls.u - cls.u_minus - cls.dt*cls.u_prime - (cls.dt**2)*(0.5-cls.beta)*cls.u_doubleprime)/(cls.beta*cls.dt**2)
+        
+        cls.u_prime = cls.u_prime + cls.dt*((1.0-cls.gamma)*cls.u_doubleprime_minus + cls.gamma*cls.u_doubleprime)
         
         cls.ux = np.array([cls.u[2*n] for n in range(cls.mesh.npoints)])
         cls.uy = np.array([cls.u[2*n+1] for n in range(cls.mesh.npoints)])
         
         cls.mesh.X = cls.X_orig + cls.ux
         cls.mesh.Y = cls.Y_orig + cls.uy
-        
-        cls.u_prime = (cls.u - cls.u_minus)/cls.dt
         
         cls.calc_stress()
         
