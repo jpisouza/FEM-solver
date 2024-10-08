@@ -18,18 +18,18 @@ import os
 E = 10**5
 nu = 0.3
 h = 1.0
-rho = 100.0
+rho = 300.0
 dt = 0.1
-end = 4000
+end = 1000
 dynamic = True
 
-case = './Cases/Solid_Newmark/'
+case = './Cases/Solid_NewmarkHE/'
 output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
 
-BC = {'upper_bound': ['None', 'None', 0, -1], 'left_bound': [0, 0, 'None', 'None']}
+BC = {'upper_bound': ['None', 'None', 0, -20], 'left_bound': [0, 0, 'None', 'None']}
 
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
@@ -41,12 +41,15 @@ i = 0
 
 nat_freq = False
 n_freq = 10
-HE = False
+HE = True
 
 if dynamic:
     while i < end:
         
-        u, u_w = FEM.solve(i,0,nat_freq)
+        if HE:
+            u = FEM.solve_HE(i,0,nat_freq)
+        else:
+            u, u_w = FEM.solve(i,0,nat_freq)    
     
         export_data(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
         

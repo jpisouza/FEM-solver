@@ -66,7 +66,6 @@ class FEM:
         cls.Gys = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         
         #vector for stress calculation
-        # cls.M_stress = lil_matrix( (2*cls.mesh.npoints,3*cls.mesh.npoints),dtype='float' ) 
         cls.Res_stress = np.zeros((2*cls.mesh.npoints),dtype='float' ) 
         
         quad = Elements.Quad(cls.mesh.X_orig,cls.mesh.Y_orig)
@@ -228,13 +227,14 @@ class FEM:
                               cls.Mb[iglobal_y,jglobal_x] = cls.Mb[iglobal_y,jglobal_x] + Mbe[2*ilocal+1,2*jlocal]
                       
     @classmethod   
-    def build_blocks(cls):
-        
+    def build_blocks(cls, HE = False):
+            
         cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.beta*cls.dt**2)
-        cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/(cls.beta*cls.dt**2) + cls.u_prime/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime)
+        if HE:
+            cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
+        else:
+            cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/(cls.beta*cls.dt**2) + cls.u_prime/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime)
         
-        # cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2)
-        # cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2),2.0*cls.u - cls.u_minus)
         
     @classmethod   
     def build_blocks_static(cls):
@@ -419,8 +419,11 @@ class FEM:
             cls.dof.append(2*i + 1)
     
     @classmethod 
-    def calc_init_accel(cls):
-        cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.K.tocsr(),cls.u))
+    def calc_init_accel(cls, HE = False):
+        if HE:
+            cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.Res_stress)
+        else:
+            cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.K.tocsr(),cls.u))
         
     @classmethod   
     def solve(cls,i, mesh_factor=0, nat_freq=False):
@@ -480,6 +483,81 @@ class FEM:
                     cls.mesh.fluidmesh.Y[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,1]
         
         return cls.u, cls.u_w
+    
+    @classmethod   
+    def solve_HE(cls, i, mesh_factor=0, nat_freq=False):
+        
+        if cls.int_i == 0:          
+            cls.build_quad_GQHE()
+            cls.calc_bound_force()
+            cls.calc_init_accel(True)
+                    
+        cls.int_i += 1
+        tol = 0.001
+        error = 1.0
+
+        du = np.zeros((2*cls.mesh.npoints), dtype='float')
+        cls.u_minus = cls.u.copy()
+        cls.u_doubleprime_minus = cls.u_doubleprime.copy()
+        cls.u_prime_minus = cls.u_prime.copy()
+        
+        k = 1
+        while error > tol and k<=30:
+  
+            cls.u = cls.u + du
+            
+            cls.u_doubleprime = (cls.u - cls.u_minus - cls.dt*cls.u_prime_minus - (cls.dt**2)*(0.5-cls.beta)*cls.u_doubleprime_minus)/(cls.beta*cls.dt**2)       
+            cls.u_prime = cls.u_prime_minus + cls.dt*((1.0-cls.gamma)*cls.u_doubleprime_minus + cls.gamma*cls.u_doubleprime)
+            
+            cls.ux = np.array([cls.u[2*n] for n in range(cls.mesh.npoints)])
+            cls.uy = np.array([cls.u[2*n+1] for n in range(cls.mesh.npoints)])
+                        
+            cls.build_quad_GQHE()
+            cls.build_blocks(True)
+            cls.calc_bound_force()
+            
+            Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.h*cls.Res_stress - sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u_doubleprime)     
+            cls.set_BCHE(Res)
+            
+            du = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+            
+            cls.calc_stressHE()
+            
+            error = np.sqrt(sum((Res)**2))
+            Res_mod = np.sqrt(sum((Res)**2))
+            
+            print ('Iteration ' + str(k) + '-----Error = ' + str(error) + '---------Res = ' + str(Res_mod) + '-------max du = ' + str(max(du)))
+            k+=1
+              
+               
+        cls.mesh.X = cls.X_orig + cls.ux
+        cls.mesh.Y = cls.Y_orig + cls.uy
+        
+        if cls.mesh.FSI_flag:
+            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,0] = cls.ux[cls.mesh.IEN]
+            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,1] = cls.uy[cls.mesh.IEN]
+            
+            cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
+            cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
+            
+            u_prime_x =  np.array([cls.u_prime[2*n] for n in range(cls.mesh.npoints)])
+            u_prime_y = np.array([cls.u_prime[2*n+1] for n in range(cls.mesh.npoints)])
+            cls.mesh.fluid.vx[cls.mesh.IEN_orig] = u_prime_x[cls.mesh.IEN]
+            cls.mesh.fluid.vy[cls.mesh.IEN_orig] = u_prime_y[cls.mesh.IEN]
+            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = u_prime_x[cls.mesh.IEN]
+            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,1] = u_prime_y[cls.mesh.IEN]
+            
+            for node in cls.mesh.fluidmesh.node_list:
+                if node.ID not in cls.mesh.IEN_orig and node.ID not in cls.mesh.fluidmesh.IENbound:
+                    factor = -mesh_factor*node.FSI_dist[1]
+                    cls.mesh.fluidmesh.mesh_velocity[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],0]*np.exp(factor)
+                    cls.mesh.fluidmesh.mesh_velocity[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],1]*np.exp(factor)
+                    cls.mesh.fluidmesh.mesh_displacement[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.ID,0]*cls.dt
+                    cls.mesh.fluidmesh.mesh_displacement[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.ID,1]*cls.dt
+                    cls.mesh.fluidmesh.X[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,0]
+                    cls.mesh.fluidmesh.Y[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,1]
+                  
+        return cls.u
     
     @classmethod   
     def solve_static(cls, nat_freq):
