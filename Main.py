@@ -76,7 +76,7 @@ if particles_flag:
     particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
 
 
-FEM.set_matrices(MESH,fluid,dt,BC, SolidProp, porous,turb)
+FEM.set_matrices(MESH,fluid,dt,BC,IC,SolidProp, porous,turb)
 neighborElem=[[]]
 SL_matrix=True
 oface=[]
@@ -116,7 +116,7 @@ while i < end:
     
     # fluid = FEM.solve_fields(True,neighborElem,oface)
     if particles_flag:
-        fluid = FEM.solve_fields(particleCloud.forces,SL_matrix,neighborElem,oface)
+        fluid = FEM.solve_fields(i,particleCloud.forces,SL_matrix,neighborElem,oface)
         particleCloud.solve(dt,nLoop,fluid.Re,1.0/np.sqrt(fluid.Ga))
         if type_ == "continuous":
             if i == 0:
@@ -135,15 +135,16 @@ while i < end:
     else:
 
         for j in range(fluid_steps):
-            fluid = FEM.solve_fields(np.zeros((MESH.npoints,2), dtype='float'), dt/fluid_steps, SL_matrix,neighborElem,oface)
+            fluid = FEM.solve_fields(i,np.zeros((MESH.npoints,2), dtype='float'), dt/fluid_steps, SL_matrix,neighborElem,oface)
         particleCloud = 0
     
     if len(FEM.mesh.FSI) > 0:
         if i>=1:
-            u, u_w = SolidFEM.solve(i,mesh_factor)
+            k=i-1
+            u, u_w = SolidFEM.solve(k,mesh_factor)
         else:
             u = SolidFEM.u
-        ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.sigma_VM,i)
+        ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.u_prime, SolidFEM.u_doubleprime, SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.sigma_VM,i)
         Export.export_data(i,output_dir,fluid,MESH,particleCloud)
         
     else:    

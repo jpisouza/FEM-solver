@@ -20,7 +20,7 @@ from SolidFEM import FEM as SolidFEM
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC,SolidProp,porous = False, turb = False):
+    def set_matrices(cls,mesh,fluid,dt,BC,IC,SolidProp,porous = False, turb = False):
 
         cls.fluid = fluid
         cls.Re = fluid.Re
@@ -35,6 +35,9 @@ class FEM:
         cls.turb = turb
         cls.porous = porous
         cls.SolidProp = SolidProp
+        cls.IC = IC
+        cls.int_i = 0 #internal count
+        
         if len(cls.mesh.porous_elem)>0:
             cls.porous = True
         
@@ -43,7 +46,7 @@ class FEM:
         if len(cls.mesh.FSI) > 0:
             cls.solidMesh = FSISolidMesh(cls.mesh, cls.fluid)
             cls.BC_solid = cls.solidMesh.build_BCdict(cls.fluid.FSIForces)
-            SolidFEM.set_parameters(cls.solidMesh, cls.BC_solid, float(SolidProp['h']), float(SolidProp['E']), dt, float(SolidProp['rho']), float(SolidProp['nu']))
+            SolidFEM.set_parameters(cls.solidMesh, cls.BC_solid, cls.IC, float(SolidProp['h']), float(SolidProp['E']), dt, float(SolidProp['rho']), float(SolidProp['nu']))
         
         if len(cls.mesh.FSI) == 0:
             start = timer()
@@ -926,7 +929,12 @@ class FEM:
     
     
     @classmethod
-    def solve_fields(cls,forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[]):
+    def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[]):
+        if i > 0 and cls.int_i < 1 and type(cls.IC['mesh_X']) == np.ndarray:
+            cls.mesh.X = cls.IC['mesh_X']
+            cls.mesh.Y = cls.IC['mesh_Y']
+        cls.int_i += 1
+        
         cls.dt = dt
         if SL_matrix:
             start = timer()

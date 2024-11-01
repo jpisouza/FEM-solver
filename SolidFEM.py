@@ -9,28 +9,26 @@ import Elements
 class FEM:
     
     @classmethod
-    def set_parameters(cls, mesh, BC, h, E, dt, rho, nu):
+    def set_parameters(cls, mesh, BC, IC, h, E, dt, rho, nu):
         
         cls.E = E
         cls.rho = rho
         cls.mesh = mesh
         cls.nu = nu
         cls.BC = BC
+        cls.IC = IC
         cls.h = h
         cls.dt = dt
         cls.gamma = 0.7
         cls.beta = ((2.0*cls.gamma + 1.0)**2)/16.0
+
         
         cls.D = (E/(1.0-nu**2))*np.array([[1.0,   nu,  0.0],
                                      [nu,  1.0,   0.0],
                                      [0.0,   0.0,   (1.0-nu)/2.0]]);
         
-        cls.forces = np.zeros((2*cls.mesh.npoints), dtype='float')
-        cls.u = np.zeros((2*cls.mesh.npoints), dtype='float')
-        cls.ux = np.zeros((cls.mesh.npoints), dtype='float')
-        cls.uy = np.zeros((cls.mesh.npoints), dtype='float')
-        cls.u_prime = np.zeros((2*cls.mesh.npoints), dtype='float')
-        cls.u_doubleprime = np.zeros((2*cls.mesh.npoints), dtype='float')
+        
+        cls.set_IC()
         
         cls.sigma = np.zeros((cls.mesh.npoints,3), dtype='float')
         cls.PK_stress = np.zeros((cls.mesh.npoints,3), dtype='float')
@@ -53,7 +51,28 @@ class FEM:
         cls.u_w = np.zeros((2*cls.mesh.npoints), dtype = 'float')
         
         cls.int_i = 0 #internal count of iteration
-
+    
+    @classmethod   
+    def set_IC(cls):
+        cls.u = np.zeros((2*cls.mesh.npoints), dtype='float')
+        cls.ux = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.uy = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.u_prime = np.zeros((2*cls.mesh.npoints), dtype='float')
+        cls.u_doubleprime = np.zeros((2*cls.mesh.npoints), dtype='float')
+        cls.forces = np.zeros((2*cls.mesh.npoints), dtype='float')
+        if type(cls.IC['u']) == np.ndarray:
+            cls.ux = cls.IC['u'][:,0]
+            cls.uy = cls.IC['u'][:,1]
+            for k in range (len(cls.ux)):
+                cls.u[2*k] = cls.ux[k]
+                cls.u_prime[2*k] = cls.IC['u_prime'][k,0]
+                cls.u_doubleprime[2*k] = cls.IC['u_doubleprime'][k,0]
+                
+                cls.u[2*k + 1] = cls.uy[k]
+                cls.u_prime[2*k + 1] = cls.IC['u_prime'][k,1]
+                cls.u_doubleprime[2*k + 1] = cls.IC['u_doubleprime'][k,1]
+                
+        
     @classmethod   
     def build_quad_GQHE(cls):
         cls.K = lil_matrix( (2*cls.mesh.npoints,2*cls.mesh.npoints),dtype='float' )
@@ -421,19 +440,44 @@ class FEM:
     @classmethod 
     def calc_init_accel(cls, HE = False):
         if HE:
-            cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.Res_stress)
+            # cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.Res_stress)
+            cls.u_doubleprime = np.zeros((2*cls.mesh.npoints), dtype='float')
+            
+            # A = cls.rho*cls.h*cls.M.tocsr()
+            # b = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.Res_stress
+            
         else:
-            cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.K.tocsr(),cls.u))
+            # cls.u_doubleprime = sp.sparse.linalg.spsolve(cls.rho*cls.h*cls.M.tocsr(),sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.K.tocsr(),cls.u))
+            cls.u_doubleprime = np.zeros((2*cls.mesh.npoints), dtype='float')       
+            # A = cls.rho*cls.h*cls.M.tocsr()
+            # b = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - sp.sparse.csr_matrix.dot(cls.h*cls.K.tocsr(),cls.u)
+            
+        # #sets prescribed displacements
+        # for bound in cls.BC:
+        #     for node in cls.mesh.bound_dict[bound]:
+        #         if cls.BC[bound][0] != 'None':
+        #             row = A.getrow(2*node)
+        #             for col in row.indices:
+        #                 A[2*node,col] = 0
+        #             A[2*node,2*node] = 1.0
+        #             b[2*node] = cls.BC[bound][0]
+        #         if cls.BC[bound][1] != 'None':
+        #             row = A.getrow(2*node+1)
+        #             for col in row.indices:
+        #                 A[2*node+1,col] = 0
+        #             A[2*node+1,2*node+1] = 1.0
+        #             b[2*node+1] = cls.BC[bound][1]
+        
+        # cls.u_doubleprime = sp.sparse.linalg.spsolve(A,b)
         
     @classmethod   
     def solve(cls,i, mesh_factor=0, nat_freq=False):
         
         if cls.int_i == 0:          
             cls.build_quad_GQ()
-            cls.calc_bound_force()
-            cls.calc_init_accel()
-            
-        cls.int_i += 1
+            # cls.calc_bound_force()
+            # cls.calc_init_accel()
+        cls.int_i += 1   
         
         cls.build_blocks()
         cls.calc_bound_force()
@@ -487,12 +531,15 @@ class FEM:
     @classmethod   
     def solve_HE(cls, i, mesh_factor=0, nat_freq=False):
         
+        # if i == 0:          
+        #     cls.build_quad_GQHE()
+        #     cls.calc_bound_force()
+        #     cls.calc_init_accel(True)
         if cls.int_i == 0:          
-            cls.build_quad_GQHE()
-            cls.calc_bound_force()
-            cls.calc_init_accel(True)
+            cls.build_quad_GQ()
+
+        cls.int_i += 1 
                     
-        cls.int_i += 1
         tol = 0.001
         error = 1.0
 

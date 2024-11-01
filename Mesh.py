@@ -80,8 +80,7 @@ class mesh:
                         for i in self.IEN[elem]:
                             if i not in self.solid_nodes:
                                self.solid_nodes.append(i) 
-             
-            
+                        
             #Removing non-boundary interfaces
             self.X_interf = []
             self.Y_interf = []

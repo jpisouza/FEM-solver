@@ -12,7 +12,7 @@
   <Solid>
     <Region name="solid"/>
   </Solid>
-  <SolidInterface E = "4000.0" nu="0.3" rho="7.8" h="0.1">
+  <SolidInterface E = "4500.0" nu="0.3" rho="7.8" h="0.1">
 	<Boundary name="wallSolidTop" fluid_interface = "False" ux="0" uy="0"/>
 	<Boundary name="wallSolidBottom" fluid_interface = "True" ux="None" uy="None" />
 	<Boundary name="wallSolidLeft" fluid_interface = "True" ux="None" uy="None"/>

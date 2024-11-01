@@ -116,7 +116,14 @@ class Case:
         if i > 0:
             file = os.path.dirname(os.path.abspath(cls.case)) + '/Results/sol-' + str(i) + '.vtk'
             data = meshio.read(file)
+            if len(cls.mesh.solid_list) > 0:
+                file_solid = os.path.dirname(os.path.abspath(cls.case)) + '/Results/solid_sol-' + str(i) + '.vtk'
+                data_solid = meshio.read(file_solid)
+                IC_solid = data_solid.point_data
+
             IC_ = data.point_data
+            # cls.mesh.X = data.points[:,0]
+            # cls.mesh.Y = data.points[:,1]
 
             if cls.mesh.mesh_kind == 'mini':
                 IC_c = data.cell_data['triangle']
@@ -144,9 +151,23 @@ class Case:
                 IC['vy'] = v[:,1]
                 IC['p'] = IC_['p'][list(cls.mesh.converter.keys())]
                 IC['T'] = IC_['T']
+                
+                if len(cls.mesh.solid_list) > 0:
+                    IC['u'] = IC_solid['u']
+                    IC['u_prime'] = IC_solid['u_prime']
+                    IC['u_doubleprime'] = IC_solid['u_doubleprime']
+                    IC['mesh_X'] = data.points[:,0]
+                    IC['mesh_Y'] = data.points[:,1]
+                else:
+                    IC['mesh_X'] = None
+                    IC['mesh_Y'] = None
 
         else:
             IC = cls.root.find('InitialCondition').attrib
+            if len(cls.mesh.solid_list) > 0:
+                IC['u'] = 0
+                IC['u_prime'] = 0
+                IC['u_doubleprime'] = 0
             forces = np.zeros((cls.mesh.npoints,2), dtype='float')
         return IC, forces
     

@@ -15,25 +15,25 @@ import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**5
+E = 10**7
 nu = 0.3
 h = 1.0
 rho = 300.0
 dt = 0.1
 end = 1000
-dynamic = True
+dynamic = False
 
-case = './Cases/Solid_NewmarkHE/'
+case = './Cases/Solid_Newmark/'
 output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
 
-BC = {'upper_bound': ['None', 'None', 0, -20], 'left_bound': [0, 0, 'None', 'None']}
-
+BC = {'right_bound': ['None', 'None', 0, -10**4], 'left_bound': [0, 0, 'None', 'None']}
+IC = None
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
-FEM.set_parameters(mesh, BC, h, E, dt, rho, nu)
+FEM.set_parameters(mesh, BC, IC, h, E, dt, rho, nu)
 
 umax = [0]
 t = [0]
@@ -41,7 +41,7 @@ i = 0
 
 nat_freq = False
 n_freq = 10
-HE = True
+HE = False
 
 if dynamic:
     while i < end:
@@ -51,7 +51,7 @@ if dynamic:
         else:
             u, u_w = FEM.solve(i,0,nat_freq)    
     
-        export_data(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
+        export_data(mesh, output_dir, u, FEM.u_prime, FEM.u_doubleprime, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.sigma_VM, i)
         
         i+=1
         umax.append(np.max(np.abs(FEM.uy)))
