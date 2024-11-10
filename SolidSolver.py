@@ -15,12 +15,15 @@ import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**7
+E = 10**5
 nu = 0.3
 h = 1.0
 rho = 300.0
 dt = 0.1
 end = 1000
+
+gamma = 1.0
+beta = 1.0
 dynamic = False
 
 case = './Cases/Solid_Newmark/'
@@ -29,11 +32,11 @@ if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
 
-BC = {'right_bound': ['None', 'None', 0, -10**4], 'left_bound': [0, 0, 'None', 'None']}
+BC = {'upper_bound': ['None', 'None', 0, -1.0], 'left_bound': [0, 0, 'None', 'None']}
 IC = None
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
-FEM.set_parameters(mesh, BC, IC, h, E, dt, rho, nu)
+FEM.set_parameters(mesh, BC, IC, h, E, dt, rho, nu, gamma, beta)
 
 umax = [0]
 t = [0]

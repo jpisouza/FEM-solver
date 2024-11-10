@@ -69,6 +69,13 @@ class Case:
             SolidProp['nu'] = parSolid.attrib['nu']
             SolidProp['h'] = parSolid.attrib['h']
             
+            if 'gamma' in parSolid.attrib:
+                SolidProp['gamma'] = parSolid.attrib['gamma']
+                SolidProp['beta'] = parSolid.attrib['beta']
+            else:
+                SolidProp['gamma'] = 0.7
+                SolidProp['beta'] = ((2.0*SolidProp['gamma'] + 1.0)**2)/16.0
+            
         particles = par.attrib['particles']
         if particles == 'True':
             particles = True

@@ -46,7 +46,7 @@ class FEM:
         if len(cls.mesh.FSI) > 0:
             cls.solidMesh = FSISolidMesh(cls.mesh, cls.fluid)
             cls.BC_solid = cls.solidMesh.build_BCdict(cls.fluid.FSIForces)
-            SolidFEM.set_parameters(cls.solidMesh, cls.BC_solid, cls.IC, float(SolidProp['h']), float(SolidProp['E']), dt, float(SolidProp['rho']), float(SolidProp['nu']))
+            SolidFEM.set_parameters(cls.solidMesh, cls.BC_solid, cls.IC, float(SolidProp['h']), float(SolidProp['E']), dt, float(SolidProp['rho']), float(SolidProp['nu']), float(SolidProp['gamma']), float(SolidProp['beta']))
         
         if len(cls.mesh.FSI) == 0:
             start = timer()
