@@ -15,18 +15,18 @@ import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**5
+E = 10**6
 nu = 0.3
 h = 1.0
-rho = 300.0
+rho = 100.0
 dt = 0.1
 end = 1000
 
-gamma = 1.0
-beta = 1.0
-dynamic = False
+gamma = 0.5
+beta = 0.5
+dynamic = True
 
-case = './Cases/Solid_Newmark/'
+case = './Cases/Solid/'
 output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)

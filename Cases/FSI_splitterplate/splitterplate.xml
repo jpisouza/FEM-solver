@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <Case name="splitterplate">
-  <Parameters Fr="1000" Re="400" Gr="0" Pr="0.7" Fr_flag="True" particles="False" two_way="False" turb="False" mesh_factor="1.4" fluid_steps="1"/>
+  <Parameters Fr="1000" Re="400" Gr="0" Pr="0.7" Fr_flag="True" particles="False" two_way="False" turb="False" mesh_factor="1.4" fluid_steps="3"/>
   <BoundaryCondition>
     <Boundary name="cylinder" vx="0" vy="0" p="None" T="0"/>
     <Boundary name="outFlow" vx="None" vy="None" p="0" T="None"/>

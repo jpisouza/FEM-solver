@@ -75,7 +75,7 @@ class FEM:
                    cls.u[2*k + 1] = cls.uy[k]
                    cls.u_prime[2*k + 1] = cls.IC['u_prime'][k,1]
                    cls.u_doubleprime[2*k + 1] = cls.IC['u_doubleprime'][k,1]
-                
+
         
     @classmethod   
     def build_quad_GQHE(cls):
@@ -253,10 +253,12 @@ class FEM:
     def build_blocks(cls, HE = False):
             
         cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.beta*cls.dt**2)
+        # cls.A = cls.h*cls.K.tocsr() + cls.rho*cls.h*cls.M.tocsr()/(cls.dt**2)
         if HE:
             cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
         else:
             cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/(cls.beta*cls.dt**2) + cls.u_prime/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime)
+            # cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/cls.dt**2 + cls.u_prime/cls.dt)
         
         
     @classmethod   
@@ -493,6 +495,14 @@ class FEM:
         cls.u_minus = cls.u.copy()
         cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
         
+        #-----------teste não Newmark------------------------------------------
+        
+        # cls.u_prime_minus = cls.u_prime.copy()
+        # cls.u_prime = (cls.u - cls.u_minus)/cls.dt
+        
+        # cls.u_doubleprime_minus = cls.u_doubleprime.copy()
+        # cls.u_doubleprime = (cls.u_prime - cls.u_prime_minus)/cls.dt
+        #-----------------------------------------------------------------------
         cls.u_doubleprime_minus = cls.u_doubleprime.copy()
         cls.u_doubleprime = (cls.u - cls.u_minus - cls.dt*cls.u_prime - (cls.dt**2)*(0.5-cls.beta)*cls.u_doubleprime)/(cls.beta*cls.dt**2)
         
