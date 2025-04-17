@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<Case name="cylinder">
+  <Parameters Fr="1000" Re="10" Gr="0" Pr="0.7" Fr_flag="True" particles="False" two_way="False" turb="False" mesh_factor="1.0" fluid_steps="1"/>
+  <BoundaryCondition>
+    <Boundary name="top" vx="0" vy="0" p="None" T="None"/>
+	<Boundary name="bottom" vx="0" vy="0" p="None" T="None"/>
+    <Boundary name="outFlow" vx="None" vy="None" p="0" T="None"/>
+	<Boundary name="inFlow" vx="Profile-0.67" vy="0" p="None" T="1"/>
+	<Boundary name="cylinder" vx="0" vy="0" p="None" T="0" calc_force="True"/>
+  </BoundaryCondition>
+  <OutFlow>
+    <OF name="outFlow"/>
+  </OutFlow>
+  <InitialCondition vx="0" vy="0" p="0" T="0"/>
+</Case>

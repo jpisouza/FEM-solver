@@ -191,13 +191,15 @@ class mesh:
             bound_list.append([])
             for i in range (len(self.IENboundElem)):
                 if self.IENboundElem[i] == bound['name']:
-                    if bound in self.FSI:
+                    if bound in self.FSI or ('calc_force' in bound and bound['calc_force'] == 'True'):
                         self.FSI_dict_list.append({'bound_elem':i})
                         self.FSI_dict_list[-1]['nodes'] = self.IENbound[i]
-                        self.FSI_dict_list[-1]['norm'] = np.array(([0,0]), dtype='float')
+                        self.FSI_dict_list[-1]['norm'] = np.array(([[0,0],[0,0],[0,0]]), dtype='float')
+                        if 'calc_force' in bound and bound['calc_force'] == 'True':
+                            bound['fluid_interface'] = "True"
                         self.FSI_dict_list[-1]['fluid_interface'] = bound['fluid_interface']
                     for l in range (len(self.IENbound[i])):
-                        if bound in self.FSI:
+                        if bound in self.FSI or ('calc_force' in bound and bound['calc_force'] == 'True'):
                             if self.IENbound[i,l] not in self.FSI_list:
                                 self.FSI_list.append(self.IENbound[i,l])
                         if self.IENbound[i,l] not in bound_list[k]:
@@ -232,28 +234,31 @@ class mesh:
             if edge['fluid_interface'] == 'True':
                 if (self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]]) != 0.0:
                     if (self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]]) > 0.0:
-                        edge['norm'][1] = -1.0        
+                        edge['norm'][2][1] = -1.0        
                     else:
-                        edge['norm'][1] = 1.0
-                    edge['norm'][0] = -edge['norm'][1]*(self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]])/(self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]])
+                        edge['norm'][2][1] = 1.0
+                    edge['norm'][2][0] = -edge['norm'][2][1]*(self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]])/(self.X[edge['nodes'][1]] - self.X[edge['nodes'][0]])
 
                 else:
                     if (self.Y[edge['nodes'][1]] - self.Y[edge['nodes'][0]]) < 0.0:
-                        edge['norm'][0] = -1.0
-                        edge['norm'][1] = 0.0
+                        edge['norm'][2][0] = -1.0
+                        edge['norm'][2][1] = 0.0
                     else:
-                        edge['norm'][0] = 1.0
-                        edge['norm'][1] = 0.0
+                        edge['norm'][2][0] = 1.0
+                        edge['norm'][2][1] = 0.0
             
-                mod = np.sqrt(edge['norm'][1]**2 + edge['norm'][0]**2)
+                mod = np.sqrt(edge['norm'][2][1]**2 + edge['norm'][2][0]**2)
                 
-                edge['norm'][1] = edge['norm'][1]/mod
-                edge['norm'][0] = edge['norm'][0]/mod
+                edge['norm'][2][1] = edge['norm'][2][1]/mod
+                edge['norm'][2][0] = edge['norm'][2][0]/mod
                
-                self.normal_vect[edge['nodes'][0],:] = edge['norm']
-                self.normal_vect[edge['nodes'][1],:] = edge['norm']
-                self.normal_vect[edge['nodes'][2],:] = edge['norm']
-
+                self.normal_vect[edge['nodes'][0],:] += edge['norm'][2]
+                self.normal_vect[edge['nodes'][1],:] += edge['norm'][2]
+                self.normal_vect[edge['nodes'][2],:] += edge['norm'][2]
+        
+        for i in self.FSI_list:
+            mod = np.sqrt(self.normal_vect[i,0]**2 + self.normal_vect[i,1]**2)
+            self.normal_vect[i,:] = self.normal_vect[i,:]/mod
             
 
 

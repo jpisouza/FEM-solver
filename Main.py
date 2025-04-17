@@ -110,6 +110,7 @@ print('Output directory ---> ' + output_dir)
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
+
 if not i == 0:
     i += 1
 while i < end:
@@ -150,9 +151,13 @@ while i < end:
     else:    
         Export.export_data(i,output_dir,fluid,MESH,particleCloud)
     
-        
-
+    if len(FEM.mesh.FSI_list) > 0:
+        f = open(output_dir + '/FSI_Cd.txt', 'a')    
+        f.write(str(FEM.Cd) + '\n')
+        f.close()
+    
     i+=1
+
 
 # if type_ == "continuous":
 #     f.close()

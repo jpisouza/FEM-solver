@@ -926,6 +926,31 @@ class FEM:
         
         cls.fluid.FSIForces[:,0] = cls.FSIForces_x 
         cls.fluid.FSIForces[:,1] = cls.FSIForces_y
+        
+        # Cd_local = 2*np.multiply(-cls.fluid.p_quad,norm[:,0])
+        # Cl_local = 2*np.multiply(-cls.fluid.p_quad,norm[:,1])
+        
+        Cd_local = 2*(np.multiply(cls.T11, norm[:,0]) + np.multiply(cls.T12, norm[:,1]))
+        Cl_local = 2*(np.multiply(cls.T21, norm[:,0]) + np.multiply(cls.T22, norm[:,1]))
+        
+        #calculate the total force------------------------------------------------
+        
+        cls.Cd = 0
+        cls.Cl = 0
+        totalforce_x = 0
+        totalforce_y = 0
+        interp_matrix = np.array([1.0/6.0, 1.0/6.0, 4.0/6.0])
+        for elem in cls.mesh.FSI_dict_list:
+            nodes = elem['nodes']
+            h1 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[1]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[1]])**2)**0.5
+            h2 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[1]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[1]])**2)**0.5
+            h = h1 + h2
+            totalforce_x += h*interp_matrix@cls.FSIForces_x[nodes]
+            totalforce_y += h*interp_matrix@cls.FSIForces_y[nodes]
+            cls.Cd += h*interp_matrix@Cd_local[nodes]
+            cls.Cl += h*interp_matrix@Cl_local[nodes]
+        cls.totalforce = np.array([totalforce_x,totalforce_y])
+            
     
     
     @classmethod
