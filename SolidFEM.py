@@ -9,11 +9,13 @@ import Elements
 class FEM:
     
     @classmethod
-    def set_parameters(cls, mesh, BC, IC, h, E, dt, rho, nu, gamma, beta):
+    def set_parameters(cls, mesh, BC, IC, h, E, dt, rho, nu, gamma, beta, g=[0,0], Fr=1.0):
         
         cls.E = E
         cls.rho = rho
+        cls.Fr = Fr
         cls.mesh = mesh
+        cls.g = np.array(cls.mesh.npoints*g)
         cls.nu = nu
         cls.BC = BC
         cls.IC = IC
@@ -257,15 +259,19 @@ class FEM:
         if HE:
             cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
         else:
-            cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/(cls.beta*cls.dt**2) + cls.u_prime/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime)
+            cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/(cls.beta*cls.dt**2) + cls.u_prime/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime + (1.0/cls.Fr**2)*cls.g)
             # cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/cls.dt**2 + cls.u_prime/cls.dt)
         
         
     @classmethod   
-    def build_blocks_static(cls):
+    def build_blocks_static(cls, HE = False):
         
         cls.A = cls.h*cls.K.tocsr()
-        cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
+        
+        if HE:
+           cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
+        else:
+           cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(), (1.0/cls.Fr**2)*cls.g) #np.zeros((2*cls.mesh.npoints), dtype='float') 
     
     @classmethod   
     def calc_bound_force(cls):
@@ -295,13 +301,15 @@ class FEM:
                     for col in row.indices:
                         cls.A[2*node,col] = 0
                     cls.A[2*node,2*node] = 1.0
-                    cls.b[2*node] = cls.BC[bound][0]
+                    # cls.b[2*node] = cls.BC[bound][0]
+                    cls.b[2*node] = 0
                 if cls.BC[bound][1] != 'None':
                     row = cls.A.getrow(2*node+1)
                     for col in row.indices:
                         cls.A[2*node+1,col] = 0
                     cls.A[2*node+1,2*node+1] = 1.0
-                    cls.b[2*node+1] = cls.BC[bound][1]
+                    # cls.b[2*node+1] = cls.BC[bound][1]
+                    cls.b[2*node+1] = 0
     @classmethod   
     def set_BC(cls):
         #Calculates force vector
@@ -379,6 +387,7 @@ class FEM:
         cls.sigma[:,0] = cls.sigma_x
         cls.sigma[:,1] = cls.sigma_y
         cls.sigma[:,2] = cls.tau_xy
+        
                     
         cls.sigma_VM = np.power(np.power(cls.sigma_x,2) + np.power(cls.sigma_y,2) - np.multiply(cls.sigma_x, cls.sigma_y) + 3.0*np.power(cls.tau_xy,2),0.5)
     
@@ -645,11 +654,12 @@ class FEM:
     @classmethod   
     def solve_staticHE(cls):
         
-        tol = 0.001
+        tol = 0.000001
         error = 1.0
 
         du = np.zeros((2*cls.mesh.npoints), dtype='float')
         
+        cls.u, uw = FEM.solve_static(False)
         i = 1
         while error > tol and i<=30:
   
@@ -659,10 +669,10 @@ class FEM:
             cls.uy = np.array([cls.u[2*n+1] for n in range(cls.mesh.npoints)])
                         
             cls.build_quad_GQHE()
-            cls.build_blocks_static()
+            cls.build_blocks_static(True)
             cls.calc_bound_force()
             
-            Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.h*cls.Res_stress          
+            Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) + sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(), (1.0/cls.Fr**2)*cls.g) - cls.h*cls.Res_stress          
             cls.set_BCHE(Res)
             
             du = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)

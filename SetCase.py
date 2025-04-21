@@ -60,7 +60,7 @@ class Case:
             mesh_factor = float(par.attrib['mesh_factor'])
         else:
             mesh_factor = False
-        
+                
         SolidProp = {}
         parSolid = cls.root.find('SolidInterface')
         if parSolid != None:
@@ -83,6 +83,8 @@ class Case:
             particles = False
         if par.attrib['Fr_flag'] == 'True':
             Fr = float(par.attrib['Fr'])
+            if parSolid != None:
+                SolidProp['Fr'] = Fr
             Ga = 1/Fr**2
         else:
             Fr = 0.0

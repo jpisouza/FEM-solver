@@ -54,6 +54,5 @@ class SolidMesh:
                 for node in  self.IENbound[e]:
                     if node not in self.bound_dict[self.IENboundElem[e]]:
                         self.bound_dict[self.IENboundElem[e]].append(node)
-                
-
+        
 

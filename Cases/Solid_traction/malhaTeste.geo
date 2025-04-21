@@ -5,9 +5,9 @@ fator=0.1;
 //+
 Point(1) = {0, 0, 0, fator};
 //+
-Point(2) = {10, 0, 0, fator};
+Point(2) = {5, 0, 0, fator};
 //+
-Point(3) = {10, 1, 0, fator};
+Point(3) = {5, 1, 0, fator};
 //+
 Point(4) = {0, 1, 0, fator};
 //+

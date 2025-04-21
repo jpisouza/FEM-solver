@@ -15,28 +15,30 @@ import os
 
 ##Mesh reader------------------------------------------------------------------
 
-E = 10**6
-nu = 0.3
+E = 1.0e3
+nu = 0.4
+g = [0,-0]
 h = 1.0
-rho = 100.0
+rho = 1000.0
 dt = 0.1
 end = 1000
 
 gamma = 0.5
 beta = 0.5
-dynamic = True
+dynamic = False
 
-case = './Cases/Solid/'
+case = './Cases/Solid_traction/'
 output_dir = case + 'Results'
 if not os.path.isdir(output_dir):
    os.mkdir(output_dir)
 
 
-BC = {'upper_bound': ['None', 'None', 0, -1.0], 'left_bound': [0, 0, 'None', 'None']}
+BC = {'right_bound': ['None', 'None', 10, 0], 'left_bound': [0, 'None', 'None', 'None']}
+# BC = {'right_bound': [1, 'None', 'None', 'None'], 'left_bound': [0, 'None', 'None', 'None']}
 IC = None
 mesh = SolidMesh(case+'malhaTeste.msh', BC)
 
-FEM.set_parameters(mesh, BC, IC, h, E, dt, rho, nu, gamma, beta)
+FEM.set_parameters(mesh, BC, IC, h, E, dt, rho, nu, gamma, beta, g)
 
 umax = [0]
 t = [0]
@@ -44,7 +46,7 @@ i = 0
 
 nat_freq = False
 n_freq = 10
-HE = False
+HE = True
 
 if dynamic:
     while i < end:
