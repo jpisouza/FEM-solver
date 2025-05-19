@@ -10,6 +10,7 @@ class Fluid:
         self.Gr = Gr
         self.Da = Da
         self.Fo = Fo
+        self.mesh = mesh
         
         if not type(IC['vx']) == np.ndarray:
             self.vx = float(IC['vx'])*np.ones((mesh.npoints), dtype='float')
@@ -24,6 +25,7 @@ class Fluid:
             self.vy = IC['vy']
             self.p = IC['p']
             self.T = IC['T']
+            self.mesh.mesh_displacement = IC['mesh_displacement']
 
         self.nu_t = np.zeros((mesh.npoints), dtype='float')
         self.kappa = np.zeros((mesh.npoints), dtype='float')

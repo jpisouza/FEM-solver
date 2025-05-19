@@ -56,6 +56,10 @@ class Case:
             fluid_steps = int(par.attrib['fluid_steps'])
         else:
             fluid_steps = 1
+        if 'n_save' in par.attrib:
+            n_save = int(par.attrib['n_save'])
+        else:
+            n_save = 1
         if 'mesh_factor' in par.attrib:
             mesh_factor = float(par.attrib['mesh_factor'])
         else:
@@ -75,6 +79,12 @@ class Case:
             else:
                 SolidProp['gamma'] = 0.7
                 SolidProp['beta'] = ((2.0*SolidProp['gamma'] + 1.0)**2)/16.0
+                
+            SolidProp['HE'] = False
+            if 'HE' in parSolid.attrib:
+                if parSolid.attrib['HE'] == "True":
+                    SolidProp['HE'] = True                
+                
             
         particles = par.attrib['particles']
         if particles == 'True':
@@ -97,7 +107,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save
     
     @classmethod
     def set_BC(cls):
@@ -165,8 +175,11 @@ class Case:
                     IC['u'] = IC_solid['u']
                     IC['u_prime'] = IC_solid['u_prime']
                     IC['u_doubleprime'] = IC_solid['u_doubleprime']
+                    IC['solidmesh_X'] = data_solid.points[:,0]
+                    IC['solidmesh_Y'] = data_solid.points[:,1]
                     IC['mesh_X'] = data.points[:,0]
                     IC['mesh_Y'] = data.points[:,1]
+                    IC['mesh_displacement'] = IC_['mesh_disp']
                 else:
                     IC['mesh_X'] = None
                     IC['mesh_Y'] = None

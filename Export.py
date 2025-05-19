@@ -5,7 +5,7 @@ from pyevtk.hl import pointsToVTK
 def export_data(i,output_dir,fluid,MESH,particleCloud):
     # print(i)
     
-    print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
+    # print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
     if MESH.mesh_kind == 'mini':
         point_data = {'p' : fluid.p[0:MESH.npoints_p]}
         data_T  = {'T' : fluid.T}
@@ -42,6 +42,7 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
         data_normalFSI = {'FSI_normal' : np.transpose(np.block([[MESH.normal_vect[:,0]],[MESH.normal_vect[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
         data_FSIForces = {'FSI_forces' : np.transpose(np.block([[fluid.FSIForces[:,0]],[fluid.FSIForces[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
         data_meshVel = {'mesh_vel' : np.transpose(np.block([[MESH.mesh_velocity[:,0]],[MESH.mesh_velocity[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
+        data_meshDisp = {'mesh_disp' : np.transpose(np.block([[MESH.mesh_displacement[:,0]],[MESH.mesh_displacement[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
         if particleCloud != 0:
             data_F = {'forces' : np.block([particleCloud.forces,np.zeros((MESH.npoints,1),dtype='float')])}
         else:
@@ -52,6 +53,7 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
         point_data.update(data_normalFSI)
         point_data.update(data_FSIForces)
         point_data.update(data_meshVel)
+        point_data.update(data_meshDisp)
         meshio.write_points_cells(
         output_dir + '/sol-'+str(i)+'.vtk',
         points,

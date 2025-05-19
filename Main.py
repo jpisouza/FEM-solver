@@ -59,7 +59,7 @@ MESH = mesh(msh,mesh_kind,porous_list,solid_list, limit_name, smooth_value, poro
 Case.read(case,MESH)
 
 IC,forces = Case.set_IC(i)
-Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps = Case.set_parameters()
+Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save = Case.set_parameters()
 BC,FSI = Case.set_BC()
 
 outflow = Case.set_OutFlow()
@@ -141,19 +141,31 @@ while i < end:
     
     if len(FEM.mesh.FSI) > 0:
         if i>=1:
-            k=i-1
-            u, u_w = SolidFEM.solve(k,mesh_factor)
+            k=i-10
+            if SolidProp['HE']:
+                u = SolidFEM.solve_HE(k,mesh_factor)
+            else:
+                u, u_w = SolidFEM.solve(k,mesh_factor)
         else:
             u = SolidFEM.u
-        ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.u_prime, SolidFEM.u_doubleprime, SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.sigma_VM,i)
-        Export.export_data(i,output_dir,fluid,MESH,particleCloud)
         
-    else:    
-        Export.export_data(i,output_dir,fluid,MESH,particleCloud)
+        if n_save != 0 and i%n_save == 0:
+            ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.u_prime, SolidFEM.u_doubleprime, SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.PK_stress_x, SolidFEM.PK_stress_y, SolidFEM.PK_stress_xy, SolidFEM.sigma_VM,i)
+            Export.export_data(i,output_dir,fluid,MESH,particleCloud)
+            print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
+        else:
+            print ('--------Time step = ' + str(i) + ' --------\n')
+            
+    else:  
+        if n_save != 0 and i%n_save == 0:
+            Export.export_data(i,output_dir,fluid,MESH,particleCloud)
+            print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
+        else:
+            print ('--------Time step = ' + str(i) + ' --------\n')
     
     if len(FEM.mesh.FSI_list) > 0:
         f = open(output_dir + '/FSI_Cd.txt', 'a')    
-        f.write(str(FEM.Cd) + '\n')
+        f.write(str(i*dt)+ '\t' + str(FEM.Cd) + '\t' + str(FEM.Cl) + '\n')
         f.close()
     
     i+=1

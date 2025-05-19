@@ -1,4 +1,0 @@
-<?xml version="1.0" ?>
-<Case name="poiseuille.xml">
-  <Particles nparticles="1" rho="10000.0" diameter="100e-6" nLoop="300" lim_inf_x="-6.0" lim_sup_x="-6.0" lim_inf_y="0.1" lim_sup_y="0.1" num_method = "RK4"/>
-</Case>

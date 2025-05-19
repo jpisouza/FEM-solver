@@ -1,5 +1,0 @@
-<?xml version="1.0" ?>
-<Case name="DPF.xml">
-  <Particles nparticles="49" rho="10000.0" diameter="0.3" nLoop="600" lim_inf_x="-4.0" lim_sup_x="-3.27" lim_inf_y="-0.4" lim_sup_y="0.4" distribution="normal_log" type="continuous" frequency="6" inlet="in_flow" lim_inf="0.1" lim_sup="0.9"/>
-  <distribution mean="1.8" sigma="0.19" factor="0.8e-6"/>
-</Case>

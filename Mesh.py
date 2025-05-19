@@ -258,7 +258,8 @@ class mesh:
         
         for i in self.FSI_list:
             mod = np.sqrt(self.normal_vect[i,0]**2 + self.normal_vect[i,1]**2)
-            self.normal_vect[i,:] = self.normal_vect[i,:]/mod
+            if mod != 0:
+                self.normal_vect[i,:] = self.normal_vect[i,:]/mod
             
 
 

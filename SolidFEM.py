@@ -29,11 +29,13 @@ class FEM:
 
         
         cls.D = (E/(1.0-nu**2))*np.array([[1.0,   nu,  0.0],
-                                     [nu,  1.0,   0.0],
-                                     [0.0,   0.0,   (1.0-nu)/2.0]]);
+                                      [nu,  1.0,   0.0],
+                                      [0.0,   0.0,   (1.0-nu)/2.0]])
         
+        cls.D = (E*(1.0-nu)/((1.0+nu)*(1.0-2.0*nu)))*np.array([[1.0,   nu/(1.0-nu),  0.0],
+                                                                [nu/(1.0-nu),  1.0,   0.0],
+                                                                [0.0,   0.0,   (1.0-2.0*nu)/(2.0*(1.0-nu))]])
         
-        cls.set_IC()
         
         cls.sigma = np.zeros((cls.mesh.npoints,3), dtype='float')
         cls.PK_stress = np.zeros((cls.mesh.npoints,3), dtype='float')
@@ -55,6 +57,8 @@ class FEM:
         cls.calc_dof()
         cls.u_w = np.zeros((2*cls.mesh.npoints), dtype = 'float')
         
+        cls.set_IC()
+        
         cls.int_i = 0 #internal count of iteration
     
     @classmethod   
@@ -67,6 +71,10 @@ class FEM:
         cls.forces = np.zeros((2*cls.mesh.npoints), dtype='float')
         if not cls.IC == None:
             if type(cls.IC['u']) == np.ndarray:
+               cls.mesh.X = cls.IC['solidmesh_X']
+               cls.mesh.Y = cls.IC['solidmesh_Y']
+               cls.X = cls.IC['solidmesh_X']
+               cls.Y = cls.IC['solidmesh_Y']
                cls.ux = cls.IC['u'][:,0]
                cls.uy = cls.IC['u'][:,1]
                for k in range (len(cls.ux)):
@@ -77,7 +85,6 @@ class FEM:
                    cls.u[2*k + 1] = cls.uy[k]
                    cls.u_prime[2*k + 1] = cls.IC['u_prime'][k,1]
                    cls.u_doubleprime[2*k + 1] = cls.IC['u_doubleprime'][k,1]
-
         
     @classmethod   
     def build_quad_GQHE(cls):
@@ -159,7 +166,9 @@ class FEM:
                 if (cls.BC[bound][2] != 'None' or cls.BC[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
                     v1,v2,v3 = cls.mesh.IENbound[e]
                     
-                    L = ((cls.mesh.X[v1] - cls.mesh.X[v2])**2 + (cls.mesh.Y[v1] - cls.mesh.Y[v2])**2)**0.5;
+                    L1 = ((cls.mesh.X_orig[v1] - cls.mesh.X_orig[v3])**2 + (cls.mesh.Y_orig[v1] - cls.mesh.Y_orig[v3])**2)**0.5
+                    L2 = ((cls.mesh.X_orig[v3] - cls.mesh.X_orig[v2])**2 + (cls.mesh.Y_orig[v3] - cls.mesh.Y_orig[v2])**2)**0.5
+                    L = L1 + L2
                     
                     Mbe = (L/30)* np.array([[4, 0, 2, 0, -1, 0],
                                                [0, 4, 0, 2, 0, -1],
@@ -190,7 +199,7 @@ class FEM:
         cls.Gxs = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         cls.Gys = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
         
-        quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
+        quad = Elements.Quad(cls.mesh.X_orig,cls.mesh.Y_orig)
         
         for e in range(0,cls.mesh.ne):
             v1,v2,v3,v4,v5,v6 = cls.mesh.IEN[e]
@@ -224,13 +233,15 @@ class FEM:
                       cls.Ms[iglobal_s,jglobal_s] = cls.Ms[iglobal_s,jglobal_s] + m_stress[ilocal,jlocal]
                       cls.Gxs[iglobal_s,jglobal_s] = cls.Gxs[iglobal_s,jglobal_s] + gradx_stress[ilocal,jlocal]
                       cls.Gys[iglobal_s,jglobal_s] = cls.Gys[iglobal_s,jglobal_s] + grady_stress[ilocal,jlocal]
-        
+
         for e in range(0,len(cls.mesh.IENbound)):
             for bound in cls.BC:
                 if (cls.BC[bound][2] != 'None' or cls.BC[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
                     v1,v2,v3 = cls.mesh.IENbound[e]
                     
-                    L = ((cls.mesh.X[v1] - cls.mesh.X[v2])**2 + (cls.mesh.Y[v1] - cls.mesh.Y[v2])**2)**0.5;
+                    L1 = ((cls.mesh.X_orig[v1] - cls.mesh.X_orig[v3])**2 + (cls.mesh.Y_orig[v1] - cls.mesh.Y_orig[v3])**2)**0.5
+                    L2 = ((cls.mesh.X_orig[v3] - cls.mesh.X_orig[v2])**2 + (cls.mesh.Y_orig[v3] - cls.mesh.Y_orig[v2])**2)**0.5
+                    L = L1 + L2
                     
                     Mbe = (L/30)* np.array([[4, 0, 2, 0, -1, 0],
                                                [0, 4, 0, 2, 0, -1],
@@ -249,7 +260,7 @@ class FEM:
                               cls.Mb[iglobal_x,jglobal_x] = cls.Mb[iglobal_x,jglobal_x] + Mbe[2*ilocal,2*jlocal]
                               cls.Mb[iglobal_x,jglobal_y] = cls.Mb[iglobal_x,jglobal_y] + Mbe[2*ilocal,2*jlocal+1]
                               cls.Mb[iglobal_y,jglobal_y] = cls.Mb[iglobal_y,jglobal_y] + Mbe[2*ilocal+1,2*jlocal+1]
-                              cls.Mb[iglobal_y,jglobal_x] = cls.Mb[iglobal_y,jglobal_x] + Mbe[2*ilocal+1,2*jlocal]
+                              cls.Mb[iglobal_y,jglobal_x] = cls.Mb[iglobal_y,jglobal_x] + Mbe[2*ilocal+1,2*jlocal]        
                       
     @classmethod   
     def build_blocks(cls, HE = False):
@@ -274,7 +285,39 @@ class FEM:
            cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(), (1.0/cls.Fr**2)*cls.g) #np.zeros((2*cls.mesh.npoints), dtype='float') 
     
     @classmethod   
-    def calc_bound_force(cls):
+    def calc_bound_force(cls, refconfig_force = True):
+        
+        if not refconfig_force:
+        #Calculate mass matrix in the boundary if the force is in the updated (deformed) reference
+            cls.Mb = lil_matrix( (2*cls.mesh.npoints,2*cls.mesh.npoints),dtype='float' )
+            for e in range(0,len(cls.mesh.IENbound)):
+                for bound in cls.BC:
+                    if (cls.BC[bound][2] != 'None' or cls.BC[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
+                        v1,v2,v3 = cls.mesh.IENbound[e]
+                        
+                        L1 = ((cls.mesh.X[v1] - cls.mesh.X[v3])**2 + (cls.mesh.Y[v1] - cls.mesh.Y[v3])**2)**0.5
+                        L2 = ((cls.mesh.X[v3] - cls.mesh.X[v2])**2 + (cls.mesh.Y[v3] - cls.mesh.Y[v2])**2)**0.5
+                        L = L1 + L2
+                        
+                        Mbe = (L/30)* np.array([[4, 0, 2, 0, -1, 0],
+                                                   [0, 4, 0, 2, 0, -1],
+                                                   [2, 0, 16, 0, 2, 0],
+                                                   [0, 2, 0, 16, 0, 2],
+                                                   [-1, 0, 2, 0, 4, 0],
+                                                   [0, -1, 0, 2, 0, 4]])
+                        
+                        for ilocal in range(0,3):
+                              iglobal_x = 2*cls.mesh.IENbound[e,ilocal]
+                              iglobal_y = 2*cls.mesh.IENbound[e,ilocal]+1
+                              for jlocal in range(0,3):
+                                  jglobal_x = 2*cls.mesh.IENbound[e,jlocal]
+                                  jglobal_y = 2*cls.mesh.IENbound[e,jlocal]+1
+                                  
+                                  cls.Mb[iglobal_x,jglobal_x] = cls.Mb[iglobal_x,jglobal_x] + Mbe[2*ilocal,2*jlocal]
+                                  cls.Mb[iglobal_x,jglobal_y] = cls.Mb[iglobal_x,jglobal_y] + Mbe[2*ilocal,2*jlocal+1]
+                                  cls.Mb[iglobal_y,jglobal_y] = cls.Mb[iglobal_y,jglobal_y] + Mbe[2*ilocal+1,2*jlocal+1]
+                                  cls.Mb[iglobal_y,jglobal_x] = cls.Mb[iglobal_y,jglobal_x] + Mbe[2*ilocal+1,2*jlocal]
+                                  
         #Calculates force vector
         for bound in cls.BC:
             for i in range(len(cls.mesh.bound_dict[bound])):
@@ -327,7 +370,7 @@ class FEM:
         #                 cls.forces[2*cls.mesh.bound_dict[bound][i]+1] = cls.BC[bound][3]
 
         cls.b = cls.b + sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces)
-        
+
         #sets prescribed displacements
         for bound in cls.BC:
             for node in cls.mesh.bound_dict[bound]:
@@ -343,7 +386,8 @@ class FEM:
                         cls.A[2*node+1,col] = 0
                     cls.A[2*node+1,2*node+1] = 1.0
                     cls.b[2*node+1] = cls.BC[bound][1]
-                                
+                    
+                   
     @classmethod   
     def calc_stressHE(cls):
         
@@ -410,6 +454,10 @@ class FEM:
         cls.sigma_x = cls.sigma[:,0]
         cls.sigma_y = cls.sigma[:,1]
         cls.tau_xy = cls.sigma[:,2]
+        
+        cls.PK_stress_x = cls.sigma_x
+        cls.PK_stress_y = cls.sigma_x
+        cls.PK_stress_xy = cls.sigma_x
                             
         cls.sigma_VM = np.power(np.power(cls.sigma_x,2) + np.power(cls.sigma_y,2) - np.multiply(cls.sigma_x, cls.sigma_y) + 3.0*np.power(cls.tau_xy,2),0.5)
       
@@ -486,7 +534,7 @@ class FEM:
         cls.u_doubleprime = sp.sparse.linalg.spsolve(A,b)
         
     @classmethod   
-    def solve(cls,i, mesh_factor=0, nat_freq=False):
+    def solve(cls,i, mesh_factor=0, refconfig_force = False):
         
         if cls.int_i == 0:          
             cls.build_quad_GQ()
@@ -495,14 +543,13 @@ class FEM:
         cls.int_i += 1   
         
         cls.build_blocks()
-        cls.calc_bound_force()
+        cls.calc_bound_force(refconfig_force)
         cls.set_BC()
-        
-        if i==0 and nat_freq:
-            cls.calc_freq()
                 
         cls.u_minus = cls.u.copy()
         cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+        # print(sp.sparse.csr_matrix.sum(cls.A))
+        # print(np.sum(cls.b))
         
         #-----------teste não Newmark------------------------------------------
         
@@ -552,7 +599,7 @@ class FEM:
         return cls.u, cls.u_w
     
     @classmethod   
-    def solve_HE(cls, i, mesh_factor=0, nat_freq=False):
+    def solve_HE(cls, i, mesh_factor=0, refconfig_force = False):
         
         # if i == 0:          
         #     cls.build_quad_GQHE()
@@ -563,7 +610,7 @@ class FEM:
 
         cls.int_i += 1 
                     
-        tol = 0.001
+        tol = 0.000001
         error = 1.0
 
         du = np.zeros((2*cls.mesh.npoints), dtype='float')
@@ -584,9 +631,9 @@ class FEM:
                         
             cls.build_quad_GQHE()
             cls.build_blocks(True)
-            cls.calc_bound_force()
+            cls.calc_bound_force(refconfig_force)
             
-            Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) - cls.h*cls.Res_stress - sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u_doubleprime)     
+            Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) + sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(), (1.0/cls.Fr**2)*cls.g) - cls.h*cls.Res_stress - sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u_doubleprime)     
             cls.set_BCHE(Res)
             
             du = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
