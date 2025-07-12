@@ -1207,6 +1207,7 @@ class Quad:
                     [0, dphiJdy[k][0], 0,  dphiJdy[k][1], 0, dphiJdy[k][2], 0, dphiJdy[k][3], 0, dphiJdy[k][4], 0, dphiJdy[k][5]]])
      
      
+     
      _self.kG = _self.kG + 0.5*np.transpose(BG)@SIGMA@BG*jacob[k]*_self.gqWeights[k]
      
      _self.k_solid = _self.kN + _self.kG
@@ -1225,6 +1226,16 @@ class Quad:
      _self.res_stress = _self.res_stress + 0.5*np.transpose(BN)@stress*jacob[k]*_self.gqWeights[k]
      # compute area 
      _self.area += (1.0/2.0)*jacob[k]*_self.gqWeights[k]
+     # if k == 0:
+     #     print(N)
+     #     print('\n')
+     #     print(BN)
+     #     print('\n')
+     #     print(BG)
+     #     print('\n')
+     #     print(SIGMA)
+
+
      
  def getMass_porous(_self,v,porous_nodes):
 

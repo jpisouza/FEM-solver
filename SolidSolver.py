@@ -13,26 +13,27 @@ from ExportSolid import export_nat
 from ExportSolid import export_static
 import os
 
-def Solid_solver(E,nu,rho,disp,HE,case):
+def Solid_solver(E,nu,rho,disp,HE,case,msh):
 
-    g = [0,-2]
+    g = [0,-2.0]
     h = 1.0
     dt = 0.02
     end = 1000
     
     gamma = 0.5
     beta = 0.5
-    dynamic = True
+    dynamic = False
     
     output_dir = case + 'Results'
     if not os.path.isdir(output_dir):
        os.mkdir(output_dir)
     
     
+    # BC = {'fixed': [0,0, 'None', 'None']}
     BC = {'right_bound': ['None', 'None', 'None', 'None'], 'left_bound': [0, 0, 'None', 'None'], 'upper_bound': ['None', 'None', 'None', 'None']}
     # BC = {'right_bound': [disp, 'None', 'None', 'None'], 'left_bound': [0, 'None', 'None', 'None'], 'lower_bound': ['None', 0, 'None', 'None']}
     IC = None
-    mesh = SolidMesh(case+'malhaTeste.msh', BC)
+    mesh = SolidMesh(case+msh, BC)
     
     FEM.set_parameters(mesh, BC, IC, h, E, dt, rho, nu, gamma, beta, g)
     
@@ -90,5 +91,8 @@ if __name__ == "__main__":
     disp = 1.0
     HE = True
     case = './Cases/Solid_Turek/'
-    FEM = Solid_solver(E, nu, rho, disp, HE, case)
+    # case = 'C:\\Users\\jpinn\\Downloads\\'
+    msh = 'malhaTeste.msh'
+    # msh = 'tri_quad.msh'
+    FEM = Solid_solver(E, nu, rho, disp, HE, case, msh)
 
