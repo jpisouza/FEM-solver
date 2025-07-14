@@ -170,6 +170,7 @@ class Case:
                 IC['vy'] = v[:,1]
                 IC['p'] = IC_['p'][list(cls.mesh.converter.keys())]
                 IC['T'] = IC_['T']
+                IC['mesh_displacement'] = IC_['mesh_disp']
                 
                 if len(cls.mesh.solid_list) > 0:
                     IC['u'] = IC_solid['u']
@@ -178,8 +179,7 @@ class Case:
                     IC['solidmesh_X'] = data_solid.points[:,0]
                     IC['solidmesh_Y'] = data_solid.points[:,1]
                     IC['mesh_X'] = data.points[:,0]
-                    IC['mesh_Y'] = data.points[:,1]
-                    IC['mesh_displacement'] = IC_['mesh_disp']
+                    IC['mesh_Y'] = data.points[:,1]                    
                 else:
                     IC['mesh_X'] = None
                     IC['mesh_Y'] = None
