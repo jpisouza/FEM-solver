@@ -8,6 +8,7 @@ import scipy.sparse.linalg
 # import MathWrapper
 from semi_lagrangiano import semi_lagrange2
 import SL
+import clSemiLagrangian as SL_
 import Elements
 from Turbulence import Turbulence
 from FSISolidMesh import FSISolidMesh
@@ -977,11 +978,24 @@ class FEM:
                 for i in range(cls.mesh.npoints_p):
                     cls.mesh.node_list[i].T = cls.fluid.T[i]
             else:
-                sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy, cls.mesh.mesh_displacement)
-                sl.compute(cls.dt)
-                cls.fluid.vxd = sl.conv*cls.fluid.vx
-                cls.fluid.vyd = sl.conv*cls.fluid.vy
-                cls.fluid.Td = sl.conv*cls.fluid.T
+                #Using parallel ------------------------------------------------------
+                element = 'Tri6'
+                SLelem = getattr(SL_, element)
+                vxALE = cls.mesh.mesh_displacement[:,0]/cls.dt
+                vyALE = cls.mesh.mesh_displacement[:,1]/cls.dt
+                vxEuler = cls.fluid.vx - vxALE
+                vyEuler = cls.fluid.vy - vyALE
+                sl1 = SLelem(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,vxEuler,vyEuler)
+                sl1.compute(dt)
+                cls.fluid.vxd = sl1.conv*cls.fluid.vx
+                cls.fluid.vyd = sl1.conv*cls.fluid.vy
+                cls.fluid.Td = sl1.conv*cls.fluid.T
+                #End of parallel ------------------------------------------------------
+                # sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy, cls.mesh.mesh_displacement)
+                # sl.compute(cls.dt)
+                # cls.fluid.vxd = sl.conv*cls.fluid.vx
+                # cls.fluid.vyd = sl.conv*cls.fluid.vy
+                # cls.fluid.Td = sl.conv*cls.fluid.T
                 for i in range(cls.mesh.npoints):
                     cls.mesh.node_list[i].vx = cls.fluid.vx[i]
                     cls.mesh.node_list[i].vy = cls.fluid.vy[i]

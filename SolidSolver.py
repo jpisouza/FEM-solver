@@ -22,7 +22,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
     
     gamma = 0.5
     beta = 0.5
-    dynamic = False
+    dynamic = True
     
     output_dir = case + 'Results'
     if not os.path.isdir(output_dir):
