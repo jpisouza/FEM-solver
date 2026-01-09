@@ -1087,7 +1087,7 @@ class FEM:
         
         start = timer()
         
-        if sys.platform == "win32":
+        if True: # sys.platform == "win32":
             sol = sp.sparse.linalg.spsolve(cls.Matriz,cls.vetor.transpose())
         else:
             #PETSC----------------------------------------------------------------
@@ -1121,7 +1121,6 @@ class FEM:
             ksp.solve(b_petsc, x_petsc)
             
             sol = x_petsc.getArray()
-            print(sol)
 
         end = timer()  
         print('time --> Flow solution = ' + str(end-start) + ' [s]')
