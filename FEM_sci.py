@@ -15,6 +15,9 @@ from Turbulence import Turbulence
 from FSISolidMesh import FSISolidMesh
 from SolidFEM import FEM as SolidFEM
 from multiprocessing import cpu_count
+import sys
+if sys.platform != "win32":
+    from petsc4py import PETSc
 # import solveSys
 # from julia import Main
 
@@ -1013,23 +1016,23 @@ class FEM:
                     cls.mesh.node_list[i].T = cls.fluid.T[i]
             else:
                 #Using parallel ------------------------------------------------------
-                element = 'Tri6'
-                SLelem = getattr(SL_, element)
-                vxALE = cls.mesh.mesh_displacement[:,0]/cls.dt
-                vyALE = cls.mesh.mesh_displacement[:,1]/cls.dt
-                vxEuler = cls.fluid.vx - vxALE
-                vyEuler = cls.fluid.vy - vyALE
-                sl1 = SLelem(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,vxEuler,vyEuler)
-                sl1.compute(dt)
-                cls.fluid.vxd = sl1.conv*cls.fluid.vx
-                cls.fluid.vyd = sl1.conv*cls.fluid.vy
-                cls.fluid.Td = sl1.conv*cls.fluid.T
+                # element = 'Tri6'
+                # SLelem = getattr(SL_, element)
+                # vxALE = cls.mesh.mesh_displacement[:,0]/cls.dt
+                # vyALE = cls.mesh.mesh_displacement[:,1]/cls.dt
+                # vxEuler = cls.fluid.vx - vxALE
+                # vyEuler = cls.fluid.vy - vyALE
+                # sl1 = SLelem(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,vxEuler,vyEuler)
+                # sl1.compute(dt)
+                # cls.fluid.vxd = sl1.conv*cls.fluid.vx
+                # cls.fluid.vyd = sl1.conv*cls.fluid.vy
+                # cls.fluid.Td = sl1.conv*cls.fluid.T
                 #End of parallel ------------------------------------------------------
-                # sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy, cls.mesh.mesh_displacement)
-                # sl.compute(cls.dt)
-                # cls.fluid.vxd = sl.conv*cls.fluid.vx
-                # cls.fluid.vyd = sl.conv*cls.fluid.vy
-                # cls.fluid.Td = sl.conv*cls.fluid.T
+                sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy, cls.mesh.mesh_displacement)
+                sl.compute(cls.dt)
+                cls.fluid.vxd = sl.conv*cls.fluid.vx
+                cls.fluid.vyd = sl.conv*cls.fluid.vy
+                cls.fluid.Td = sl.conv*cls.fluid.T
                 for i in range(cls.mesh.npoints):
                     cls.mesh.node_list[i].vx = cls.fluid.vx[i]
                     cls.mesh.node_list[i].vy = cls.fluid.vy[i]
@@ -1083,8 +1086,40 @@ class FEM:
         print('time --> Set boundaries = ' + str(end-start) + ' [s]')
         
         start = timer()
+        
+        if sys.platform == "win32":
+            sol = sp.sparse.linalg.spsolve(cls.Matriz,cls.vetor.transpose())
+        else:
+            #PETSC----------------------------------------------------------------
+            A = cls.Matriz.copy()
+            b = cls.vetor.copy()
+            A_coo = cls.Matriz.tocoo()
+            nsize = cls.Matriz.shape[0]
+            
+            A = A + sp.sparse.diags([1e-30 * (A.diagonal() == 0)], [0])
+            A_csr = A.tocsr()  # garante formato CSR
+            A_petsc = PETSc.Mat().createAIJ(size=A.shape,
+                                 csr=(A.indptr, A.indices, A.data),
+                                 comm=PETSc.COMM_WORLD)
+            
+            # --- convert rhs vector b and solution vector x to PETSc Vec ---
+            b_petsc = PETSc.Vec().createWithArray(b, comm=PETSc.COMM_WORLD)
+            x_petsc = PETSc.Vec().createSeq(nsize)
+            
+            # --- setup solver (preonly) ---
+            ksp = PETSc.KSP().create(comm=PETSc.COMM_WORLD)
+            ksp.setOperators(A_petsc)
 
-        sol = sp.sparse.linalg.spsolve(cls.Matriz,cls.vetor.transpose())
+            # direct solver
+            ksp.setType('preonly')         # solver type
+            ksp.getPC().setType('lu')      # direct solver
+            #ksp.getPC().setFactorSolverType('superlu') # multithread
+            ksp.getPC().setFactorSolverType('umfpack') # serial
+            
+            ksp.setFromOptions()
+            ksp.solve(b_petsc, x_petsc)
+            
+            sol = x_petsc.getArray()
 
         end = timer()  
         print('time --> Flow solution = ' + str(end-start) + ' [s]')
