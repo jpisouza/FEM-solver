@@ -1087,7 +1087,7 @@ class FEM:
         
         start = timer()
         
-        if True: # sys.platform == "win32":
+        if sys.platform == "win32":
             sol = sp.sparse.linalg.spsolve(cls.Matriz,cls.vetor.transpose())
         else:
             #PETSC----------------------------------------------------------------
