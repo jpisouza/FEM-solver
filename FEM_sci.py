@@ -1092,18 +1092,18 @@ class FEM:
         else:
             #PETSC----------------------------------------------------------------
             A = cls.Matriz.copy()
-            b = cls.vetor.copy()
-            A_coo = cls.Matriz.tocoo()
-            nsize = cls.Matriz.shape[0]
+            b = cls.vetor.transpose().copy()
+            A_coo = A.tocoo()
+            nsize = A.shape[0]
             
-            A = A + sp.sparse.diags([1e-30 * (A.diagonal() == 0)], [0])
-            A_csr = A.tocsr()  # garante formato CSR
-            A_petsc = PETSc.Mat().createAIJ(size=A.shape,
-                                 csr=(A.indptr, A.indices, A.data),
+            A_coo = A_coo + sp.sparse.diags([1e-10 * (A_coo.diagonal() == 0)], [0])
+            A_csr = A_coo.tocsr()  # garante formato CSR
+            A_petsc = PETSc.Mat().createAIJ(size=A_csr.shape,
+                                 csr=(A_csr.indptr, A_csr.indices, A_csr.data),
                                  comm=PETSc.COMM_WORLD)
             
             # --- convert rhs vector b and solution vector x to PETSc Vec ---
-            b_petsc = PETSc.Vec().createWithArray(b, comm=PETSc.COMM_WORLD)
+            b_petsc = PETSc.Vec().createWithArray(b.toarray(), comm=PETSc.COMM_WORLD)
             x_petsc = PETSc.Vec().createSeq(nsize)
             
             # --- setup solver (preonly) ---
@@ -1114,12 +1114,14 @@ class FEM:
             ksp.setType('preonly')         # solver type
             ksp.getPC().setType('lu')      # direct solver
             #ksp.getPC().setFactorSolverType('superlu') # multithread
-            ksp.getPC().setFactorSolverType('umfpack') # serial
+            #ksp.getPC().setFactorSolverType('umfpack') # serial 
+            ksp.getPC().setFactorSolverType('petsc')
             
             ksp.setFromOptions()
             ksp.solve(b_petsc, x_petsc)
             
             sol = x_petsc.getArray()
+            print(sol)
 
         end = timer()  
         print('time --> Flow solution = ' + str(end-start) + ' [s]')
