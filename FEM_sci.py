@@ -165,6 +165,8 @@ class FEM:
         n_vp = dofVel * dofP   * cls.mesh.ne          # 6×3 valores por elemento
        
         m_data   = np.empty(n_vv, dtype=np.float64)
+        m_data_porous = np.empty_like(m_data)
+        m_data_porous_F = np.empty_like(m_data)
         kx_data = np.empty_like(m_data)
         ky_data = np.empty_like(m_data)
         k_data = np.empty_like(m_data)
@@ -195,9 +197,15 @@ class FEM:
             s_vp = slice(e*offset_vp, (e+1)*offset_vp)
           
             m_data[s_vv]   = local[e].mass.ravel()
-            kx_data[s_vv]  = local[e].kxx.ravel()
-            ky_data[s_vv]  = local[e].kyy.ravel()
-            k_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
+            if e in cls.mesh.solid_elem:
+                kx_data[s_vv]  = 10000*cls.Re*local[e].kxx.ravel()
+                ky_data[s_vv]  = 10000*cls.Re*local[e].kyy.ravel()
+                k_data[s_vv]   = 10000*cls.Re*(local[e].kxx + local[e].kyy).ravel()
+            else:
+                kx_data[s_vv]  = local[e].kxx.ravel()
+                ky_data[s_vv]  = local[e].kyy.ravel()
+                k_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
+                
             gvx_data[s_vv]  = local[e].gvx.ravel()
             gvy_data[s_vv]  = local[e].gvy.ravel()
           
@@ -206,8 +214,16 @@ class FEM:
             dx_data[s_vp]  = local[e].dx.ravel()
             dy_data[s_vp]  = local[e].dy.ravel()
             
+            if len(cls.mesh.porous_list) > 0:
+                m_data_porous[s_vv]   = local[e].mass.ravel()*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]
+                m_data_porous_F[s_vv]   = local[e].mass.ravel()*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]**2
+            else:
+                m_data_porous[s_vv]   = local[e].mass.ravel()*cls.mesh.porosity_array[e]
+                m_data_porous_F[s_vv]   = local[e].mass.ravel()*cls.mesh.porosity_array[e]**2
             
         cls.M    = coo_matrix((m_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.M_porous    = coo_matrix((m_data_porous,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.M_porous_F    = coo_matrix((m_data_porous,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.M_T = cls.M.copy()
         cls.Kx    = coo_matrix((kx_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.Ky    = coo_matrix((ky_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
