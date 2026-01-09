@@ -1009,8 +1009,13 @@ class SemiLagrangian3D(ABC):
             Lx=Lx,
             hasPBC=hasPBC
         )
+        
+        if sys.platform == "win32":
+            ctx = get_context("spawn")
+        else:
+            ctx = get_context("fork")
 
-        with get_context("fork").Pool(processes) as pool:
+        with ctx.Pool(processes) as pool:
             func = partial(depart_chunk3D, **args_common)
             results = pool.map(func, chunks)
 

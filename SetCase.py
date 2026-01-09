@@ -64,6 +64,11 @@ class Case:
             mesh_factor = float(par.attrib['mesh_factor'])
         else:
             mesh_factor = False
+        
+        COO_flag = False
+        if 'COO' in par.attrib:
+            if par.attrib['COO'] == 'True':
+                COO_flag = True
                 
         SolidProp = {}
         parSolid = cls.root.find('SolidInterface')
@@ -107,7 +112,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save
     
     @classmethod
     def set_BC(cls):

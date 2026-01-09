@@ -10,9 +10,11 @@ from semi_lagrangiano import semi_lagrange2
 import SL
 import clSemiLagrangian as SL_
 import Elements
+import clElement
 from Turbulence import Turbulence
 from FSISolidMesh import FSISolidMesh
 from SolidFEM import FEM as SolidFEM
+from multiprocessing import cpu_count
 # import solveSys
 # from julia import Main
 
@@ -21,7 +23,7 @@ from SolidFEM import FEM as SolidFEM
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC,IC,SolidProp,porous = False, turb = False):
+    def set_matrices(cls,mesh,fluid,dt,BC,IC,SolidProp,COO_flag = False,porous = False, turb = False):
 
         cls.fluid = fluid
         cls.Re = fluid.Re
@@ -35,6 +37,7 @@ class FEM:
         cls.BC = BC
         cls.turb = turb
         cls.porous = porous
+        cls.COO_flag = COO_flag
         cls.SolidProp = SolidProp
         cls.IC = IC
         cls.int_i = 0 #internal count
@@ -54,7 +57,10 @@ class FEM:
             if cls.mesh.mesh_kind == 'mini':
                 cls.build_mini()
             elif cls.mesh.mesh_kind == 'quad':
-                cls.build_quad_GQ()
+                if cls.COO_flag:
+                    cls.build_quad_GQ_COO()
+                else:
+                    cls.build_quad_GQ()
        
             cls.set_block_matrices(BC)
         
@@ -140,67 +146,79 @@ class FEM:
 
     @classmethod
     def build_quad_GQ_COO(cls):
-        quad = Elements.Quad(cls.mesh.X,cls.mesh.Y)
+        dofVel, dofP, ngauss = 6, 3, 12 # degrees of fredom of velocity/pressure
+        element_class = clElement.Triangle
         
-        rows = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
-        cols = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
-        rows_p = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]*cls.mesh.IEN_orig.shape[1]), dtype='float')
-        cols_p = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]*cls.mesh.IEN_orig.shape[1]), dtype='float')
+        vel_nodes  = cls.mesh.IEN.astype(np.int32)       # (numElems, 6)
+        pres_nodes = [[cls.mesh.converter[n] for n in line_IEN] for line_IEN in cls.mesh.IEN[:,0:dofP].astype(np.int32)]  # (numVerts, 4)
+       
+        iv  = np.repeat(vel_nodes, dofVel, axis=1).ravel()  # VV — linha (nó)
+        jv  = np.tile   (vel_nodes, (1, dofVel)).ravel()    # VV — coluna (nó)
+       
+        ip  = np.repeat(vel_nodes, dofP,  axis=1).ravel()   # VP — linha (nó)
+        jp  = np.tile   (pres_nodes, (1, dofVel)).ravel()   # VP — coluna (nó‑p)
+       
+        ipd = np.repeat(pres_nodes, dofVel, axis=1).ravel() # PV — linha (nó‑p)
+        jpd = np.tile   (vel_nodes, (1, dofP )).ravel()     # PV — coluna (nó)
         
-        M = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
-        K = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
-        M_T = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
-        K_T = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
-        Gx = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]*cls.mesh.IEN_orig.shape[1]), dtype='float')
-        Gy = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]*cls.mesh.IEN_orig.shape[1]), dtype='float')
-        M_porous_elem = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
-        M_porous_elem_F = np.zeros((cls.mesh.ne*cls.mesh.IEN.shape[1]**2), dtype='float')
+        n_vv = dofVel * dofVel * cls.mesh.ne          # 6×6 valores por elemento
+        n_vp = dofVel * dofP   * cls.mesh.ne          # 6×3 valores por elemento
+       
+        m_data   = np.empty(n_vv, dtype=np.float64)
+        kx_data = np.empty_like(m_data)
+        ky_data = np.empty_like(m_data)
+        k_data = np.empty_like(m_data)
+        gvx_data  = np.empty_like(m_data)
+        gvy_data  = np.empty_like(m_data)
+       
+        gx_data  = np.empty(n_vp, dtype=np.float64)
+        gy_data  = np.empty_like(gx_data)
+        dx_data  = np.empty_like(gx_data)
+        dy_data  = np.empty_like(gx_data)
         
-        npoints_elem = cls.mesh.IEN.shape[1]
-        npoints_elem_p = cls.mesh.IEN_orig.shape[1]
+        offset_vv = dofVel * dofVel          # 6x6 = 36
+        offset_vp = dofVel * dofP            # 6x3 = 18
         
-        for e in range(0,cls.mesh.ne):
-            v1,v2,v3,v4,v5,v6 = cls.mesh.IEN[e]
-            quad.getM([v1,v2,v3,v4,v5,v6])
-            kelem = quad.kxx + quad.kyy
-            melem = quad.mass
-            gxelem = quad.gx
-            gyelem = quad.gy
-            melem_flat = melem.flatten()
-            kelem_flat = kelem.flatten()
-            gxelem_flat = gxelem.flatten()
-            gyelem_flat = gyelem.flatten()
-
-            rows[e*npoints_elem**2:(e+1)*npoints_elem**2] = npoints_elem*[v1] + npoints_elem*[v2] + npoints_elem*[v3] + npoints_elem*[v4] + npoints_elem*[v5] + npoints_elem*[v6] 
-            cols[e*npoints_elem**2:(e+1)*npoints_elem**2] = npoints_elem*[v1,v2,v3,v4,v5,v6]
-            rows_p[e*npoints_elem*npoints_elem_p:(e+1)*npoints_elem*npoints_elem_p] = npoints_elem_p*[v1] + npoints_elem_p*[v2] + npoints_elem_p*[v3] + npoints_elem_p*[v4] + npoints_elem_p*[v5] + npoints_elem_p*[v6]
-            cols_p[e*npoints_elem*npoints_elem_p:(e+1)*npoints_elem*npoints_elem_p] = npoints_elem*[cls.mesh.converter[v1],cls.mesh.converter[v2],cls.mesh.converter[v3]]             
-            Gx[e*npoints_elem*npoints_elem_p:(e+1)*npoints_elem*npoints_elem_p] = gxelem_flat
-            Gy[e*npoints_elem*npoints_elem_p:(e+1)*npoints_elem*npoints_elem_p] = gyelem_flat
+        # Call the parallel engine:
+        nprocs = max(1, cpu_count() - 1)
+        local = clElement.parallel_get_matrices(
+           element_class=element_class,# Triangle, Tetrahedron, Line...
+           constructor_args=(cls.mesh.X, cls.mesh.Y, dofVel,dofP,ngauss),
+           v_list=[cls.mesh.IEN[e] for e in range(cls.mesh.ne)],
+           processes=nprocs,
+           chunksize=max(1, cls.mesh.ne // (8 * nprocs)),
+           use_slip=False
+        )
+        
+        for e in range(cls.mesh.ne):
+            s_vv = slice(e*offset_vv, (e+1)*offset_vv)
+            s_vp = slice(e*offset_vp, (e+1)*offset_vp)
+          
+            m_data[s_vv]   = local[e].mass.ravel()
+            kx_data[s_vv]  = local[e].kxx.ravel()
+            ky_data[s_vv]  = local[e].kyy.ravel()
+            k_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
+            gvx_data[s_vv]  = local[e].gvx.ravel()
+            gvy_data[s_vv]  = local[e].gvy.ravel()
+          
+            gx_data[s_vp]  = local[e].gx.ravel()
+            gy_data[s_vp]  = local[e].gy.ravel()
+            dx_data[s_vp]  = local[e].dx.ravel()
+            dy_data[s_vp]  = local[e].dy.ravel()
             
-            M[e*npoints_elem**2:(e+1)*npoints_elem**2] = melem_flat
-            M_T[e*npoints_elem**2:(e+1)*npoints_elem**2] = melem_flat
-            K[e*npoints_elem**2:(e+1)*npoints_elem**2] = kelem_flat
-            K_T[e*npoints_elem**2:(e+1)*npoints_elem**2] = kelem_flat
             
-            if len(cls.mesh.porous_list) > 0:
-                M_porous_elem[e*npoints_elem**2:(e+1)*npoints_elem**2] = (melem_flat*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e])
-                M_porous_elem_F[e*npoints_elem**2:(e+1)*npoints_elem**2] = (melem_flat*cls.mesh.porous_elem[e]*cls.mesh.porosity_array[e]**2)
-            else:
-                M_porous_elem[e*npoints_elem**2:(e+1)*npoints_elem**2] = (melem_flat*cls.mesh.porosity_array[e])
-                M_porous_elem_F[e*npoints_elem**2:(e+1)*npoints_elem**2] = (melem_flat*cls.mesh.porosity_array[e]**2)
-                
-   
-        cls.M = coo_matrix((M,(rows,cols)), shape = (cls.mesh.npoints,cls.mesh.npoints)).tolil()
-        cls.M_T = coo_matrix((M_T,(rows,cols)), shape = (cls.mesh.npoints,cls.mesh.npoints)).tolil()
-        cls.K = coo_matrix((K,(rows,cols)), shape = (cls.mesh.npoints,cls.mesh.npoints)).tolil()
-        cls.K_T = coo_matrix((K_T,(rows,cols)), shape = (cls.mesh.npoints,cls.mesh.npoints)).tolil()
-        cls.M_porous_elem = coo_matrix((M_porous_elem,(rows,cols)), shape = (cls.mesh.npoints,cls.mesh.npoints)).tolil()
-        cls.M_porous_elem_F = coo_matrix((M_porous_elem_F,(rows,cols)), shape = (cls.mesh.npoints,cls.mesh.npoints)).tolil()
-        cls.Gx = coo_matrix((Gx,(rows_p,cols_p)), shape = (cls.mesh.npoints,cls.mesh.npoints_p)).tolil()
-        cls.Gy = coo_matrix((Gy,(rows_p,cols_p)), shape = (cls.mesh.npoints,cls.mesh.npoints_p)).tolil()
-        cls.Dx = cls.Gx.transpose().tolil()
-        cls.Dy = cls.Gy.transpose().tolil()
+        cls.M    = coo_matrix((m_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.M_T = cls.M.copy()
+        cls.Kx    = coo_matrix((kx_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.Ky    = coo_matrix((ky_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.K     = cls.Kx + cls.Ky
+        cls.K_T = cls.K.copy()
+        cls.Gvx   = coo_matrix((gvx_data, (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.Gvy   = coo_matrix((gvy_data, (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.Gx   = coo_matrix((gx_data,(ip , jp)),shape=(cls.mesh.npoints, cls.mesh.npoints_p)).tocsr()
+        cls.Gy   = coo_matrix((gy_data,(ip , jp)),shape=(cls.mesh.npoints, cls.mesh.npoints_p)).tocsr()
+        cls.Dx   = coo_matrix((dx_data, (ipd, jpd)),shape=(cls.mesh.npoints_p, cls.mesh.npoints)).tocsr()
+        cls.Dy   = coo_matrix((dy_data, (ipd, jpd)),shape=(cls.mesh.npoints_p, cls.mesh.npoints)).tocsr()
 
     @classmethod
     def build_mini_GQ_COO(cls):

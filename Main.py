@@ -60,7 +60,7 @@ def main():
     Case.read(case,MESH)
     
     IC,forces = Case.set_IC(i)
-    Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save = Case.set_parameters()
+    Re,Pr,Ga,Gr,Fr,Da,Fo,particles_flag,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save = Case.set_parameters()
     BC,FSI = Case.set_BC()
     
     outflow = Case.set_OutFlow()
@@ -77,7 +77,7 @@ def main():
         particleCloud.set_distribution(mean, sigma, factor, inlet, type_, freq, dist, rho, lims, max_part)
     
     
-    FEM.set_matrices(MESH,fluid,dt,BC,IC,SolidProp, porous,turb)
+    FEM.set_matrices(MESH,fluid,dt,BC,IC,SolidProp,COO_flag,porous,turb)
     neighborElem=[[]]
     SL_matrix=True
     oface=[]
