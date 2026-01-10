@@ -37,11 +37,11 @@ class mesh:
             self.X = self.msh.points[:, 0]
             self.Y = self.msh.points[:, 1]
      
-            self.IEN = next(cb.data for cb in self.msh.cells if cb.type == "triangle6")
+            self.IEN = np.vstack([cb.data for cb in self.msh.cells if cb.type == "triangle6"])
             self.IEN_orig = self.IEN[:, :3].copy()
             self.ne = len(self.IEN)
-            self.IENbound = next(cb.data for cb in self.msh.cells if cb.type == "line3")
-            
+            self.IENbound = np.vstack([cb.data for cb in self.msh.cells if cb.type == "line3"])
+          
             self.npoints = np.max(self.IEN) + 1
             self.npoints_p = len(np.unique(self.IEN[:,:3]))
             
@@ -56,9 +56,9 @@ class mesh:
             self.boundNames = list(self.msh.field_data.keys())
 
 
-            line3_cb = next((cb for cb in self.msh.cells if cb.type == "line3"), None)
+            #line3_cb = next((cb for cb in self.msh.cells if cb.type == "line3"), None)
             
-            triangle6_cb = next((cb for cb in self.msh.cells if cb.type == "triangle6"), None)
+            #triangle6_cb = next((cb for cb in self.msh.cells if cb.type == "triangle6"), None)
             
             self.IENboundTypeElem = []
             self.IENTypeElem = []
@@ -83,16 +83,12 @@ class mesh:
                     # Adiciona à lista final
                     self.IENTypeElem.extend(phys_ids)
             
-            if triangle6_cb is not None:
-                idx = self.msh.cells.index(triangle6_cb)
-                self.IENTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
-            
 
             self.IENboundElem = [
                 self.boundNames[self.dict_boundary[elem]]
                 for elem in self.IENboundTypeElem
             ] if self.IENboundTypeElem else []
-            
+
             self.IENElem = []
             self.porous_elem = []
             self.porosity_array = []

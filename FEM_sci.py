@@ -1100,14 +1100,14 @@ class FEM:
             A_csr = A_coo.tocsr()  
             A_petsc = PETSc.Mat().createAIJ(size=A_csr.shape,
                                  csr=(A_csr.indptr, A_csr.indices, A_csr.data),
-                                 comm=PETSc.COMM_WORLD)
+                                 comm=PETSc.COMM_SELF)
             
             # --- convert rhs vector b and solution vector x to PETSc Vec ---
-            b_petsc = PETSc.Vec().createWithArray(b.toarray(), comm=PETSc.COMM_WORLD)
+            b_petsc = PETSc.Vec().createWithArray(b.toarray(), comm=PETSc.COMM_SELF)
             x_petsc = PETSc.Vec().createSeq(nsize)
             
             # --- setup solver (preonly) ---
-            ksp = PETSc.KSP().create(comm=PETSc.COMM_WORLD)
+            ksp = PETSc.KSP().create(comm=PETSc.COMM_SELF)
             ksp.setOperators(A_petsc)
 
             # direct solver
@@ -1115,7 +1115,7 @@ class FEM:
             ksp.getPC().setType('lu')      # direct solver
             #ksp.getPC().setFactorSolverType('superlu') # multithread
             #ksp.getPC().setFactorSolverType('umfpack') # serial 
-            ksp.getPC().setFactorSolverType('petsc')
+            ksp.getPC().setFactorSolverType('umfpack')
             
             ksp.setFromOptions()
             ksp.solve(b_petsc, x_petsc)
