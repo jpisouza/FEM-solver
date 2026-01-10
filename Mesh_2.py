@@ -29,16 +29,18 @@ class mesh:
             i+=1
             
         
-        if 'triangle6' in self.msh.cells:
-            self.mesh_kind = 'quad'
-            
-            self.X = self.msh.points[:,0]
-            self.Y = self.msh.points[:,1]
-            
-            self.IEN = self.msh.cells['triangle6']
-            self.IEN_orig = self.IEN[:,:3].copy()
-            self.ne=len(self.IEN)
-            self.IENbound = self.msh.cells['line3']
+        has_triangle6 = any(cb.type == "triangle6" for cb in self.msh.cells)
+
+        if has_triangle6:
+            self.mesh_kind = "quad"
+     
+            self.X = self.msh.points[:, 0]
+            self.Y = self.msh.points[:, 1]
+     
+            self.IEN = next(cb.data for cb in self.msh.cells if cb.type == "triangle6")
+            self.IEN_orig = self.IEN[:, :3].copy()
+            self.ne = len(self.IEN)
+            self.IENbound = next(cb.data for cb in self.msh.cells if cb.type == "line3")
             
             self.npoints = np.max(self.IEN) + 1
             self.npoints_p = len(np.unique(self.IEN[:,:3]))
@@ -51,10 +53,30 @@ class mesh:
             
             self.converter = dict(zip(points_p_real,points_p))
             
-            self.IENboundTypeElem = list(self.msh.cell_data['line3']['gmsh:physical'])
-            self.IENTypeElem = list(self.msh.cell_data['triangle6']['gmsh:physical'])
             self.boundNames = list(self.msh.field_data.keys())
-            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+
+
+            line3_cb = next((cb for cb in self.msh.cells if cb.type == "line3"), None)
+            
+            triangle6_cb = next((cb for cb in self.msh.cells if cb.type == "triangle6"), None)
+            
+            self.IENboundTypeElem = []
+            self.IENTypeElem = []
+            
+            if line3_cb is not None:
+                idx = self.msh.cells.index(line3_cb) 
+                self.IENboundTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
+            
+            if triangle6_cb is not None:
+                idx = self.msh.cells.index(triangle6_cb)
+                self.IENTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
+            
+
+            self.IENboundElem = [
+                self.boundNames[self.dict_boundary[elem]]
+                for elem in self.IENboundTypeElem
+            ] if self.IENboundTypeElem else []
+            
             self.IENElem = []
             self.porous_elem = []
             self.porosity_array = []
@@ -101,20 +123,41 @@ class mesh:
 
         elif self.mesh_kind == 'mini':
 
-            self.X = self.msh.points[:,0]
-            self.Y = self.msh.points[:,1]
-
-            self.IEN = self.msh.cells['triangle']
+            self.X = self.msh.points[:, 0]
+            self.Y = self.msh.points[:, 1]
+            
+            self.IEN = next(cb.data for cb in self.msh.cells if cb.type == "triangle")
             self.IEN_orig = self.IEN.copy()
-            self.ne=len(self.IEN)
-
+            self.ne = len(self.IEN)
+            
             self.npoints_p = len(self.X)
             
-            self.IENbound = self.msh.cells['line']
-            self.IENboundTypeElem = list(self.msh.cell_data['line']['gmsh:physical'])
-            self.IENTypeElem = list(self.msh.cell_data['triangle']['gmsh:physical'])
             self.boundNames = list(self.msh.field_data.keys())
-            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
+
+            # ---------------------- Cell blocks ----------------------
+            # Pega o bloco de células do tipo line3 (fronteira)
+            line_cb = next((cb for cb in self.msh.cells if cb.type == "line"), None)
+            
+            # Pega o bloco de células do tipo triangle6 (elementos)
+            triangle_cb = next((cb for cb in self.msh.cells if cb.type == "triangle"), None)
+
+            self.IENboundTypeElem = []
+            self.IENTypeElem = []
+            
+
+            if line_cb is not None:
+                idx = self.msh.cells.index(line_cb)
+                self.IENboundTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
+            
+            if triangle_cb is not None:
+                idx = self.msh.cells.index(triangle_cb)
+                self.IENTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
+            
+            self.IENboundElem = [
+                self.boundNames[self.dict_boundary[elem]]
+                for elem in self.IENboundTypeElem
+            ] if self.IENboundTypeElem else []
+            
             self.IENElem = []
             self.porous_elem = []
             self.porosity_array = []
