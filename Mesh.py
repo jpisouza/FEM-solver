@@ -63,9 +63,25 @@ class mesh:
             self.IENboundTypeElem = []
             self.IENTypeElem = []
             
-            if line3_cb is not None:
-                idx = self.msh.cells.index(line3_cb) 
-                self.IENboundTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
+            for i, cb in enumerate(self.msh.cells):
+                if cb.type == "line3":
+                    # Pega o array de IDs físicos correspondente
+                    phys_ids = self.msh.cell_data["gmsh:physical"][i]
+            
+                    # Garante que é 1D e converte em lista
+                    phys_ids = np.ravel(phys_ids).tolist()
+            
+                    # Adiciona à lista final
+                    self.IENboundTypeElem.extend(phys_ids)
+                elif cb.type == "triangle6":
+                    # Pega o array de IDs físicos correspondente
+                    phys_ids = self.msh.cell_data["gmsh:physical"][i]
+            
+                    # Garante que é 1D e converte em lista
+                    phys_ids = np.ravel(phys_ids).tolist()
+            
+                    # Adiciona à lista final
+                    self.IENTypeElem.extend(phys_ids)
             
             if triangle6_cb is not None:
                 idx = self.msh.cells.index(triangle6_cb)
