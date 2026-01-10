@@ -7,20 +7,55 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
     
     # print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
     if MESH.mesh_kind == 'mini':
+        line_cb = next(cb for cb in MESH.msh.cells if cb.type == "line")
+        triangle_cb = next(cb for cb in MESH.msh.cells if cb.type.startswith("triangle"))
+        
+        n_line = len(line_cb.data)
+        n_tri  = len(triangle_cb.data)
+        
         point_data = {'p' : fluid.p[0:MESH.npoints_p]}
         data_T  = {'T' : fluid.T}
         data_v = {'v' : np.transpose(np.block([[fluid.vx[0:MESH.npoints_p]],[fluid.vy[0:MESH.npoints_p]],[np.zeros((MESH.npoints_p),dtype='float')]]))}
         if particleCloud != 0:
             data_F = {'forces' : np.block([particleCloud.forces[0:MESH.npoints_p],np.zeros((MESH.npoints_p,1),dtype='float')])}
         else:
-            data_F = {'forces' : np.zeros((MESH.npoints_p,3),dtype='float')}
+            data_F = {'forces' : np.zeros((MESH.npoints_p,3),dtype=float)}
         point_data.update(data_T)
         point_data.update(data_v)
         point_data.update(data_F)
         if particleCloud != 0:
-            cell_data = {'line': {'v_c':np.zeros((len(MESH.msh.cells['line']),3),dtype='float'), 'forces_c':np.zeros((len(MESH.msh.cells['line']),3),dtype='float')},'triangle':{'v_c': np.transpose(np.block([[fluid.vx[MESH.npoints_p:]],[fluid.vy[MESH.npoints_p:]],[np.zeros((len(MESH.msh.cells['triangle'])),dtype='float')]])), 'forces_c' : np.block([particleCloud.forces[MESH.npoints_p:],np.zeros((len(MESH.msh.cells['triangle']),1),dtype='float')])}}
+            cell_data = {
+                'line': {
+                    'v_c': np.zeros((n_line, 3), dtype=float),
+                    'forces_c': np.zeros((n_line, 3), dtype=float)
+                },
+                'triangle': {
+                    'v_c': np.transpose(np.block([
+                        [fluid.vx[MESH.npoints_p:]],
+                        [fluid.vy[MESH.npoints_p:]],
+                        [np.zeros(n_tri, dtype=float)]
+                    ])),
+                    'forces_c': np.block([
+                        particleCloud.forces[MESH.npoints_p:],
+                        np.zeros((n_tri, 1), dtype=float)
+                    ])
+                }
+            }
         else:
-            cell_data = {'line': {'v_c':np.zeros((len(MESH.msh.cells['line']),3),dtype='float'), 'forces_c':np.zeros((len(MESH.msh.cells['line']),3),dtype='float')},'triangle':{'v_c': np.transpose(np.block([[fluid.vx[MESH.npoints_p:]],[fluid.vy[MESH.npoints_p:]],[np.zeros((len(MESH.msh.cells['triangle'])),dtype='float')]])), 'forces_c' : np.zeros((len(MESH.msh.cells['triangle']),3),dtype='float')}}
+            cell_data = {
+                'line': {
+                    'v_c': np.zeros((n_line, 3), dtype=float),
+                    'forces_c': np.zeros((n_line, 3), dtype=float)
+                },
+                'triangle': {
+                    'v_c': np.transpose(np.block([
+                        [fluid.vx[MESH.npoints_p:]],
+                        [fluid.vy[MESH.npoints_p:]],
+                        [np.zeros(n_tri, dtype=float)]
+                    ])),
+                    'forces_c': np.zeros((n_tri, 3), dtype=float)
+                }
+            }
         meshio.write_points_cells(
         output_dir + '/sol-'+str(i)+'.vtk',
         MESH.msh.points,
@@ -31,20 +66,21 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
         )
 
     if MESH.mesh_kind == 'quad':
-        points = np.block([[MESH.X],[MESH.Y],[np.zeros((MESH.npoints), dtype="float")]]).transpose()
-        cells = {}
-        cells['line3'] = MESH.IENbound
-        cells['triangle6'] = MESH.IEN
+        points = np.block([[MESH.X],[MESH.Y],[np.zeros((MESH.npoints), dtype=float)]]).transpose()
+        cells = [
+            meshio.CellBlock("line3", MESH.IENbound),
+            meshio.CellBlock("triangle6", MESH.IEN)
+        ]
 
         point_data = {'p' : fluid.p_quad}
         data_T  = {'T' : fluid.T}
-        data_v = {'v' : np.transpose(np.block([[fluid.vx],[fluid.vy],[np.zeros((MESH.npoints),dtype='float')]]))}
+        data_v = {'v' : np.transpose(np.block([[fluid.vx],[fluid.vy],[np.zeros((MESH.npoints),dtype=float)]]))}
         data_normalFSI = {'FSI_normal' : np.transpose(np.block([[MESH.normal_vect[:,0]],[MESH.normal_vect[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
         data_FSIForces = {'FSI_forces' : np.transpose(np.block([[fluid.FSIForces[:,0]],[fluid.FSIForces[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
         data_meshVel = {'mesh_vel' : np.transpose(np.block([[MESH.mesh_velocity[:,0]],[MESH.mesh_velocity[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
         data_meshDisp = {'mesh_disp' : np.transpose(np.block([[MESH.mesh_displacement[:,0]],[MESH.mesh_displacement[:,1]],[np.zeros((MESH.npoints),dtype='float')]]))}
         if particleCloud != 0:
-            data_F = {'forces' : np.block([particleCloud.forces,np.zeros((MESH.npoints,1),dtype='float')])}
+            data_F = {'forces' : np.block([particleCloud.forces,np.zeros((MESH.npoints,1),dtype=float)])}
         else:
             data_F = {'forces' : np.zeros((MESH.npoints,3),dtype='float')}
         point_data.update(data_T)
