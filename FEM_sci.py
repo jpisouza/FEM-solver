@@ -1097,7 +1097,7 @@ class FEM:
             nsize = A.shape[0]
             
             A_coo = A_coo + sp.sparse.diags([1e-10 * (A_coo.diagonal() == 0)], [0])
-            A_csr = A_coo.tocsr()  # garante formato CSR
+            A_csr = A_coo.tocsr()  
             A_petsc = PETSc.Mat().createAIJ(size=A_csr.shape,
                                  csr=(A_csr.indptr, A_csr.indices, A_csr.data),
                                  comm=PETSc.COMM_WORLD)

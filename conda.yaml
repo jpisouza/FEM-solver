@@ -1,0 +1,20 @@
+name: mech
+channels:
+  - mrossi
+  - conda-forge
+
+dependencies:
+  - python>=3.13
+  - pyvista
+  - numpy
+  - matplotlib
+  - sympy
+  - scipy
+  - meshio
+  - meshpy
+  - colorama
+  - petsc4py
+  - tqdm
+  - pip
+  - pip:
+    - gmsh
