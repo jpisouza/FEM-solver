@@ -1,11 +1,12 @@
-name: mech
+name: petsc_env
 channels:
   - mrossi
   - conda-forge
 
 dependencies:
-  - python>=3.13
+  - python=3.12
   - pyvista
+  - pyevtk
   - numpy
   - matplotlib
   - sympy
