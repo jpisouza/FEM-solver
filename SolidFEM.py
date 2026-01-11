@@ -163,7 +163,7 @@ class FEM:
         
         for e in range(0,len(cls.mesh.IENbound)):
             for bound in cls.BC:
-                if (cls.BC[bound][2] != 'None' or cls.BC[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
+                if (np.array(cls.BC[bound][2] != 'None').any() or np.array(cls.BC[bound][3] != 'None').any())  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
                     v1,v2,v3 = cls.mesh.IENbound[e]
                     
                     L1 = ((cls.mesh.X_orig[v1] - cls.mesh.X_orig[v3])**2 + (cls.mesh.Y_orig[v1] - cls.mesh.Y_orig[v3])**2)**0.5
@@ -236,7 +236,7 @@ class FEM:
 
         for e in range(0,len(cls.mesh.IENbound)):
             for bound in cls.BC:
-                if (cls.BC[bound][2] != 'None' or cls.BC[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
+                if (np.array(cls.BC[bound][2] != 'None').any() or np.array(cls.BC[bound][3] != 'None').any())  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
                     v1,v2,v3 = cls.mesh.IENbound[e]
                     
                     L1 = ((cls.mesh.X_orig[v1] - cls.mesh.X_orig[v3])**2 + (cls.mesh.Y_orig[v1] - cls.mesh.Y_orig[v3])**2)**0.5
@@ -292,7 +292,7 @@ class FEM:
             cls.Mb = lil_matrix( (2*cls.mesh.npoints,2*cls.mesh.npoints),dtype='float' )
             for e in range(0,len(cls.mesh.IENbound)):
                 for bound in cls.BC:
-                    if (cls.BC[bound][2] != 'None' or cls.BC[bound][3] != 'None')  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
+                    if (np.array(cls.BC[bound][2] != 'None').any() or np.array(cls.BC[bound][3] != 'None').any())  and all(np.in1d(cls.mesh.IENbound[e,:],cls.mesh.bound_dict[bound])):
                         v1,v2,v3 = cls.mesh.IENbound[e]
                         
                         L1 = ((cls.mesh.X[v1] - cls.mesh.X[v3])**2 + (cls.mesh.Y[v1] - cls.mesh.Y[v3])**2)**0.5
@@ -321,12 +321,12 @@ class FEM:
         #Calculates force vector
         for bound in cls.BC:
             for i in range(len(cls.mesh.bound_dict[bound])):
-                if cls.BC[bound][2] != 'None':
+                if np.array(cls.BC[bound][2] != 'None').any():
                     if type(cls.BC[bound][2]) == np.ndarray:
                         cls.forces[2*cls.mesh.bound_dict[bound][i]] = cls.BC[bound][2][i]
                     else:
                         cls.forces[2*cls.mesh.bound_dict[bound][i]] = cls.BC[bound][2]
-                if cls.BC[bound][3] != 'None':
+                if np.array(cls.BC[bound][3]!= 'None').any():
                     if type(cls.BC[bound][2]) == np.ndarray:
                         cls.forces[2*cls.mesh.bound_dict[bound][i]+1] = cls.BC[bound][3][i]
                     else:

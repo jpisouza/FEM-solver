@@ -1,20 +1,19 @@
-name: petsc_env
+name: dsc_env
 channels:
   - mrossi
   - conda-forge
 
 dependencies:
-  - python=3.12
+  - python=3.9
   - pyvista
   - pyevtk
-  - numpy=2.2.6
+  - numpy=2.0.2
   - matplotlib
   - sympy
   - scipy
   - meshio
   - meshpy
   - colorama
-  - petsc4py
   - tqdm
   - pip
   - pip:

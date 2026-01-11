@@ -54,11 +54,6 @@ class mesh:
             self.converter = dict(zip(points_p_real,points_p))
             
             self.boundNames = list(self.msh.field_data.keys())
-
-
-            #line3_cb = next((cb for cb in self.msh.cells if cb.type == "line3"), None)
-            
-            #triangle6_cb = next((cb for cb in self.msh.cells if cb.type == "triangle6"), None)
             
             self.IENboundTypeElem = []
             self.IENTypeElem = []
@@ -138,32 +133,38 @@ class mesh:
             self.X = self.msh.points[:, 0]
             self.Y = self.msh.points[:, 1]
             
-            self.IEN = next(cb.data for cb in self.msh.cells if cb.type == "triangle")
+            self.IEN = np.vstack([cb.data for cb in self.msh.cells if cb.type == "triangle"])
             self.IEN_orig = self.IEN.copy()
             self.ne = len(self.IEN)
+            self.IENbound = np.vstack([cb.data for cb in self.msh.cells if cb.type == "line"])
             
             self.npoints_p = len(self.X)
             
             self.boundNames = list(self.msh.field_data.keys())
 
-            # ---------------------- Cell blocks ----------------------
-            # Pega o bloco de células do tipo line3 (fronteira)
-            line_cb = next((cb for cb in self.msh.cells if cb.type == "line"), None)
-            
-            # Pega o bloco de células do tipo triangle6 (elementos)
-            triangle_cb = next((cb for cb in self.msh.cells if cb.type == "triangle"), None)
 
             self.IENboundTypeElem = []
             self.IENTypeElem = []
             
-
-            if line_cb is not None:
-                idx = self.msh.cells.index(line_cb)
-                self.IENboundTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
+            for i, cb in enumerate(self.msh.cells):
+                if cb.type == "line3":
+                    # Pega o array de IDs físicos correspondente
+                    phys_ids = self.msh.cell_data["gmsh:physical"][i]
             
-            if triangle_cb is not None:
-                idx = self.msh.cells.index(triangle_cb)
-                self.IENTypeElem = list(self.msh.cell_data['gmsh:physical'][idx])
+                    # Garante que é 1D e converte em lista
+                    phys_ids = np.ravel(phys_ids).tolist()
+            
+                    # Adiciona à lista final
+                    self.IENboundTypeElem.extend(phys_ids)
+                elif cb.type == "triangle6":
+                    # Pega o array de IDs físicos correspondente
+                    phys_ids = self.msh.cell_data["gmsh:physical"][i]
+            
+                    # Garante que é 1D e converte em lista
+                    phys_ids = np.ravel(phys_ids).tolist()
+            
+                    # Adiciona à lista final
+                    self.IENTypeElem.extend(phys_ids)
             
             self.IENboundElem = [
                 self.boundNames[self.dict_boundary[elem]]

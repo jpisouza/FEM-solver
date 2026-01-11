@@ -17,18 +17,17 @@ class SolidMesh:
             else:
                 self.dict_element[self.msh.field_data[key][0]] = i
             i+=1
-        
-        has_triangle6 = any(cb.type == "triangle6" for cb in self.msh.cells)
-        if has_triangle6:
+            
+        if 'triangle6' in self.msh.cells:
             self.mesh_kind = 'quad'
             
             self.X = self.msh.points[:,0]
             self.Y = self.msh.points[:,1]
             
-            self.IEN = np.vstack([cb.data for cb in self.msh.cells if cb.type == "triangle6"])
+            self.IEN = self.msh.cells['triangle6']
             self.IEN_orig = self.IEN[:,:3].copy()
             self.ne=len(self.IEN)
-            self.IENbound = np.vstack([cb.data for cb in self.msh.cells if cb.type == "line3"])
+            self.IENbound = self.msh.cells['line3']
             
             self.npoints = np.max(self.IEN) + 1
             
@@ -37,33 +36,10 @@ class SolidMesh:
             
             self.converter = dict(zip(points_real,points))
             
-            self.IENboundTypeElem = []
-            self.IENTypeElem = []
-            
-            for i, cb in enumerate(self.msh.cells):
-                if cb.type == "line3":
-                    # Pega o array de IDs físicos correspondente
-                    phys_ids = self.msh.cell_data["gmsh:physical"][i]
-            
-                    # Garante que é 1D e converte em lista
-                    phys_ids = np.ravel(phys_ids).tolist()
-            
-                    # Adiciona à lista final
-                    self.IENboundTypeElem.extend(phys_ids)
-                elif cb.type == "triangle6":
-                    # Pega o array de IDs físicos correspondente
-                    phys_ids = self.msh.cell_data["gmsh:physical"][i]
-            
-                    # Garante que é 1D e converte em lista
-                    phys_ids = np.ravel(phys_ids).tolist()
-            
-                    # Adiciona à lista final
-                    self.IENTypeElem.extend(phys_ids)
+            self.IENboundTypeElem = list(self.msh.cell_data['line3']['gmsh:physical'])
+            self.IENTypeElem = list(self.msh.cell_data['triangle6']['gmsh:physical'])
             self.boundNames = list(self.msh.field_data.keys())
-            self.IENboundElem = [
-                self.boundNames[self.dict_boundary[elem]]
-                for elem in self.IENboundTypeElem
-            ] if self.IENboundTypeElem else []
+            self.IENboundElem = [self.boundNames[self.dict_boundary[elem]] for elem in self.IENboundTypeElem]
         
         self.build_bounddict()
             

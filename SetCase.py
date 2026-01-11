@@ -150,7 +150,20 @@ class Case:
             # cls.mesh.Y = data.points[:,1]
 
             if cls.mesh.mesh_kind == 'mini':
-                IC_c = data.cell_data['triangle']
+                IC_c = {
+                    'v_c': [],
+                    'forces_c': []
+                }
+                
+                # percorre todos os cell blocks
+                for i, cb in enumerate(data.cells):
+                    if cb.type == "triangle":
+                        IC_c['v_c'].append(data.cell_data['v_c'][i])
+                        IC_c['forces_c'].append(data.cell_data['forces_c'][i])
+                
+                # concatena todos os blocos em um único array (como no 3.x)
+                IC_c['v_c'] = np.vstack(IC_c['v_c'])
+                IC_c['forces_c'] = np.vstack(IC_c['forces_c'])
 
                 v = np.zeros((cls.mesh.npoints,3), dtype='float')
                 v[:cls.mesh.npoints_p,:] = IC_['v']

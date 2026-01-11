@@ -10,15 +10,15 @@ class Linear:
 
   _self.X = _X
   _self.Y = _Y
-  _self.mass = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
   _self.area = 0.0
 
   # L1, L2 e L3 de todos os pontos de Gauss
@@ -57,8 +57,8 @@ class Linear:
            + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
 
   # Mudanca de variavel: pontos de Gauss
-  localx = np.zeros((_self.NUMRULE), dtype=np.float)
-  localy = np.zeros((_self.NUMRULE), dtype=np.float)
+  localx = np.zeros((_self.NUMRULE), dtype='float')
+  localy = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE):
    valx = 0.0;
    valy = 0.0;
@@ -69,10 +69,10 @@ class Linear:
    localy[k] = valy;
 
   # Mudanca de variavel: derivadas pontos de Gauss
-  dxdl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dxdl2 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl2 = np.zeros((_self.NUMRULE), dtype=np.float)
+  dxdl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dxdl2 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl2 = np.zeros((_self.NUMRULE), dtype='float')
   jacob = np.zeros((_self.NUMRULE),dtype='float')
   for k in range(0,_self.NUMRULE): 
    valxl1 = 0.0;
@@ -91,8 +91,8 @@ class Linear:
    # compute det(jacobian)
    jacob[k] = abs(valxl1*valyl2 - valxl2*valyl1)
 
-  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype=np.float)
-  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype=np.float)
+  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype='float')
+  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEC):
     dphiJdx[k][i] = ( _self.dphiJdl1[k][i]*dydl2[k]-_self.dphiJdl2[k][i]\
@@ -100,13 +100,13 @@ class Linear:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+_self.dphiJdl2[k][i]\
                   *dxdl1[k] )/jacobian;
 
-  _self.mass = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEC):
     for j in range(0,_self.NUMGLEC):
@@ -135,17 +135,17 @@ class Linear:
            + _self.X[v[0]]*( _self.Y[v[1]]-_self.Y[v[2]]) \
            + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
 
-  localx = np.zeros((_self.NUMRULE), dtype=np.float)
-  localy = np.zeros((_self.NUMRULE), dtype=np.float)
+  localx = np.zeros((_self.NUMRULE), dtype='float')
+  localy = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE):
    for i in range(0,_self.NUMGLEC):
     localx[k] += _self.X[v[i]] * _self.phiJ[k][i]
     localy[k] += _self.Y[v[i]] * _self.phiJ[k][i]
 
-  dxdl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dxdl2 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl2 = np.zeros((_self.NUMRULE), dtype=np.float)
+  dxdl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dxdl2 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl2 = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEC): 
     dxdl1[k] += _self.X[v[i]]*_self.dphiJdl1[k][i]
@@ -153,8 +153,8 @@ class Linear:
     dydl1[k] += _self.Y[v[i]]*_self.dphiJdl1[k][i]
     dydl2[k] += _self.Y[v[i]]*_self.dphiJdl2[k][i]
 
-  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype=np.float)
-  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype=np.float)
+  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype='float')
+  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEC), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEC):
     dphiJdx[k][i] = ( _self.dphiJdl1[k][i]*dydl2[k]-_self.dphiJdl2[k][i]\
@@ -162,9 +162,9 @@ class Linear:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+_self.dphiJdl2[k][i]\
                   *dxdl1[k] )/jacobian;
 
-  _self.mass = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEC,_self.NUMGLEC), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEC):
     for j in range(0,_self.NUMGLEC):
@@ -255,22 +255,22 @@ class Mini:
 
   _self.X = _X
   _self.Y = _Y
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.kxxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.kxyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.kyxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.kyyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.kxxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.kxyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.kyxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.kyyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
 
   _self.gqPoints=[ [0.873821971016996, 0.063089014491502, 0.063089014491502],
                    [0.063089014491502, 0.873821971016996, 0.063089014491502],
@@ -422,18 +422,18 @@ class Mini:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
 	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -495,7 +495,7 @@ class Mini:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
 	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-  _self.mass_porous = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.mass_porous = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
   
   for k in range(0,_self.NUMRULE): 
@@ -536,7 +536,7 @@ class Mini:
       dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
      	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
     
-    _self.mass_forchheimer = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+    _self.mass_forchheimer = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
     _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
     # _self.GQ_velocity_mod = _self.phiJ@vx[v]
     _self.GQ_velocity_mod = np.zeros((len(vx)),dtype='float')
@@ -607,22 +607,22 @@ class Mini:
     dgqPointsdy[k][i] = ( -_self.dgqPointsdl1[k][i]*dxdl2lin[k]+
 	                   _self.dgqPointsdl2[k][i]*dxdl1lin[k] )/jacobian;
 
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.kxxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.kxyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.kyxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.kyyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.kxxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.kxyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.kyxp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.kyyp = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -665,8 +665,8 @@ class Mini:
            + _self.X[v[0]]*( _self.Y[v[1]]-_self.Y[v[2]]) \
            + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
 
-  localx = np.zeros((_self.NUMRULE), dtype=np.float)
-  localy = np.zeros((_self.NUMRULE), dtype=np.float)
+  localx = np.zeros((_self.NUMRULE), dtype='float')
+  localy = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE):
    valx = 0.0;
    valy = 0.0;
@@ -676,10 +676,10 @@ class Mini:
    localx[k] = valx;
    localy[k] = valy;
 
-  dxdl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dxdl2 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl2 = np.zeros((_self.NUMRULE), dtype=np.float)
+  dxdl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dxdl2 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl2 = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE): 
    valxl1 = 0.0;
    valxl2 = 0.0;
@@ -695,8 +695,8 @@ class Mini:
    dydl1[k] = valyl1
    dydl2[k] = valyl2
 
-  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
-  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
+  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
+  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     dphiJdx[k][i] = ( _self.dphiJdl1[k][i]*dydl2[k]-_self.dphiJdl2[k][i]\
@@ -704,10 +704,10 @@ class Mini:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+_self.dphiJdl2[k][i]\
                   *dxdl1[k] )/jacobian;
 
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -743,7 +743,7 @@ class Mini:
                               [b2, c2],
                               [b3, c3] ])
 
-  klin = np.zeros((_self.NUMGLEP,_self.NUMGLEP), dtype=np.float)
+  klin = np.zeros((_self.NUMGLEP,_self.NUMGLEP), dtype='float')
   for i in range(0,_self.NUMGLEP):
    for j in range(0,_self.NUMGLEP-1):
     klin[i][j] += BT[i][j]*B[j][i]
@@ -770,7 +770,7 @@ class Mini:
   zzy  = (1.0/(4.0*A)) * (c2*c2 + c3*c3 + c2*c3)
   zzxy = (1.0/(4.0*A)) * (b2*c2 + b3*c3 + 0.5*b2*c3 + 0.5*b3*c2)
 
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   _self.mass = (A/840.0)*np.array( [[83,13,13, 45],
                                     [13,83,13, 45],
                                     [13,13,83, 45],
@@ -878,18 +878,18 @@ class Quad:
 
   _self.X = _X
   _self.Y = _Y
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   _self.area = 0.0
 
   _self.gqPoints=[ [0.249286745171, 0.249286745171, 0.501426509658 ],
@@ -1028,18 +1028,18 @@ class Quad:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
 	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -1103,8 +1103,8 @@ class Quad:
      dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
  	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-   _self.mass_solid = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
-   _self.k_solid  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+   _self.mass_solid = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype='float')
+   _self.k_solid  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype='float')
 
    for k in range(0,_self.NUMRULE): 
     B = np.array([[dphiJdx[k][0], 0, dphiJdx[k][1], 0, dphiJdx[k][2], 0, dphiJdx[k][3], 0, dphiJdx[k][4], 0, dphiJdx[k][5], 0],
@@ -1179,12 +1179,12 @@ class Quad:
      sigma_y[k] = sigma[1]
      sigma_xy[k] = sigma[2]
 
-    _self.mass_solid = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
-    _self.mass_stress = np.zeros((2*_self.NUMGLEU,3*_self.NUMGLEU), dtype=np.float)
-    _self.res_stress = np.zeros((2*_self.NUMGLEU), dtype=np.float)
-    _self.kN  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
-    _self.kG  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
-    _self.k_solid  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype=np.float)
+    _self.mass_solid = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype='float')
+    _self.mass_stress = np.zeros((2*_self.NUMGLEU,3*_self.NUMGLEU), dtype='float')
+    _self.res_stress = np.zeros((2*_self.NUMGLEU), dtype='float')
+    _self.kN  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype='float')
+    _self.kG  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype='float')
+    _self.k_solid  = np.zeros((2*_self.NUMGLEU,2*_self.NUMGLEU), dtype='float')
 
     for k in range(0,_self.NUMRULE): 
      F11 = 1.0 + np.array([dphiJdx[k][0], dphiJdx[k][1], dphiJdx[k][2], dphiJdx[k][3], dphiJdx[k][4], dphiJdx[k][5]])@ux[v]
@@ -1269,7 +1269,7 @@ class Quad:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
 	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-  _self.mass_porous = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.mass_porous = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
   
   for k in range(0,_self.NUMRULE): 
@@ -1310,7 +1310,7 @@ class Quad:
       dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
      	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
     
-    _self.mass_forchheimer = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+    _self.mass_forchheimer = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
     _self.GQ_porous_values = _self.phiJ@porous_nodes[v]
     # _self.GQ_velocity_mod = _self.phiJ@vel[v]
     _self.GQ_velocity_mod = np.zeros((len(vx)),dtype='float')
@@ -1386,18 +1386,18 @@ class Quad:
     dgqPointsdy[k][i] = ( -_self.dgqPointsdl1[k][i]*dxdl2lin[k]+
 	                   _self.dgqPointsdl2[k][i]*dxdl1lin[k] )/jacob[k];
 
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gvy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -1432,8 +1432,8 @@ class Quad:
            + _self.X[v[0]]*( _self.Y[v[1]]-_self.Y[v[2]]) \
            + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
 
-  localx = np.zeros((_self.NUMRULE), dtype=np.float)
-  localy = np.zeros((_self.NUMRULE), dtype=np.float)
+  localx = np.zeros((_self.NUMRULE), dtype='float')
+  localy = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE):
    valx = 0.0;
    valy = 0.0;
@@ -1443,10 +1443,10 @@ class Quad:
    localx[k] = valx;
    localy[k] = valy;
 
-  dxdl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dxdl2 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl2 = np.zeros((_self.NUMRULE), dtype=np.float)
+  dxdl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dxdl2 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl2 = np.zeros((_self.NUMRULE), dtype='float')
   jacob = [0.0]*_self.NUMRULE # area for each Gauss point
   for k in range(0,_self.NUMRULE): 
    valxl1 = 0.0;
@@ -1465,8 +1465,8 @@ class Quad:
    # compute det(jacobian)
    jacob[k] = dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k]
 
-  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
-  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
+  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
+  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     dphiJdx[k][i] = ( _self.dphiJdl1[k][i]*dydl2[k]-_self.dphiJdl2[k][i]\
@@ -1474,10 +1474,10 @@ class Quad:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+_self.dphiJdl2[k][i]\
                   *dxdl1[k] )/jacob[k];
 
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -1501,16 +1501,16 @@ class QuadBubble:
 
   _self.X = _X
   _self.Y = _Y
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
   _self.area = 0.0
 
   _self.gqPoints=[ [0.249286745171, 0.249286745171, 0.501426509658 ],
@@ -1645,16 +1645,16 @@ class QuadBubble:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
 	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -1688,8 +1688,8 @@ class QuadBubble:
            + _self.X[v[0]]*( _self.Y[v[1]]-_self.Y[v[2]]) \
            + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
 
-  localx = np.zeros((_self.NUMRULE), dtype=np.float)
-  localy = np.zeros((_self.NUMRULE), dtype=np.float)
+  localx = np.zeros((_self.NUMRULE), dtype='float')
+  localy = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE):
    valx = 0.0;
    valy = 0.0;
@@ -1699,10 +1699,10 @@ class QuadBubble:
    localx[k] = valx;
    localy[k] = valy;
 
-  dxdl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dxdl2 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl2 = np.zeros((_self.NUMRULE), dtype=np.float)
+  dxdl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dxdl2 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl2 = np.zeros((_self.NUMRULE), dtype='float')
   jacob = [0.0]*_self.NUMRULE # area for each Gauss point
   for k in range(0,_self.NUMRULE): 
    valxl1 = 0.0;
@@ -1721,8 +1721,8 @@ class QuadBubble:
    # compute det(jacobian)
    jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
 
-  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
-  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
+  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
+  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     dphiJdx[k][i] = ( _self.dphiJdl1[k][i]*dydl2[k]-_self.dphiJdl2[k][i]\
@@ -1730,10 +1730,10 @@ class QuadBubble:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+_self.dphiJdl2[k][i]\
                   *dxdl1[k] )/jacob[k];
 
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -1755,16 +1755,16 @@ class Cubic:
 
   _self.X = _X
   _self.Y = _Y
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
   _self.area = 0.0
 
   _self.gqPoints=[ [0.249286745171, 0.249286745171, 0.501426509658 ],
@@ -1900,16 +1900,16 @@ class Cubic:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+
 	                   _self.dphiJdl2[k][i]*dxdl1[k] )/jacob[k];
 
-  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype=np.float)
-  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
-  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype=np.float)
+  _self.mass = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.k    = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.gx   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.gy   = np.zeros((_self.NUMGLEU,_self.NUMGLEP), dtype='float')
+  _self.dx   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
+  _self.dy   = np.zeros((_self.NUMGLEP,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
@@ -1943,8 +1943,8 @@ class Cubic:
            + _self.X[v[0]]*( _self.Y[v[1]]-_self.Y[v[2]]) \
            + _self.X[v[1]]*(-_self.Y[v[0]]+_self.Y[v[2]])
 
-  localx = np.zeros((_self.NUMRULE), dtype=np.float)
-  localy = np.zeros((_self.NUMRULE), dtype=np.float)
+  localx = np.zeros((_self.NUMRULE), dtype='float')
+  localy = np.zeros((_self.NUMRULE), dtype='float')
   for k in range(0,_self.NUMRULE):
    valx = 0.0;
    valy = 0.0;
@@ -1954,10 +1954,10 @@ class Cubic:
    localx[k] = valx;
    localy[k] = valy;
 
-  dxdl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dxdl2 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl1 = np.zeros((_self.NUMRULE), dtype=np.float)
-  dydl2 = np.zeros((_self.NUMRULE), dtype=np.float)
+  dxdl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dxdl2 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl1 = np.zeros((_self.NUMRULE), dtype='float')
+  dydl2 = np.zeros((_self.NUMRULE), dtype='float')
   jacob = [0.0]*_self.NUMRULE # area for each Gauss point
   for k in range(0,_self.NUMRULE): 
    valxl1 = 0.0;
@@ -1976,8 +1976,8 @@ class Cubic:
    # compute det(jacobian)
    jacob[k] = abs(dxdl1[k]*dydl2[k] - dxdl2[k]*dydl1[k])
 
-  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
-  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype=np.float)
+  dphiJdx = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
+  dphiJdy = np.zeros((_self.NUMRULE,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     dphiJdx[k][i] = ( _self.dphiJdl1[k][i]*dydl2[k]-_self.dphiJdl2[k][i]\
@@ -1985,10 +1985,10 @@ class Cubic:
     dphiJdy[k][i] = ( -_self.dphiJdl1[k][i]*dxdl2[k]+_self.dphiJdl2[k][i]\
                   *dxdl1[k] )/jacob[k];
 
-  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
-  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype=np.float)
+  _self.kxx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kxy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyx  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
+  _self.kyy  = np.zeros((_self.NUMGLEU,_self.NUMGLEU), dtype='float')
   for k in range(0,_self.NUMRULE): 
    for i in range(0,_self.NUMGLEU):
     for j in range(0,_self.NUMGLEU):
