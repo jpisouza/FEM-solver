@@ -1070,7 +1070,10 @@ class FEM:
         start = timer()
         
         if len(cls.mesh.FSI) > 0:
-            cls.build_quad_GQ()
+            if cls.COO_flag:
+                cls.build_quad_GQ_COO()
+            else:
+                cls.build_quad_GQ()
             cls.set_block_matrices(cls.BC)
             cls.set_block_vectors(forces)
             cls.set_BC_dynamic(cls.BC)
