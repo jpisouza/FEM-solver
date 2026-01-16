@@ -1067,26 +1067,30 @@ class FEM:
             end = timer()
             print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
         
-        start = timer()
-        
         if len(cls.mesh.FSI) > 0:
+            start = timer()
             if cls.COO_flag:
                 cls.build_quad_GQ_COO()
             else:
-                cls.build_quad_GQ()
+                cls.build_quad_GQ()                
             cls.set_block_matrices(cls.BC)
+            end = timer()
+            print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')
+            
+            start = timer()            
             cls.set_block_vectors(forces)
             cls.set_BC_dynamic(cls.BC)
+            end = timer()
+            print('time --> Set boundaries = ' + str(end-start) + ' [s]')
         if cls.porous or cls.turb:
             cls.set_block_vectors(forces)
             cls.set_BC_dynamic(cls.BC)
         elif len(cls.mesh.FSI) == 0:
+            start = timer()
             cls.set_block_vectors(forces)
             cls.set_BC(cls.BC)
-        
-        
-        end = timer()
-        print('time --> Set boundaries = ' + str(end-start) + ' [s]')
+            end = timer()
+            print('time --> Set boundaries = ' + str(end-start) + ' [s]')
         
         start = timer()
         
