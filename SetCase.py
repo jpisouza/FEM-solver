@@ -48,6 +48,11 @@ class Case:
         else:
             Pr = 1.0
             
+        if 'Ma' in par.attrib:
+            Ma = float(par.attrib['Ma'])
+        else:
+            Ma = 0.0
+            
         if 'Gr' in par.attrib:
             Gr = float(par.attrib['Gr'])
         else:
@@ -79,8 +84,8 @@ class Case:
             SolidProp['h'] = parSolid.attrib['h']
             
             if 'gamma' in parSolid.attrib:
-                SolidProp['gamma'] = parSolid.attrib['gamma']
-                SolidProp['beta'] = parSolid.attrib['beta']
+                SolidProp['gamma'] = float(parSolid.attrib['gamma'])
+                SolidProp['beta'] = float(parSolid.attrib['beta'])
             else:
                 SolidProp['gamma'] = 0.7
                 SolidProp['beta'] = ((2.0*SolidProp['gamma'] + 1.0)**2)/16.0
@@ -88,7 +93,11 @@ class Case:
             SolidProp['HE'] = False
             if 'HE' in parSolid.attrib:
                 if parSolid.attrib['HE'] == "True":
-                    SolidProp['HE'] = True                
+                    SolidProp['HE'] = True 
+            
+            SolidProp['Fluid_conv'] = 0
+            if 'Fluid_conv' in parSolid.attrib:
+                SolidProp['Fluid_conv'] = int(parSolid.attrib['Fluid_conv'])
                 
             
         particles = par.attrib['particles']
@@ -112,7 +121,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,particles,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,Ma,particles,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save
     
     @classmethod
     def set_BC(cls):

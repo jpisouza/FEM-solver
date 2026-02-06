@@ -201,6 +201,7 @@ class Element2D:
   _self.dx   = np.dot(_self.gqPoints.T,       dphiJdx*abs(_self.jacob)*_self.gqWeights)
   _self.dy   = np.dot(_self.gqPoints.T,       dphiJdy*abs(_self.jacob)*_self.gqWeights)
   _self.dmass= np.dot(_self.gqPoints.T,    _self.phiJ*abs(_self.jacob)*_self.gqWeights)
+  _self.mass_p = np.dot( _self.gqPoints.T,_self.gqPoints*abs(_self.jacob)*_self.gqWeights)
 
    # compute area
   _self.area = (_self.jacob*_self.gqWeights).sum()

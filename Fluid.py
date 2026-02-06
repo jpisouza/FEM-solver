@@ -2,7 +2,7 @@ import numpy as np
 
 class Fluid:
     
-    def __init__(self,mesh,Re,Pr,Ga,Gr,IC,Da=0,Fo=0):
+    def __init__(self,mesh,Re,Pr,Ga,Gr,IC,Da=0,Fo=0,Ma=0):
         
         self.Re = Re
         self.Pr = Pr
@@ -10,6 +10,7 @@ class Fluid:
         self.Gr = Gr
         self.Da = Da
         self.Fo = Fo
+        self.Ma = Ma
         self.mesh = mesh
         
         if not type(IC['vx']) == np.ndarray:
@@ -38,4 +39,6 @@ class Fluid:
         self.Td = np.zeros((mesh.npoints), dtype='float')
         self.kappad = np.zeros((mesh.npoints), dtype='float')
         self.epsd = np.zeros((mesh.npoints), dtype='float')
+        
+        self.FSIForces = np.zeros((mesh.npoints,2), dtype='float')
         

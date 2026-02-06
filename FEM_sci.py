@@ -35,6 +35,7 @@ class FEM:
         cls.Pr = fluid.Pr
         cls.Da = fluid.Da
         cls.Fo = fluid.Fo
+        cls.Ma = fluid.Ma
         cls.dt = dt
         cls.mesh = mesh
         cls.BC = BC
@@ -44,6 +45,12 @@ class FEM:
         cls.SolidProp = SolidProp
         cls.IC = IC
         cls.int_i = 0 #internal count
+        cls.robin = False
+        cls.alpha = 0.5
+        
+        cls.compressible = False
+        if cls.Ma>0:
+            cls.compressible = True
         
         if len(cls.mesh.porous_elem)>0:
             cls.porous = True
@@ -164,10 +171,15 @@ class FEM:
         ipd = np.repeat(pres_nodes, dofVel, axis=1).ravel() # PV — linha (nó‑p)
         jpd = np.tile   (vel_nodes, (1, dofP )).ravel()     # PV — coluna (nó)
         
+        ipp = np.repeat(pres_nodes, dofP, axis=1).ravel()
+        jpp = np.tile   (pres_nodes, (1, dofP)).ravel()
+        
         n_vv = dofVel * dofVel * cls.mesh.ne          # 6×6 valores por elemento
         n_vp = dofVel * dofP   * cls.mesh.ne          # 6×3 valores por elemento
+        n_pp = dofP * dofP * cls.mesh.ne
        
         m_data   = np.empty(n_vv, dtype=np.float64)
+        mp_data = np.empty(n_pp, dtype=np.float64)
         m_data_porous = np.empty_like(m_data)
         m_data_porous_F = np.empty_like(m_data)
         kx_data = np.empty_like(m_data)
@@ -183,6 +195,7 @@ class FEM:
         
         offset_vv = dofVel * dofVel          # 6x6 = 36
         offset_vp = dofVel * dofP            # 6x3 = 18
+        offset_pp = dofP * dofP
         
         # Call the parallel engine:
         nprocs = max(1, cpu_count() - 1)
@@ -198,8 +211,10 @@ class FEM:
         for e in range(cls.mesh.ne):
             s_vv = slice(e*offset_vv, (e+1)*offset_vv)
             s_vp = slice(e*offset_vp, (e+1)*offset_vp)
+            s_pp = slice(e*offset_pp, (e+1)*offset_pp)
           
             m_data[s_vv]   = local[e].mass.ravel()
+            mp_data[s_pp] = local[e].mass_p.ravel()
             if e in cls.mesh.solid_elem:
                 kx_data[s_vv]  = 10000*cls.Re*local[e].kxx.ravel()
                 ky_data[s_vv]  = 10000*cls.Re*local[e].kyy.ravel()
@@ -225,6 +240,7 @@ class FEM:
                 m_data_porous_F[s_vv]   = local[e].mass.ravel()*cls.mesh.porosity_array[e]**2
             
         cls.M    = coo_matrix((m_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
+        cls.Mp    = coo_matrix((mp_data,  (ipp , jpp )),shape=(cls.mesh.npoints_p, cls.mesh.npoints_p)).tocsr()
         cls.M_porous    = coo_matrix((m_data_porous,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.M_porous_F    = coo_matrix((m_data_porous,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.M_T = cls.M.copy()
@@ -238,6 +254,27 @@ class FEM:
         cls.Gy   = coo_matrix((gy_data,(ip , jp)),shape=(cls.mesh.npoints, cls.mesh.npoints_p)).tocsr()
         cls.Dx   = coo_matrix((dx_data, (ipd, jpd)),shape=(cls.mesh.npoints_p, cls.mesh.npoints)).tocsr()
         cls.Dy   = coo_matrix((dy_data, (ipd, jpd)),shape=(cls.mesh.npoints_p, cls.mesh.npoints)).tocsr()
+        
+        if len(cls.mesh.FSI) > 0 and cls.robin:
+            cls.Mb = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )
+            for e in range(len(SolidFEM.mesh.IENbound_orig)):
+                v1,v2,v3 = SolidFEM.mesh.IENbound_orig[e]
+                
+                L1 = ((cls.mesh.X[v1] - cls.mesh.X[v3])**2 + (cls.mesh.Y[v1] - cls.mesh.Y[v3])**2)**0.5
+                L2 = ((cls.mesh.X[v3] - cls.mesh.X[v2])**2 + (cls.mesh.Y[v3] - cls.mesh.Y[v2])**2)**0.5
+                L = L1 + L2
+                
+                Mbe = (L/30)* np.array([[4, 2, -1],
+                                        [2, 16, 2],
+                                        [-1, 2, 4]])
+                
+                for ilocal in range(0,3):
+                      iglobal = SolidFEM.mesh.IENbound_orig[e,ilocal]
+                      for jlocal in range(0,3):
+                          jglobal = SolidFEM.mesh.IENbound_orig[e,jlocal]
+                                                        
+                          cls.Mb[iglobal,jglobal] = cls.Mb[iglobal,jglobal] + Mbe[ilocal,jlocal]
+
 
     @classmethod
     def build_mini_GQ_COO(cls):
@@ -713,13 +750,23 @@ class FEM:
         #                               [ None, A1, -cls.Gy],
         #                               [ cls.Dx, cls.Dy, None]])
         
-        A11 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K
+        if cls.robin:
+            A11 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K + cls.alpha*cls.Mb
+        else:
+            A11 = (1.0/cls.dt)*cls.M + (1.0/cls.Re)*cls.K     
         A22 = A11
         A12 = None
         
-        cls.Matriz = sp.sparse.bmat([ [ A11, A12, -cls.Gx],
-                                      [ A12, A22, -cls.Gy],
-                                      [ cls.Dx, cls.Dy, None]])
+        if cls.compressible:
+            A33 = ((cls.Ma**2)/cls.dt)*cls.Mp
+            cls.Matriz = sp.sparse.bmat([ [ A11, A12, -cls.Gx],
+                                          [ A12, A22, -cls.Gy],
+                                          [ cls.Dx, cls.Dy, A33]])
+        else:
+        
+            cls.Matriz = sp.sparse.bmat([ [ A11, A12, -cls.Gx],
+                                          [ A12, A22, -cls.Gy],
+                                          [ cls.Dx, cls.Dy, None]])
         
         cls.Matriz_T=(1.0/cls.dt)*cls.M_T + (1.0/(cls.Re*cls.Pr))*cls.K_T
         
@@ -785,15 +832,29 @@ class FEM:
         cls.M = cls.M.tocsr()
         # cls.M_full = cls.M_full.tocsr()
         cls.M_T = cls.M_T.tocsr()
-        cls.vetor_vx = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vxd) + sp.sparse.csr_matrix.dot(cls.M,forces[:,0])
+        if cls.robin:
+            cls.solid_u_prime_x = np.zeros((cls.mesh.npoints), dtype='float')
+            cls.solid_u_prime_x[SolidFEM.mesh.IENbound_orig] = SolidFEM.u_prime_x[SolidFEM.mesh.IENbound]
+            cls.vetor_vx = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vxd) + sp.sparse.csr_matrix.dot(cls.M,forces[:,0]) + sp.sparse.csr_matrix.dot(cls.alpha*cls.Mb,cls.solid_u_prime_x)
+        else:
+            cls.vetor_vx = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vxd) + sp.sparse.csr_matrix.dot(cls.M,forces[:,0])
 
         if cls.mesh.mesh_kind == 'mini':
             cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T_mini + forces[:,1] -cls.fluid.Ga)
             cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td[0:cls.mesh.npoints_p])
         elif cls.mesh.mesh_kind == 'quad':
-            cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T + forces[:,1] -cls.fluid.Ga)
+            if cls.robin:
+                cls.solid_u_prime_y = np.zeros((cls.mesh.npoints), dtype='float')
+                cls.solid_u_prime_y[SolidFEM.mesh.IENbound_orig] = SolidFEM.u_prime_y[SolidFEM.mesh.IENbound]
+                cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T + forces[:,1] -cls.fluid.Ga) + sp.sparse.csr_matrix.dot(cls.alpha*cls.Mb,cls.solid_u_prime_y)
+            else:
+                cls.vetor_vy = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M,cls.fluid.vyd) + sp.sparse.csr_matrix.dot(cls.M,cls.fluid.Gr*cls.fluid.T + forces[:,1] -cls.fluid.Ga)
             cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td)
-        cls.vetor_p = np.zeros((cls.mesh.npoints_p),dtype='float' )
+        
+        if cls.compressible:
+            cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.p_ant)
+        else:
+            cls.vetor_p = np.zeros((cls.mesh.npoints_p),dtype='float' )
         
 
     @classmethod
@@ -866,7 +927,8 @@ class FEM:
                     cls.Matriz[j,j] = 1.0
                     
                     if len(cls.mesh.FSI) > 0 and BC[i] in cls.mesh.FSI:
-                        cls.vetor_vx[j] = cls.fluid.vx[j]
+                        if not cls.robin:
+                            cls.vetor_vx[j] = cls.fluid.vx[j]
                     else:
                         cls.vetor_vx[j] = float(BC[i]['vx'])
 
@@ -888,7 +950,8 @@ class FEM:
                     cls.Matriz[j + cls.mesh.npoints,j + cls.mesh.npoints] = 1.0
                     
                     if len(cls.mesh.FSI) > 0 and BC[i] in cls.mesh.FSI:
-                        cls.vetor_vy[j] = cls.fluid.vy[j]
+                        if not cls.robin:
+                            cls.vetor_vy[j] = cls.fluid.vy[j]
                     else:
                         cls.vetor_vy[j] = float(BC[i]['vy']) 
                 
@@ -992,61 +1055,63 @@ class FEM:
     
     
     @classmethod
-    def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[]):
+    def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[],n=0):
         if i > 0 and cls.int_i < 1 and type(cls.IC['mesh_X']) == np.ndarray:
             cls.mesh.X = cls.IC['mesh_X']
             cls.mesh.Y = cls.IC['mesh_Y']
         cls.int_i += 1
         
         cls.dt = dt
-        if SL_matrix:
-            start = timer()
-            if cls.mesh.IEN.shape[1]==4:
-                sl = SL.Linear(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy)
-                sl.compute(cls.dt)
-                cls.fluid.vxd = sl.conv*cls.fluid.vx[0:cls.mesh.npoints_p]
-                cls.fluid.vyd = sl.conv*cls.fluid.vy[0:cls.mesh.npoints_p]
-                cls.fluid.Td = sl.conv*cls.fluid.T
-                # interpolating for the centroid
-                [cls.fluid.vxd,cls.fluid.vyd] = sl.setCentroid(cls.fluid.vxd,cls.fluid.vyd)
-                for i in range(cls.mesh.npoints):
-                    cls.mesh.node_list[i].vx = cls.fluid.vx[i]
-                    cls.mesh.node_list[i].vy = cls.fluid.vy[i]
-                for i in range(cls.mesh.npoints_p):
-                    cls.mesh.node_list[i].T = cls.fluid.T[i]
+        if n == 0:
+            cls.p_ant = cls.fluid.p.copy()
+            if SL_matrix:
+                start = timer()
+                if cls.mesh.IEN.shape[1]==4:
+                    sl = SL.Linear(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy)
+                    sl.compute(cls.dt)
+                    cls.fluid.vxd = sl.conv*cls.fluid.vx[0:cls.mesh.npoints_p]
+                    cls.fluid.vyd = sl.conv*cls.fluid.vy[0:cls.mesh.npoints_p]
+                    cls.fluid.Td = sl.conv*cls.fluid.T
+                    # interpolating for the centroid
+                    [cls.fluid.vxd,cls.fluid.vyd] = sl.setCentroid(cls.fluid.vxd,cls.fluid.vyd)
+                    for i in range(cls.mesh.npoints):
+                        cls.mesh.node_list[i].vx = cls.fluid.vx[i]
+                        cls.mesh.node_list[i].vy = cls.fluid.vy[i]
+                    for i in range(cls.mesh.npoints_p):
+                        cls.mesh.node_list[i].T = cls.fluid.T[i]
+                else:
+                    #Using parallel ------------------------------------------------------
+                    # element = 'Tri6'
+                    # SLelem = getattr(SL_, element)
+                    # vxALE = cls.mesh.mesh_displacement[:,0]/cls.dt
+                    # vyALE = cls.mesh.mesh_displacement[:,1]/cls.dt
+                    # vxEuler = cls.fluid.vx - vxALE
+                    # vyEuler = cls.fluid.vy - vyALE
+                    # sl1 = SLelem(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,vxEuler,vyEuler)
+                    # sl1.compute(dt)
+                    # cls.fluid.vxd = sl1.conv*cls.fluid.vx
+                    # cls.fluid.vyd = sl1.conv*cls.fluid.vy
+                    # cls.fluid.Td = sl1.conv*cls.fluid.T
+                    #End of parallel ------------------------------------------------------
+                    sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy, cls.mesh.mesh_displacement)
+                    sl.compute(cls.dt)
+                    cls.fluid.vxd = sl.conv*cls.fluid.vx
+                    cls.fluid.vyd = sl.conv*cls.fluid.vy
+                    cls.fluid.Td = sl.conv*cls.fluid.T
+                    for i in range(cls.mesh.npoints):
+                        cls.mesh.node_list[i].vx = cls.fluid.vx[i]
+                        cls.mesh.node_list[i].vy = cls.fluid.vy[i]
+                        cls.mesh.node_list[i].T = cls.fluid.T[i]
+                    
+                end = timer()
+                print('time --> SL calculation = ' + str(end-start) + ' [s]')
+    
             else:
-                #Using parallel ------------------------------------------------------
-                # element = 'Tri6'
-                # SLelem = getattr(SL_, element)
-                # vxALE = cls.mesh.mesh_displacement[:,0]/cls.dt
-                # vyALE = cls.mesh.mesh_displacement[:,1]/cls.dt
-                # vxEuler = cls.fluid.vx - vxALE
-                # vyEuler = cls.fluid.vy - vyALE
-                # sl1 = SLelem(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,vxEuler,vyEuler)
-                # sl1.compute(dt)
-                # cls.fluid.vxd = sl1.conv*cls.fluid.vx
-                # cls.fluid.vyd = sl1.conv*cls.fluid.vy
-                # cls.fluid.Td = sl1.conv*cls.fluid.T
-                #End of parallel ------------------------------------------------------
-                sl = SL.Quad(cls.mesh.IEN,cls.mesh.X,cls.mesh.Y,neighborElem,oface,cls.fluid.vx,cls.fluid.vy, cls.mesh.mesh_displacement)
-                sl.compute(cls.dt)
-                cls.fluid.vxd = sl.conv*cls.fluid.vx
-                cls.fluid.vyd = sl.conv*cls.fluid.vy
-                cls.fluid.Td = sl.conv*cls.fluid.T
-                for i in range(cls.mesh.npoints):
-                    cls.mesh.node_list[i].vx = cls.fluid.vx[i]
-                    cls.mesh.node_list[i].vy = cls.fluid.vy[i]
-                    cls.mesh.node_list[i].T = cls.fluid.T[i]
-                
-            end = timer()
-            print('time --> SL calculation = ' + str(end-start) + ' [s]')
-
-        else:
-
-            start = timer()
-            cls.fluid.vxd, cls.fluid.vyd, cls.fluid.Td = semi_lagrange2(cls.mesh.node_list,cls.mesh.elem_list,cls.fluid.vx,cls.fluid.vy,cls.fluid.T,cls.dt,cls.mesh.IENbound,cls.mesh.boundary_list)
-            end = timer()
-            print('time --> SL calculation = ' + str(end-start) + ' [s]')
+    
+                start = timer()
+                cls.fluid.vxd, cls.fluid.vyd, cls.fluid.Td = semi_lagrange2(cls.mesh.node_list,cls.mesh.elem_list,cls.fluid.vx,cls.fluid.vy,cls.fluid.T,cls.dt,cls.mesh.IENbound,cls.mesh.boundary_list)
+                end = timer()
+                print('time --> SL calculation = ' + str(end-start) + ' [s]')
 
         if cls.mesh.mesh_kind == 'mini':
             cls.fluid.T_mini[0:cls.mesh.npoints_p] = cls.fluid.T
@@ -1132,8 +1197,11 @@ class FEM:
         end = timer()  
         print('time --> Flow solution = ' + str(end-start) + ' [s]')
         
+        cls.fluid.vx_minus = cls.fluid.vx.copy()
+        cls.fluid.vy_minus = cls.fluid.vy.copy()
+        
         cls.fluid.vx = sol[0:cls.mesh.npoints]
-        cls.fluid.vy = sol[cls.mesh.npoints:2*cls.mesh.npoints]
+        cls.fluid.vy = sol[cls.mesh.npoints:2*cls.mesh.npoints]           
         cls.fluid.p = sol[2*cls.mesh.npoints:]
      
         if cls.mesh.mesh_kind == 'quad':
