@@ -1055,11 +1055,11 @@ class FEM:
     
     
     @classmethod
-    def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[],n=0):
+    def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[],n=0,fluid_conv=0):
+        cls.i = i
         if i > 0 and cls.int_i < 1 and type(cls.IC['mesh_X']) == np.ndarray:
             cls.mesh.X = cls.IC['mesh_X']
             cls.mesh.Y = cls.IC['mesh_Y']
-        cls.int_i += 1
         
         cls.dt = dt
         if n == 0:
@@ -1133,14 +1133,19 @@ class FEM:
             print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
         
         if len(cls.mesh.FSI) > 0:
-            start = timer()
-            if cls.COO_flag:
-                cls.build_quad_GQ_COO()
+            if cls.i < 0.9*fluid_conv: #Accelerates pressure convergence while the solid is frozen
+                cls.Ma = 0.0
             else:
-                cls.build_quad_GQ()                
-            cls.set_block_matrices(cls.BC)
-            end = timer()
-            print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')
+                cls.Ma = cls.fluid.Ma
+            if cls.i >= 0.9*fluid_conv or cls.int_i < 1: #Does not build the matrices while the solid is frozen (except in the first time step)
+                start = timer()
+                if cls.COO_flag:
+                    cls.build_quad_GQ_COO()
+                else:
+                    cls.build_quad_GQ()                
+                cls.set_block_matrices(cls.BC)
+                end = timer()
+                print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')                                   
             
             start = timer()            
             cls.set_block_vectors(forces)
@@ -1224,7 +1229,9 @@ class FEM:
         if len(cls.mesh.FSI) > 0:
             cls.solidMesh.update_forces(cls.fluid.FSIForces, cls.BC_solid)
         cls.mesh.mesh_displacement = np.zeros((cls.mesh.npoints,2), dtype = 'float')
-            
+        
+        cls.int_i += 1
+        
         return cls.fluid
     
    

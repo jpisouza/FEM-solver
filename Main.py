@@ -158,7 +158,7 @@ def main():
                 # ux_relax_ant = SolidFEM.ux_relax
                 # vx_ant = fluid.vx
                 for j in range(fluid_steps):
-                    fluid = FEM.solve_fields(i,np.zeros((MESH.npoints,2), dtype='float'), dt/fluid_steps, SL_matrix,neighborElem,oface,n)
+                    fluid = FEM.solve_fields(i,np.zeros((MESH.npoints,2), dtype='float'), dt/fluid_steps, SL_matrix,neighborElem,oface,n,SolidProp['Fluid_conv'])
                 particleCloud = 0
                 if i>=SolidProp['Fluid_conv']:
                     k=i-10
