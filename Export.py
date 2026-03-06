@@ -2,9 +2,13 @@ import numpy as np
 import meshio
 from pyevtk.hl import pointsToVTK
 
-def export_data(i,output_dir,fluid,MESH,particleCloud):
+def export_data(i,output_dir,fluid,MESH,particleCloud,compress_output):
     # print(i)
-    
+    extension = '.vtk'
+    compression = None
+    if compress_output:
+        extension = '.vtu'
+        compression = 'zlib'
     # print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
     if MESH.mesh_kind == 'mini':
         line_cb = next(cb for cb in MESH.msh.cells if cb.type == "line")
@@ -91,7 +95,7 @@ def export_data(i,output_dir,fluid,MESH,particleCloud):
         point_data.update(data_meshVel)
         point_data.update(data_meshDisp)
         meshio.write_points_cells(
-        output_dir + '/sol-'+str(i)+'.vtk',
+        output_dir + '/sol-'+str(i)+extension,
         points,
         cells,
         #file_format="vtk-ascii",

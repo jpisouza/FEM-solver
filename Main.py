@@ -60,7 +60,11 @@ def main():
     Case.read(case,MESH)
     
     IC,forces = Case.set_IC(i)
-    Re,Pr,Ga,Gr,Fr,Da,Fo,Ma,particles_flag,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save = Case.set_parameters()
+    Re,Pr,Ga,Gr,Fr,Da,Fo,Ma,particles_flag,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save, compress_output = Case.set_parameters()
+    extension = '(VTK)'
+    if compress_output:
+        extension = '(VTU)'
+        
     BC,FSI = Case.set_BC()
     
     outflow = Case.set_OutFlow()
@@ -142,8 +146,8 @@ def main():
                 particleCloud = 0
             
             if n_save != 0 and i%n_save == 0:
-                Export.export_data(i,output_dir,fluid,MESH,particleCloud)
-                print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
+                Export.export_data(i,output_dir,fluid,MESH,particleCloud,compress_output)
+                print ('--------Time step = ' + str(i) + ' --> saving solution ' + extension + '--------\n')
             else:
                 print ('--------Time step = ' + str(i) + ' --------\n')
         
@@ -180,9 +184,9 @@ def main():
             SolidFEM.update_fluidmesh(mesh_factor)
             
             if n_save != 0 and i%n_save == 0:
-                ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.u_prime, SolidFEM.u_doubleprime, SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.PK_stress_x, SolidFEM.PK_stress_y, SolidFEM.PK_stress_xy, SolidFEM.sigma_VM,i)
-                Export.export_data(i,output_dir,fluid,MESH,particleCloud)
-                print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
+                ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.u_prime, SolidFEM.u_doubleprime, SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.PK_stress_x, SolidFEM.PK_stress_y, SolidFEM.PK_stress_xy, SolidFEM.sigma_VM, i, compress_output)
+                Export.export_data(i,output_dir,fluid,MESH,particleCloud,compress_output)
+                print ('--------Time step = ' + str(i) + ' --> saving solution ' + extension + '--------\n')
             else:
                 print ('--------Time step = ' + str(i) + ' --------\n')
                             

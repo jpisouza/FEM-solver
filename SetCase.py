@@ -75,6 +75,11 @@ class Case:
             if par.attrib['COO'] == 'True':
                 COO_flag = True
                 
+        compress_output = False
+        if 'compress_output' in par.attrib:
+            if par.attrib['compress_output'] == 'True':
+                compress_output = True
+                
         SolidProp = {}
         parSolid = cls.root.find('SolidInterface')
         if parSolid != None:
@@ -121,7 +126,7 @@ class Case:
             else:
                 two_way = False
             
-        return Re,Pr,Ga,Gr,Fr,Da,Fo,Ma,particles,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save
+        return Re,Pr,Ga,Gr,Fr,Da,Fo,Ma,particles,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save, compress_output
     
     @classmethod
     def set_BC(cls):

@@ -1,9 +1,14 @@
 import numpy as np
 import meshio
 
-def export_data(mesh, output_dir, u, u_prime, u_doubleprime, sigma_x, sigma_y, tau_xy, PK_stress_x, PK_stress_y, PK_stress_xy, sigma_VM, i):
+def export_data(mesh, output_dir, u, u_prime, u_doubleprime, sigma_x, sigma_y, tau_xy, PK_stress_x, PK_stress_y, PK_stress_xy, sigma_VM, i, compress_output):
     
     # print ('--------Time step = ' + str(i) + ' --> saving solid solution (VTK)--------\n')
+    extension = '.vtk'
+    compression = None
+    if compress_output:
+        extension = '.vtu'
+        compression = 'zlib'
     if mesh.mesh_kind == 'quad':
         
         #deformed solid
@@ -37,10 +42,11 @@ def export_data(mesh, output_dir, u, u_prime, u_doubleprime, sigma_x, sigma_y, t
         point_data.update(data_uprime)
         point_data.update(data_udoubleprime)
         meshio.write_points_cells(
-        output_dir + '/solid_sol-'+str(i)+'.vtk',
+        output_dir + '/solid_sol-'+str(i)+extension,
         points,
         cells,
-        point_data=point_data
+        point_data=point_data,
+        compression=compression
         )
 
 def export_static(mesh, output_dir, u, sigma_x, sigma_y, tau_xy, PK_stress_x, PK_stress_y, PK_stress_xy, sigma_VM):
