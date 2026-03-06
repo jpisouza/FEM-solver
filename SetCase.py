@@ -150,12 +150,15 @@ class Case:
         return BC_list, FSI_list
     
     @classmethod       
-    def set_IC(cls,i):
+    def set_IC(cls,i,compress_output):
+        extension = '.vtk'
+        if compress_output:
+            extension = '.vtu'
         if i > 0:
-            file = os.path.dirname(os.path.abspath(cls.case)) + '/Results/sol-' + str(i) + '.vtk'
+            file = os.path.dirname(os.path.abspath(cls.case)) + '/Results/sol-' + str(i) + extension
             data = meshio.read(file)
             if len(cls.mesh.solid_list) > 0:
-                file_solid = os.path.dirname(os.path.abspath(cls.case)) + '/Results/solid_sol-' + str(i) + '.vtk'
+                file_solid = os.path.dirname(os.path.abspath(cls.case)) + '/Results/solid_sol-' + str(i) + extension
                 data_solid = meshio.read(file_solid)
                 IC_solid = data_solid.point_data
 

@@ -59,12 +59,13 @@ def main():
     
     Case.read(case,MESH)
     
-    IC,forces = Case.set_IC(i)
+    
     Re,Pr,Ga,Gr,Fr,Da,Fo,Ma,particles_flag,two_way,COO_flag,porous,turb, SolidProp, mesh_factor, fluid_steps, n_save, compress_output = Case.set_parameters()
     extension = '(VTK)'
     if compress_output:
         extension = '(VTU)'
-        
+    
+    IC,forces = Case.set_IC(i,compress_output)
     BC,FSI = Case.set_BC()
     
     outflow = Case.set_OutFlow()
