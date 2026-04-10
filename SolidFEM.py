@@ -745,15 +745,43 @@ class FEM:
             # cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
             
                         
-            for node in cls.mesh.fluidmesh.node_list:
-                if node.ID not in cls.mesh.IEN_orig and node.ID not in cls.mesh.fluidmesh.IENbound:
-                    factor = -mesh_factor*node.FSI_dist[1]
-                    cls.mesh.fluidmesh.mesh_velocity[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],0]*np.exp(factor)
-                    cls.mesh.fluidmesh.mesh_velocity[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],1]*np.exp(factor)
-                    cls.mesh.fluidmesh.mesh_displacement[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.ID,0]*cls.dt
-                    cls.mesh.fluidmesh.mesh_displacement[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.ID,1]*cls.dt
-                    cls.mesh.fluidmesh.X[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,0]
-                    cls.mesh.fluidmesh.Y[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,1]
+            # for node in cls.mesh.fluidmesh.node_list:
+            #     if node.ID not in cls.mesh.IEN_orig and node.ID not in cls.mesh.fluidmesh.IENbound:
+            #         factor = -mesh_factor*node.FSI_dist[1]
+            #         cls.mesh.fluidmesh.mesh_velocity[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],0]*np.exp(factor)
+            #         cls.mesh.fluidmesh.mesh_velocity[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.FSI_dist[0],1]*np.exp(factor)
+            #         cls.mesh.fluidmesh.mesh_displacement[node.ID,0] = cls.mesh.fluidmesh.mesh_velocity[node.ID,0]*cls.dt
+            #         cls.mesh.fluidmesh.mesh_displacement[node.ID,1] = cls.mesh.fluidmesh.mesh_velocity[node.ID,1]*cls.dt
+            #         cls.mesh.fluidmesh.X[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,0]
+            #         cls.mesh.fluidmesh.Y[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,1]
+            
+            vector_x = np.zeros((cls.mesh.fluidmesh.npoints), dtype = 'float')
+            vector_y = np.zeros((cls.mesh.fluidmesh.npoints), dtype = 'float')
+            for point in np.unique(cls.mesh.fluidmesh.IENbound):
+                row = cls.mesh.fluidmesh.K.getrow(point)
+                for col in row.indices:
+                    cls.mesh.fluidmesh.K[point,col] = 0
+                cls.mesh.fluidmesh.K[point,point] = 1.0
+            for point in np.unique(cls.mesh.IEN_orig):
+                row = cls.mesh.fluidmesh.K.getrow(point)
+                for col in row.indices:
+                    cls.mesh.fluidmesh.K[point,col] = 0
+                cls.mesh.fluidmesh.K[point,point] = 1.0
+            
+            vector_x[cls.mesh.IEN_orig] = cls.u_prime_x[cls.mesh.IEN]
+            vector_y[cls.mesh.IEN_orig] = cls.u_prime_y[cls.mesh.IEN]
+            
+            cls.mesh.fluidmesh.mesh_velocity[:,0] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_x)
+            cls.mesh.fluidmesh.mesh_velocity[:,1] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_y)
+            
+            cls.mesh.fluidmesh.mesh_displacement = cls.mesh.fluidmesh.mesh_velocity*cls.dt
+            
+            cls.mesh.fluidmesh.X += cls.mesh.fluidmesh.mesh_displacement[:,0]
+            cls.mesh.fluidmesh.Y += cls.mesh.fluidmesh.mesh_displacement[:,1]
+            #Exact position calculated by the solid solver
+            cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
+            cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
+                    
     
     @classmethod   
     def solve_static(cls, nat_freq):

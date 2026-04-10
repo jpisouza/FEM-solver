@@ -5,10 +5,8 @@ from pyevtk.hl import pointsToVTK
 def export_data(i,output_dir,fluid,MESH,particleCloud,compress_output):
     # print(i)
     extension = '.vtk'
-    compression = None
     if compress_output:
         extension = '.vtu'
-        compression = 'zlib'
     # print ('--------Time step = ' + str(i) + ' --> saving solution (VTK)--------\n')
     if MESH.mesh_kind == 'mini':
         line_cb = next(cb for cb in MESH.msh.cells if cb.type == "line")

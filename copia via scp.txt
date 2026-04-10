@@ -1,7 +1,7 @@
-ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek200/Results/*sol-*" |
+ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek100/Results/*sol-*" |
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
-        [int]$Matches[2] -gt 2129
+        [int]$Matches[2] -gt 8420
     }
 } |
 ForEach-Object {

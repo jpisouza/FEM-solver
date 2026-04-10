@@ -193,6 +193,9 @@ class FEM:
         dx_data  = np.empty_like(gx_data)
         dy_data  = np.empty_like(gx_data)
         
+        if len(cls.mesh.FSI) > 0:
+            kmesh_data = np.empty_like(m_data)
+        
         offset_vv = dofVel * dofVel          # 6x6 = 36
         offset_vp = dofVel * dofP            # 6x3 = 18
         offset_pp = dofP * dofP
@@ -223,6 +226,14 @@ class FEM:
                 kx_data[s_vv]  = local[e].kxx.ravel()
                 ky_data[s_vv]  = local[e].kyy.ravel()
                 k_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
+            
+            if len(cls.mesh.FSI) > 0:
+                d = 0
+                for ID in cls.mesh.IEN[e]:
+                    d += cls.mesh.node_list[ID].FSI_dist[1]
+                d = d/len(cls.mesh.IEN[e])
+                    
+                kmesh_data[s_vv] = (1.0/d**2)*(local[e].kxx + local[e].kyy).ravel()
                 
             gvx_data[s_vv]  = local[e].gvx.ravel()
             gvy_data[s_vv]  = local[e].gvy.ravel()
@@ -254,6 +265,9 @@ class FEM:
         cls.Gy   = coo_matrix((gy_data,(ip , jp)),shape=(cls.mesh.npoints, cls.mesh.npoints_p)).tocsr()
         cls.Dx   = coo_matrix((dx_data, (ipd, jpd)),shape=(cls.mesh.npoints_p, cls.mesh.npoints)).tocsr()
         cls.Dy   = coo_matrix((dy_data, (ipd, jpd)),shape=(cls.mesh.npoints_p, cls.mesh.npoints)).tocsr()
+        
+        if len(cls.mesh.FSI) > 0: #Transfers K to the mesh for mesh velocity calculation in FSI
+            cls.mesh.K = coo_matrix((kmesh_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         
         if len(cls.mesh.FSI) > 0 and cls.robin:
             cls.Mb = lil_matrix( (cls.mesh.npoints,cls.mesh.npoints),dtype='float' )

@@ -8,7 +8,6 @@ def export_data(mesh, output_dir, u, u_prime, u_doubleprime, sigma_x, sigma_y, t
     compression = None
     if compress_output:
         extension = '.vtu'
-        compression = 'zlib'
     if mesh.mesh_kind == 'quad':
         
         #deformed solid
@@ -45,8 +44,7 @@ def export_data(mesh, output_dir, u, u_prime, u_doubleprime, sigma_x, sigma_y, t
         output_dir + '/solid_sol-'+str(i)+extension,
         points,
         cells,
-        point_data=point_data,
-        compression=compression
+        point_data=point_data
         )
 
 def export_static(mesh, output_dir, u, sigma_x, sigma_y, tau_xy, PK_stress_x, PK_stress_y, PK_stress_xy, sigma_VM):
