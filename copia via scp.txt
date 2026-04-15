@@ -1,7 +1,24 @@
 ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek100/Results/*sol-*" |
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
-        [int]$Matches[2] -gt 8420
+        $num = [int]$Matches[2]
+        $num -ge 10100 -and $num -le 10101
+    }
+} |
+ForEach-Object {
+    scp -P 51 joao@146.164.26.42:$_ .
+}
+
+
+
+
+
+
+ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Sahu-Up30/Results/*sol-*" |
+Where-Object {
+    if ($_ -match '(solid_)?sol-(\d+)') {
+        $num = [int]$Matches[2]
+        $num -ge 1050 -and $num -le 1290
     }
 } |
 ForEach-Object {
