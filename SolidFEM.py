@@ -70,6 +70,8 @@ class FEM:
         cls.u = np.zeros((2*cls.mesh.npoints), dtype='float')
         cls.ux = np.zeros((cls.mesh.npoints), dtype='float')
         cls.uy = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.ux_minus = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.uy_minus = np.zeros((cls.mesh.npoints), dtype='float')
         cls.ux_relax = np.zeros((cls.mesh.npoints), dtype='float')
         cls.uy_relax = np.zeros((cls.mesh.npoints), dtype='float')
         cls.u_prime = np.zeros((2*cls.mesh.npoints), dtype='float')
@@ -633,13 +635,13 @@ class FEM:
             
             cls.mesh.X = cls.X_orig + cls.ux
             cls.mesh.Y = cls.Y_orig + cls.uy
-            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]#cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
-            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]#cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
-            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]*cls.dt#cls.vx_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_x[cls.mesh.IEN]*cls.dt
-            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]*cls.dt#cls.vy_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_y[cls.mesh.IEN]*cls.dt
+            # cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]#cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]#cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]*cls.dt#cls.vx_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_x[cls.mesh.IEN]*cls.dt
+            # cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]*cls.dt#cls.vy_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_y[cls.mesh.IEN]*cls.dt
 
-            cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.X_orig[cls.mesh.IEN] + cls.ux_relax[cls.mesh.IEN] #cls.mesh.X[cls.mesh.IEN]
-            cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.Y_orig[cls.mesh.IEN] + cls.uy_relax[cls.mesh.IEN] #cls.mesh.Y[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.X_orig[cls.mesh.IEN] + cls.ux_relax[cls.mesh.IEN] #cls.mesh.X[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.Y_orig[cls.mesh.IEN] + cls.uy_relax[cls.mesh.IEN] #cls.mesh.Y[cls.mesh.IEN]
             
         
         return cls.u, cls.u_w
@@ -719,13 +721,13 @@ class FEM:
             
             cls.mesh.X = cls.X_orig + cls.ux
             cls.mesh.Y = cls.Y_orig + cls.uy
-            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]#cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
-            cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]#cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
-            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]*cls.dt#cls.vx_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_x[cls.mesh.IEN]*cls.dt
-            cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]*cls.dt#cls.vy_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_y[cls.mesh.IEN]*cls.dt
+            # cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]#cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]#cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]*cls.dt#cls.vx_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_x[cls.mesh.IEN]*cls.dt
+            # cls.mesh.fluidmesh.mesh_displacement[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]*cls.dt#cls.vy_relax[cls.mesh.IEN]*cls.dt #cls.u_prime_y[cls.mesh.IEN]*cls.dt
 
-            cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.X_orig[cls.mesh.IEN] + cls.ux_relax[cls.mesh.IEN] #cls.mesh.X[cls.mesh.IEN]
-            cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.Y_orig[cls.mesh.IEN] + cls.uy_relax[cls.mesh.IEN] #cls.mesh.Y[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.X_orig[cls.mesh.IEN] + cls.ux_relax[cls.mesh.IEN] #cls.mesh.X[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.Y_orig[cls.mesh.IEN] + cls.uy_relax[cls.mesh.IEN] #cls.mesh.Y[cls.mesh.IEN]
                     
                   
         return cls.u
@@ -767,20 +769,31 @@ class FEM:
                 for col in row.indices:
                     cls.mesh.fluidmesh.K[point,col] = 0
                 cls.mesh.fluidmesh.K[point,point] = 1.0
+                
+            vector_x[cls.mesh.IEN_orig] = cls.ux[cls.mesh.IEN] - cls.ux_minus[cls.mesh.IEN]
+            vector_y[cls.mesh.IEN_orig] = cls.uy[cls.mesh.IEN] - cls.uy_minus[cls.mesh.IEN]
             
-            vector_x[cls.mesh.IEN_orig] = cls.u_prime_x[cls.mesh.IEN]
-            vector_y[cls.mesh.IEN_orig] = cls.u_prime_y[cls.mesh.IEN]
+            cls.mesh.fluidmesh.mesh_displacement[:,0] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_x)
+            cls.mesh.fluidmesh.mesh_displacement[:,1] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_y)
             
-            cls.mesh.fluidmesh.mesh_velocity[:,0] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_x)
-            cls.mesh.fluidmesh.mesh_velocity[:,1] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_y)
-            
-            cls.mesh.fluidmesh.mesh_displacement = cls.mesh.fluidmesh.mesh_velocity*cls.dt
+            cls.mesh.fluidmesh.mesh_velocity = cls.mesh.fluidmesh.mesh_displacement/cls.dt
             
             cls.mesh.fluidmesh.X += cls.mesh.fluidmesh.mesh_displacement[:,0]
             cls.mesh.fluidmesh.Y += cls.mesh.fluidmesh.mesh_displacement[:,1]
+            
+            # vector_x[cls.mesh.IEN_orig] = cls.u_prime_x[cls.mesh.IEN]
+            # vector_y[cls.mesh.IEN_orig] = cls.u_prime_y[cls.mesh.IEN]
+            
+            # cls.mesh.fluidmesh.mesh_velocity[:,0] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_x)
+            # cls.mesh.fluidmesh.mesh_velocity[:,1] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_y)
+            
+            # cls.mesh.fluidmesh.mesh_displacement = cls.mesh.fluidmesh.mesh_velocity*cls.dt
+            
+            # cls.mesh.fluidmesh.X += cls.mesh.fluidmesh.mesh_displacement[:,0]
+            # cls.mesh.fluidmesh.Y += cls.mesh.fluidmesh.mesh_displacement[:,1]
             #Exact position calculated by the solid solver
-            cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
-            cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
+            # cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
                     
     
     @classmethod   
