@@ -746,7 +746,7 @@ class FEM:
             # cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
             # cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
             
-                        
+            ## Code for exponential mesh movement            
             # for node in cls.mesh.fluidmesh.node_list:
             #     if node.ID not in cls.mesh.IEN_orig and node.ID not in cls.mesh.fluidmesh.IENbound:
             #         factor = -mesh_factor*node.FSI_dist[1]
@@ -757,6 +757,7 @@ class FEM:
             #         cls.mesh.fluidmesh.X[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,0]
             #         cls.mesh.fluidmesh.Y[node.ID] += cls.mesh.fluidmesh.mesh_displacement[node.ID,1]
             
+            # Determining matrix K for mesh solution
             vector_x = np.zeros((cls.mesh.fluidmesh.npoints), dtype = 'float')
             vector_y = np.zeros((cls.mesh.fluidmesh.npoints), dtype = 'float')
             for point in np.unique(cls.mesh.fluidmesh.IENbound):
@@ -769,7 +770,8 @@ class FEM:
                 for col in row.indices:
                     cls.mesh.fluidmesh.K[point,col] = 0
                 cls.mesh.fluidmesh.K[point,point] = 1.0
-                
+            
+            #Code for system solution for mesh displacement
             vector_x[cls.mesh.IEN_orig] = cls.ux[cls.mesh.IEN] - cls.ux_minus[cls.mesh.IEN]
             vector_y[cls.mesh.IEN_orig] = cls.uy[cls.mesh.IEN] - cls.uy_minus[cls.mesh.IEN]
             
@@ -781,6 +783,7 @@ class FEM:
             cls.mesh.fluidmesh.X += cls.mesh.fluidmesh.mesh_displacement[:,0]
             cls.mesh.fluidmesh.Y += cls.mesh.fluidmesh.mesh_displacement[:,1]
             
+            # #Code for system solution for mesh velocity
             # vector_x[cls.mesh.IEN_orig] = cls.u_prime_x[cls.mesh.IEN]
             # vector_y[cls.mesh.IEN_orig] = cls.u_prime_y[cls.mesh.IEN]
             
@@ -791,7 +794,7 @@ class FEM:
             
             # cls.mesh.fluidmesh.X += cls.mesh.fluidmesh.mesh_displacement[:,0]
             # cls.mesh.fluidmesh.Y += cls.mesh.fluidmesh.mesh_displacement[:,1]
-            #Exact position calculated by the solid solver
+            # # Exact position calculated by the solid solver
             # cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
             # cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
                     

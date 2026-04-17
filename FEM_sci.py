@@ -47,6 +47,7 @@ class FEM:
         cls.int_i = 0 #internal count
         cls.robin = False
         cls.alpha = 0.5
+        cls.h_min = 0
         
         cls.compressible = False
         if cls.Ma>0:
@@ -211,6 +212,10 @@ class FEM:
            use_slip=False
         )
         
+        if cls.h_min > 0 and len(cls.mesh.FSI) > 0:
+            for e in range(cls.mesh.ne):
+                if (np.sqrt(local[e].area) < cls.h_min):
+                    cls.h_min = np.sqrt(local[e].area)
         for e in range(cls.mesh.ne):
             s_vv = slice(e*offset_vv, (e+1)*offset_vv)
             s_vp = slice(e*offset_vp, (e+1)*offset_vp)
@@ -232,8 +237,8 @@ class FEM:
                 for ID in cls.mesh.IEN[e]:
                     d += cls.mesh.node_list[ID].FSI_dist[1]
                 d = d/len(cls.mesh.IEN[e])
-                    
-                kmesh_data[s_vv] = (1.0/d**2)*(local[e].kxx + local[e].kyy).ravel()
+                h = np.sqrt(local[e].area)
+                kmesh_data[s_vv] = (h/(cls.h_min + d)**2)*(local[e].kxx + local[e].kyy).ravel()
                 
             gvx_data[s_vv]  = local[e].gvx.ravel()
             gvy_data[s_vv]  = local[e].gvy.ravel()
