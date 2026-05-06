@@ -154,12 +154,15 @@ def main():
         
         else:
             n = 0 
+            n_max = 0
+            if i>=SolidProp['Fluid_conv']:
+                n_max = 10
             error = 1000.0
-            while error >= 1e-5 and n<1:
+            while error >= 1e-4 and n <= n_max:
                 # print ('--------Start of convergence iteration ' + str(n) + ' --------\n')
                 # u_prime_x_ant = SolidFEM.u_prime_x
                 # FSIForces_ant = FEM.fluid.FSIForces[:,0].copy()
-                # ux_ant = SolidFEM.ux
+                ux_ant = SolidFEM.ux
                 # ux_relax_ant = SolidFEM.ux_relax
                 # vx_ant = fluid.vx
                 for j in range(fluid_steps):
@@ -173,16 +176,21 @@ def main():
                         u, u_w = SolidFEM.solve(k,mesh_factor,False,n)
                 else:
                     u = SolidFEM.u
+                    
+                SolidFEM.update_fluidmesh(mesh_factor, n)
+                
                 # error = np.sqrt(sum((SolidFEM.u_prime_x - u_prime_x_ant)**2))
                 # error = np.linalg.norm(SolidFEM.u_prime_x - u_prime_x_ant)/np.linalg.norm(SolidFEM.u_prime_x)
-                # error = max(abs(u - u_ant))
+                # error = np.linalg.norm(fluid.vx - vx_ant)/np.linalg.norm(fluid.vx)
+                # error = max(abs(SolidFEM.ux - ux_ant))
+                error = np.linalg.norm(SolidFEM.ux - ux_ant)/np.linalg.norm(SolidFEM.ux)
                 # error = np.sqrt(sum((FEM.fluid.FSIForces[:,0] - FSIForces_ant)**2))
                 # error = max(abs(fluid.FSIForces[:,0] - FSIForces_ant))
-
-                # print ('----------Iteration ' + str(n) + ': Error = ' + str(error) + '---------\n')
-                n+=1
-
-            SolidFEM.update_fluidmesh(mesh_factor)
+                if n_max > 0:
+                    print('####################################################################################\n')
+                    print ('----------Main Loop Iteration ' + str(n) + ': Error = ' + str(error) + '---------\n')
+                    print('####################################################################################\n')
+                n+=1    
             
             if n_save != 0 and i%n_save == 0:
                 ExportSolid.export_data(FEM.solidMesh, output_dir,u,SolidFEM.u_prime, SolidFEM.u_doubleprime, SolidFEM.sigma_x,SolidFEM.sigma_y, SolidFEM.tau_xy, SolidFEM.PK_stress_x, SolidFEM.PK_stress_y, SolidFEM.PK_stress_xy, SolidFEM.sigma_VM, i, compress_output)

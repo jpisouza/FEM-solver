@@ -9,7 +9,7 @@ import Elements
 class FEM:
     
     @classmethod
-    def set_parameters(cls, mesh, BC, IC, h, E, dt, rho, nu, gamma, beta, g=[0,0], Fr=1.0):
+    def set_parameters(cls, mesh, BC, IC, h, E, dt, rho, nu, gamma, beta, g=[0,0], Fr=1.0, relax=True):
         
         cls.E = E
         cls.rho = rho
@@ -23,6 +23,7 @@ class FEM:
         cls.dt = dt
         cls.robin = False
         cls.alpha = 0.5
+        cls.relax = relax
 
         cls.gamma = gamma
         cls.beta = beta
@@ -73,7 +74,11 @@ class FEM:
         cls.ux_minus = np.zeros((cls.mesh.npoints), dtype='float')
         cls.uy_minus = np.zeros((cls.mesh.npoints), dtype='float')
         cls.ux_relax = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.u_relax = np.zeros((2*cls.mesh.npoints), dtype='float')
         cls.uy_relax = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.vx_relax = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.vy_relax = np.zeros((cls.mesh.npoints), dtype='float')
+        cls.u_prime_relax = np.zeros((2*cls.mesh.npoints), dtype='float')
         cls.u_prime = np.zeros((2*cls.mesh.npoints), dtype='float')
         cls.u_prime_minus = np.zeros((2*cls.mesh.npoints), dtype='float')
         cls.u_doubleprime = np.zeros((2*cls.mesh.npoints), dtype='float')
@@ -99,7 +104,7 @@ class FEM:
                    cls.u_prime_minus[2*k + 1] = cls.IC['u_prime'][k,1]
                    cls.u_doubleprime[2*k + 1] = cls.IC['u_doubleprime'][k,1]
                    cls.u_doubleprime_minus[2*k + 1] = cls.IC['u_doubleprime'][k,1]
-        
+               cls.u_relax = cls.u
     @classmethod   
     def build_quad_GQHE(cls):
         cls.K = lil_matrix( (2*cls.mesh.npoints,2*cls.mesh.npoints),dtype='float' )
@@ -287,7 +292,7 @@ class FEM:
         if HE:
             cls.b = np.zeros((2*cls.mesh.npoints), dtype='float') 
         else:
-            cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/(cls.beta*cls.dt**2) + cls.u_prime_minus/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime_minus + (1.0/cls.Fr**2)*cls.g)
+            cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u_minus/(cls.beta*cls.dt**2) + cls.u_prime_minus/(cls.beta*cls.dt) + (1.0/(2.0*cls.beta)-1.0)*cls.u_doubleprime_minus + (1.0/cls.Fr**2)*cls.g)
             # cls.b = sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u/cls.dt**2 + cls.u_prime/cls.dt)
         
         
@@ -618,20 +623,32 @@ class FEM:
         cls.calc_stress()
         
         if cls.mesh.FSI_flag:
-            alpha = 1.0
-            ux_relax_ant = cls.ux_relax.copy()
-            uy_relax_ant = cls.uy_relax.copy()
-            cls.ux_relax = (1-alpha)*ux_relax_ant + alpha*cls.ux
-            cls.uy_relax = (1-alpha)*uy_relax_ant + alpha*cls.uy
-            cls.u_prime_x =  np.array([cls.u_prime[2*n] for n in range(cls.mesh.npoints)])
-            cls.u_prime_y = np.array([cls.u_prime[2*n+1] for n in range(cls.mesh.npoints)])
+            if cls.relax:
+                w_relax_min = 0.01
+                w_relax_max = 1.0
+                if n == 0:
+                    cls.w_relax = 0.5
+                    cls.r = cls.u - cls.u_relax
+                else:
+                    r_ant = cls.r.copy()
+                    cls.r = cls.u - cls.u_relax
+                    delta_r = cls.r - r_ant
+                    cls.w_relax = -cls.w_relax*(np.dot(r_ant,delta_r))/np.dot(delta_r,delta_r)
+                    cls.w_relax = max(w_relax_min,min(cls.w_relax,w_relax_max))
+                
             
-            cls.vx_relax = (cls.ux_relax-cls.ux_minus)/cls.dt
-            cls.vy_relax = (cls.uy_relax-cls.uy_minus)/cls.dt
+            cls.u_relax = (1-cls.w_relax)*cls.u_relax + cls.w_relax*cls.u
+            cls.ux_relax = np.array([cls.u_relax[2*n] for n in range(cls.mesh.npoints)])
+            cls.uy_relax = np.array([cls.u_relax[2*n+1] for n in range(cls.mesh.npoints)])
             
+            accel = (cls.u_relax - cls.u_minus - cls.dt*cls.u_prime_minus - (cls.dt**2)*(0.5-cls.beta)*cls.u_doubleprime_minus)/(cls.beta*cls.dt**2)
+            cls.u_prime_relax = cls.u_prime_minus + cls.dt*((1.0-cls.gamma)*cls.u_doubleprime_minus + cls.gamma*accel) #(1-alpha)*u_prime_relax_ant + alpha*cls.u_prime 
+            cls.vx_relax = np.array([cls.u_prime_relax[2*n] for n in range(cls.mesh.npoints)])
+            cls.vy_relax = np.array([cls.u_prime_relax[2*n+1] for n in range(cls.mesh.npoints)])
+                     
             if not cls.robin:
-                cls.mesh.fluid.vx[cls.mesh.IEN_orig] = cls.u_prime_x[cls.mesh.IEN] #cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
-                cls.mesh.fluid.vy[cls.mesh.IEN_orig] = cls.u_prime_y[cls.mesh.IEN] #cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
+                cls.mesh.fluid.vx[cls.mesh.IEN_orig] = cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
+                cls.mesh.fluid.vy[cls.mesh.IEN_orig] = cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
             
             cls.mesh.X = cls.X_orig + cls.ux
             cls.mesh.Y = cls.Y_orig + cls.uy
@@ -704,20 +721,32 @@ class FEM:
             cls.mesh.Y = cls.Y_orig + cls.uy
         
         if cls.mesh.FSI_flag:
-            alpha = 1.0
-            ux_relax_ant = cls.ux_relax.copy()
-            uy_relax_ant = cls.uy_relax.copy()
-            cls.ux_relax = (1-alpha)*ux_relax_ant + alpha*cls.ux
-            cls.uy_relax = (1-alpha)*uy_relax_ant + alpha*cls.uy
-            cls.u_prime_x =  np.array([cls.u_prime[2*n] for n in range(cls.mesh.npoints)])
-            cls.u_prime_y = np.array([cls.u_prime[2*n+1] for n in range(cls.mesh.npoints)])
+            if cls.relax:
+                w_relax_min = 0.01
+                w_relax_max = 1.0
+                if n == 0:
+                    cls.w_relax = 0.5
+                    cls.r = cls.u - cls.u_relax
+                else:
+                    r_ant = cls.r.copy()
+                    cls.r = cls.u - cls.u_relax
+                    delta_r = cls.r - r_ant
+                    cls.w_relax = -cls.w_relax*(np.dot(r_ant,delta_r))/np.dot(delta_r,delta_r)
+                    cls.w_relax = max(w_relax_min,min(cls.w_relax,w_relax_max))
+                
             
-            cls.vx_relax = (cls.ux_relax-cls.ux_minus)/cls.dt
-            cls.vy_relax = (cls.uy_relax-cls.uy_minus)/cls.dt
+            cls.u_relax = (1-cls.w_relax)*cls.u_relax + cls.w_relax*cls.u
+            cls.ux_relax = np.array([cls.u_relax[2*n] for n in range(cls.mesh.npoints)])
+            cls.uy_relax = np.array([cls.u_relax[2*n+1] for n in range(cls.mesh.npoints)])
             
+            accel = (cls.u_relax - cls.u_minus - cls.dt*cls.u_prime_minus - (cls.dt**2)*(0.5-cls.beta)*cls.u_doubleprime_minus)/(cls.beta*cls.dt**2)
+            cls.u_prime_relax = cls.u_prime_minus + cls.dt*((1.0-cls.gamma)*cls.u_doubleprime_minus + cls.gamma*accel) #(1-alpha)*u_prime_relax_ant + alpha*cls.u_prime 
+            cls.vx_relax = np.array([cls.u_prime_relax[2*n] for n in range(cls.mesh.npoints)])
+            cls.vy_relax = np.array([cls.u_prime_relax[2*n+1] for n in range(cls.mesh.npoints)])
+                     
             if not cls.robin:
-                cls.mesh.fluid.vx[cls.mesh.IEN_orig] = cls.u_prime_x[cls.mesh.IEN] #cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
-                cls.mesh.fluid.vy[cls.mesh.IEN_orig] = cls.u_prime_y[cls.mesh.IEN] #cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
+                cls.mesh.fluid.vx[cls.mesh.IEN_orig] = cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
+                cls.mesh.fluid.vy[cls.mesh.IEN_orig] = cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
             
             cls.mesh.X = cls.X_orig + cls.ux
             cls.mesh.Y = cls.Y_orig + cls.uy
@@ -733,10 +762,8 @@ class FEM:
         return cls.u
     
     @classmethod 
-    def update_fluidmesh(cls,mesh_factor=0):
+    def update_fluidmesh(cls,mesh_factor=0, n=0):
         if cls.mesh.FSI_flag:
-            # cls.mesh.X = cls.X_orig + cls.ux
-            # cls.mesh.Y = cls.Y_orig + cls.uy
             # cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]
             # cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,1] = cls.u_prime_y[cls.mesh.IEN]
             
@@ -746,7 +773,7 @@ class FEM:
             # cls.mesh.fluidmesh.X[cls.mesh.IEN_orig] = cls.mesh.X[cls.mesh.IEN]
             # cls.mesh.fluidmesh.Y[cls.mesh.IEN_orig] = cls.mesh.Y[cls.mesh.IEN]
             
-            ## Code for exponential mesh movement            
+            # # Code for exponential mesh movement            
             # for node in cls.mesh.fluidmesh.node_list:
             #     if node.ID not in cls.mesh.IEN_orig and node.ID not in cls.mesh.fluidmesh.IENbound:
             #         factor = -mesh_factor*node.FSI_dist[1]
@@ -772,16 +799,27 @@ class FEM:
                 cls.mesh.fluidmesh.K[point,point] = 1.0
             
             #Code for system solution for mesh displacement
-            vector_x[cls.mesh.IEN_orig] = cls.ux[cls.mesh.IEN] - cls.ux_minus[cls.mesh.IEN]
-            vector_y[cls.mesh.IEN_orig] = cls.uy[cls.mesh.IEN] - cls.uy_minus[cls.mesh.IEN]
+            # vector_x[cls.mesh.IEN_orig] = cls.ux[cls.mesh.IEN] - cls.ux_minus[cls.mesh.IEN]
+            # vector_y[cls.mesh.IEN_orig] = cls.uy[cls.mesh.IEN] - cls.uy_minus[cls.mesh.IEN]
+            vector_x[cls.mesh.IEN_orig] = cls.ux_relax[cls.mesh.IEN] - cls.ux_minus[cls.mesh.IEN]
+            vector_y[cls.mesh.IEN_orig] = cls.uy_relax[cls.mesh.IEN] - cls.uy_minus[cls.mesh.IEN]
             
+            # mesh_displacement_ant = cls.mesh.fluidmesh.mesh_displacement.copy()
+            if n == 0:
+                # mesh_displacement_ant = np.zeros((cls.mesh.fluidmesh.npoints,2), dtype='float')
+                cls.X_minus = cls.mesh.fluidmesh.X.copy()
+                cls.Y_minus = cls.mesh.fluidmesh.Y.copy()
+                
             cls.mesh.fluidmesh.mesh_displacement[:,0] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_x)
             cls.mesh.fluidmesh.mesh_displacement[:,1] = sp.sparse.linalg.spsolve(cls.mesh.fluidmesh.K,vector_y)
             
             cls.mesh.fluidmesh.mesh_velocity = cls.mesh.fluidmesh.mesh_displacement/cls.dt
             
-            cls.mesh.fluidmesh.X += cls.mesh.fluidmesh.mesh_displacement[:,0]
-            cls.mesh.fluidmesh.Y += cls.mesh.fluidmesh.mesh_displacement[:,1]
+            cls.mesh.fluidmesh.X = cls.X_minus + cls.mesh.fluidmesh.mesh_displacement[:,0]
+            cls.mesh.fluidmesh.Y = cls.Y_minus + cls.mesh.fluidmesh.mesh_displacement[:,1]
+            
+            # cls.mesh.fluidmesh.X += (cls.mesh.fluidmesh.mesh_displacement[:,0] - mesh_displacement_ant[:,0])
+            # cls.mesh.fluidmesh.Y += (cls.mesh.fluidmesh.mesh_displacement[:,1] - mesh_displacement_ant[:,1])
             
             # #Code for system solution for mesh velocity
             # vector_x[cls.mesh.IEN_orig] = cls.u_prime_x[cls.mesh.IEN]

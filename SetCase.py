@@ -104,6 +104,11 @@ class Case:
             if 'Fluid_conv' in parSolid.attrib:
                 SolidProp['Fluid_conv'] = int(parSolid.attrib['Fluid_conv'])
                 
+            SolidProp['relax'] = False
+            if 'relax' in parSolid.attrib:
+                if parSolid.attrib['relax'] == "True":
+                    SolidProp['relax'] = True
+                
             
         particles = par.attrib['particles']
         if particles == 'True':
