@@ -712,7 +712,7 @@ class FEM:
             error = np.sqrt(sum((Res)**2))
             Res_mod = np.sqrt(sum((Res)**2))
             
-            print ('Iteration ' + str(k) + '-----Error = ' + str(error) + '---------Res = ' + str(Res_mod) + '-------max du = ' + str(max(du)))
+            print ('Iteration ' + str(k) + '-----Error = ' + str(error) + '---------Res = ' + str(Res_mod) + '-------max du = ' + str(max(abs(du))))
             k+=1
               
         
@@ -721,6 +721,7 @@ class FEM:
             cls.mesh.Y = cls.Y_orig + cls.uy
         
         if cls.mesh.FSI_flag:
+            cls.w_relax = 1.0
             if cls.relax:
                 w_relax_min = 0.01
                 w_relax_max = 1.0
