@@ -635,6 +635,8 @@ class FEM:
                     delta_r = cls.r - r_ant
                     cls.w_relax = -cls.w_relax*(np.dot(r_ant,delta_r))/np.dot(delta_r,delta_r)
                     cls.w_relax = max(w_relax_min,min(cls.w_relax,w_relax_max))
+            else:
+                cls.w_relax = 1.0
                 
             
             cls.u_relax = (1-cls.w_relax)*cls.u_relax + cls.w_relax*cls.u
@@ -721,7 +723,6 @@ class FEM:
             cls.mesh.Y = cls.Y_orig + cls.uy
         
         if cls.mesh.FSI_flag:
-            cls.w_relax = 1.0
             if cls.relax:
                 w_relax_min = 0.01
                 w_relax_max = 1.0
@@ -734,6 +735,8 @@ class FEM:
                     delta_r = cls.r - r_ant
                     cls.w_relax = -cls.w_relax*(np.dot(r_ant,delta_r))/np.dot(delta_r,delta_r)
                     cls.w_relax = max(w_relax_min,min(cls.w_relax,w_relax_max))
+            else:
+                cls.w_relax = 1.0
                 
             
             cls.u_relax = (1-cls.w_relax)*cls.u_relax + cls.w_relax*cls.u
