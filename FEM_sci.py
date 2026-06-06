@@ -238,7 +238,7 @@ class FEM:
                     d += cls.mesh.node_list[ID].FSI_dist[1]
                 d = d/len(cls.mesh.IEN[e])
                 h = np.sqrt(local[e].area)
-                kmesh_data[s_vv] = (h/(cls.h_min + d)**2)*(local[e].kxx + local[e].kyy).ravel()
+                kmesh_data[s_vv] = (h/(cls.h_min + d))*(local[e].kxx + local[e].kyy).ravel()
                 
             gvx_data[s_vv]  = local[e].gvx.ravel()
             gvy_data[s_vv]  = local[e].gvy.ravel()

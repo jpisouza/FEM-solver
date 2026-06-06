@@ -2,7 +2,7 @@ ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek100-iter/Results/*s
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
         $num = [int]$Matches[2]
-        $num -ge 9368
+        $num -ge 10424
     }
 } |
 ForEach-Object {
@@ -12,11 +12,11 @@ ForEach-Object {
 
 
 
-ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek100-Ma0.04/Results/*sol-*" |
+ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek100-iter-0.025/Results/*sol-*" |
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
         $num = [int]$Matches[2]
-        $num -ge 12970
+        $num -ge 10064
     }
 } |
 ForEach-Object {
