@@ -26,7 +26,7 @@ if sys.platform != "win32":
 class FEM:
     
     @classmethod
-    def set_matrices(cls,mesh,fluid,dt,BC,IC,SolidProp,COO_flag = False,porous = False, turb = False):
+    def set_matrices(cls,mesh,fluid,dt,BC,IC,SolidProp,COO_flag = True,porous = False, turb = False):
 
         cls.fluid = fluid
         cls.Re = fluid.Re
@@ -48,7 +48,10 @@ class FEM:
         cls.robin = False
         cls.alpha = 0.5
         cls.h_min = 0
-        
+        cls.solid_alpha = 1.0
+        if len(cls.mesh.FSI) > 0:
+            cls.solid_alpha = float(cls.SolidProp['alpha'])
+            
         cls.compressible = False
         if cls.Ma>0:
             cls.compressible = True
@@ -68,10 +71,7 @@ class FEM:
             if cls.mesh.mesh_kind == 'mini':
                 cls.build_mini()
             elif cls.mesh.mesh_kind == 'quad':
-                if cls.COO_flag:
-                    cls.build_quad_GQ_COO()
-                else:
-                    cls.build_quad_GQ()
+                cls.build_quad_GQ_COO()
        
             cls.set_block_matrices(BC)
         
@@ -186,6 +186,7 @@ class FEM:
         kx_data = np.empty_like(m_data)
         ky_data = np.empty_like(m_data)
         k_data = np.empty_like(m_data)
+        kT_data = np.empty_like(m_data)
         gvx_data  = np.empty_like(m_data)
         gvy_data  = np.empty_like(m_data)
        
@@ -227,10 +228,12 @@ class FEM:
                 kx_data[s_vv]  = 10000*cls.Re*local[e].kxx.ravel()
                 ky_data[s_vv]  = 10000*cls.Re*local[e].kyy.ravel()
                 k_data[s_vv]   = 10000*cls.Re*(local[e].kxx + local[e].kyy).ravel()
+                kT_data[s_vv]   = cls.solid_alpha*(local[e].kxx + local[e].kyy).ravel()
             else:
                 kx_data[s_vv]  = local[e].kxx.ravel()
                 ky_data[s_vv]  = local[e].kyy.ravel()
                 k_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
+                kT_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
             
             if len(cls.mesh.FSI) > 0:
                 d = 0
@@ -263,7 +266,7 @@ class FEM:
         cls.Kx    = coo_matrix((kx_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.Ky    = coo_matrix((ky_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.K     = cls.Kx + cls.Ky
-        cls.K_T = cls.K.copy()
+        cls.K_T = coo_matrix((kT_data,  (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.Gvx   = coo_matrix((gvx_data, (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.Gvy   = coo_matrix((gvy_data, (iv , jv )),shape=(cls.mesh.npoints, cls.mesh.npoints)).tocsr()
         cls.Gx   = coo_matrix((gx_data,(ip , jp)),shape=(cls.mesh.npoints, cls.mesh.npoints_p)).tocsr()
@@ -1030,11 +1033,16 @@ class FEM:
     
     @classmethod
     def calcFSIForces(cls, norm):
+        
+        
         dudx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.vx))
         dudy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.vx))
         
         dvdx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.vy))
         dvdy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.vy))
+        
+        dTdx = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvx,cls.fluid.T))
+        dTdy = sp.sparse.linalg.spsolve(cls.M,sp.sparse.csr_matrix.dot(cls.Gvy,cls.fluid.T))
         
         cls.T11 = -cls.fluid.p_quad + 2*(1.0/cls.Re)*dudx
         cls.T22 = -cls.fluid.p_quad + 2*(1.0/cls.Re)*dvdy
@@ -1047,8 +1055,19 @@ class FEM:
         cls.fluid.FSIForces[:,0] = cls.FSIForces_x 
         cls.fluid.FSIForces[:,1] = cls.FSIForces_y
         
-        # Cd_local = 2*np.multiply(-cls.fluid.p_quad,norm[:,0])
-        # Cl_local = 2*np.multiply(-cls.fluid.p_quad,norm[:,1])
+        # dN = lambda ksi, eta: np.array([[4*ksi+4*eta-3, 4*ksi-1, 0, 4-8*ksi-4*eta, 4*eta, -4*eta],[
+        #                                     4*ksi+4*eta-3, 0 , 4*eta-1, -4*ksi, 4*ksi, 4-4*ksi-8*eta]])
+        # Nu_s = np.zeros((cls.mesh.npoints), dtype='float')
+        # points = np.array([[0,0],[1.0,0],[0,1.0],[0.5,0],[0.5,0.5],[0,0.5]])
+        # for i in range (len(cls.mesh.IEN)):
+        #     for j in range (len(cls.mesh.IEN[i])):
+        #         if cls.mesh.IEN[i,j] in cls.mesh.FSI_list:
+        #             J = dN(points[j,0],points[j,1])@np.transpose(np.block([[cls.mesh.X[cls.mesh.IEN[i]]],[cls.mesh.Y[cls.mesh.IEN[i]]]]))
+        #             deriv = np.linalg.inv(J)@dN(points[j,0],points[j,1])@cls.fluid.T[cls.mesh.IEN[i]]
+        #             Nu_s[cls.mesh.IEN[i,j]] = -deriv[0]*norm[cls.mesh.IEN[i,j],0] - deriv[1]*norm[cls.mesh.IEN[i,j],1]
+                    
+        Nu_s = -(np.multiply(dTdx, norm[:,0]) + np.multiply(dTdy, norm[:,1]))
+        cls.fluid.Nu_s = Nu_s
         
         Cd_local = 2*(np.multiply(cls.T11, norm[:,0]) + np.multiply(cls.T12, norm[:,1]))
         Cl_local = 2*(np.multiply(cls.T21, norm[:,0]) + np.multiply(cls.T22, norm[:,1]))
@@ -1057,19 +1076,24 @@ class FEM:
         
         cls.Cd = 0
         cls.Cl = 0
+        cls.Nu = 0
+        h_total = 0
         totalforce_x = 0
         totalforce_y = 0
         interp_matrix = np.array([1.0/6.0, 1.0/6.0, 4.0/6.0])
         for elem in cls.mesh.FSI_dict_list:
             nodes = elem['nodes']
-            h1 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[1]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[1]])**2)**0.5
+            h1 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[0]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[0]])**2)**0.5
             h2 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[1]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[1]])**2)**0.5
             h = h1 + h2
+            h_total += h
             totalforce_x += h*interp_matrix@cls.FSIForces_x[nodes]
             totalforce_y += h*interp_matrix@cls.FSIForces_y[nodes]
             cls.Cd += h*interp_matrix@Cd_local[nodes]
             cls.Cl += h*interp_matrix@Cl_local[nodes]
+            cls.Nu += h*interp_matrix@Nu_s[nodes]
         cls.totalforce = np.array([totalforce_x,totalforce_y])
+        cls.Nu = cls.Nu/h_total
             
     
     
@@ -1161,10 +1185,7 @@ class FEM:
                 cls.Ma = cls.fluid.Ma
             if cls.i >= 0.9*fluid_conv or cls.int_i < 1: #Does not build the matrices while the solid is frozen (except in the first time step)
                 start = timer()
-                if cls.COO_flag:
-                    cls.build_quad_GQ_COO()
-                else:
-                    cls.build_quad_GQ()                
+                cls.build_quad_GQ_COO()               
                 cls.set_block_matrices(cls.BC)
                 end = timer()
                 print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')                                   
@@ -1184,12 +1205,20 @@ class FEM:
             end = timer()
             print('time --> Set boundaries = ' + str(end-start) + ' [s]')
         
-        start = timer()
-        
+                
         if sys.platform == "win32":
+            start = timer()
             sol = sp.sparse.linalg.spsolve(cls.Matriz,cls.vetor.transpose())
+            end = timer()  
+            print('time --> Flow solution = ' + str(end-start) + ' [s]')
+            
+            start = timer()
+            cls.fluid.T = sp.sparse.linalg.spsolve(cls.Matriz_T,cls.vetor_T.transpose())
+            end = timer()
+            print('time --> Temperatute solution = ' + str(end-start) + ' [s]')
         else:
-            #PETSC----------------------------------------------------------------
+            #PETSC for momentum equation ----------------------------------------------------------------
+            start = timer()
             A = cls.Matriz.copy()
             b = cls.vetor.transpose().copy()
             A_coo = A.tocoo()
@@ -1220,9 +1249,45 @@ class FEM:
             ksp.solve(b_petsc, x_petsc)
             
             sol = x_petsc.getArray()
+            
+            end = timer()  
+            print('time --> Flow solution = ' + str(end-start) + ' [s]')
+            
+            #PETSC for temperature equation ----------------------------------------------------------------
+            start = timer()
+            A_T = cls.Matriz_T.copy()
+            b_T = cls.vetor_T.transpose().copy()
+            AT_coo = A_T.tocoo()
+            nsize = A_T.shape[0]
+            
+            AT_coo = AT_coo + sp.sparse.diags([1e-10 * (AT_coo.diagonal() == 0)], [0])
+            AT_csr = AT_coo.tocsr()  
+            AT_petsc = PETSc.Mat().createAIJ(size=AT_csr.shape,
+                                 csr=(AT_csr.indptr, AT_csr.indices, AT_csr.data),
+                                 comm=PETSc.COMM_SELF)
+            
+            # --- convert rhs vector b and solution vector x to PETSc Vec ---
+            bT_petsc = PETSc.Vec().createWithArray(b_T.toarray(), comm=PETSc.COMM_SELF)
+            xT_petsc = PETSc.Vec().createSeq(nsize)
+            
+            # --- setup solver (preonly) ---
+            ksp = PETSc.KSP().create(comm=PETSc.COMM_SELF)
+            ksp.setOperators(AT_petsc)
 
-        end = timer()  
-        print('time --> Flow solution = ' + str(end-start) + ' [s]')
+            # direct solver
+            ksp.setType('preonly')         # solver type
+            ksp.getPC().setType('lu')      # direct solver
+            #ksp.getPC().setFactorSolverType('superlu') # multithread
+            #ksp.getPC().setFactorSolverType('umfpack') # serial 
+            ksp.getPC().setFactorSolverType('umfpack')
+            
+            ksp.setFromOptions()
+            ksp.solve(bT_petsc, xT_petsc)
+            
+            cls.fluid.T = xT_petsc.getArray()
+            
+            end = timer()  
+            print('time --> Temperature solution = ' + str(end-start) + ' [s]')
         
         cls.fluid.vx_minus = cls.fluid.vx.copy()
         cls.fluid.vy_minus = cls.fluid.vy.copy()
@@ -1239,12 +1304,6 @@ class FEM:
                     j = 0
                 cls.fluid.p_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.p_quad[cls.mesh.IEN[:,j]] + cls.fluid.p_quad[cls.mesh.IEN[:,i-3]])/2.0     
         
-        
-        start = timer()
-        cls.fluid.T = sp.sparse.linalg.spsolve(cls.Matriz_T,cls.vetor_T.transpose())
-        # cls.fluid.T = MathWrapper.linSolve(cls.Matriz_T,cls.vetor_T,cls.dll)
-        end = timer()
-        print('time --> Temperatute solution = ' + str(end-start) + ' [s]')
         
         cls.mesh.calc_normal()
         cls.calcFSIForces(cls.mesh.normal_vect)

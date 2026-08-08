@@ -93,7 +93,7 @@ class Case:
                 SolidProp['beta'] = float(parSolid.attrib['beta'])
             else:
                 SolidProp['gamma'] = 0.7
-                SolidProp['beta'] = ((2.0*SolidProp['gamma'] + 1.0)**2)/16.0
+                SolidProp['beta'] = ((2.0*float(SolidProp['gamma']) + 1.0)**2)/16.0
                 
             SolidProp['HE'] = False
             if 'HE' in parSolid.attrib:
@@ -108,6 +108,10 @@ class Case:
             if 'relax' in parSolid.attrib:
                 if parSolid.attrib['relax'] == "True":
                     SolidProp['relax'] = True
+                    
+            SolidProp['alpha'] = 1.0
+            if 'alpha' in parSolid.attrib:
+                SolidProp['alpha'] = parSolid.attrib['alpha']
                 
             
         particles = par.attrib['particles']

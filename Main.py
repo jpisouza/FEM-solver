@@ -202,7 +202,7 @@ def main():
         
         if len(FEM.mesh.FSI_list) > 0:
             f = open(output_dir + '/FSI_Cd.txt', 'a')    
-            f.write(str(i*dt)+ '\t' + str(FEM.Cd) + '\t' + str(FEM.Cl) + '\n')
+            f.write(str(i*dt)+ '\t' + str(FEM.Cd) + '\t' + str(FEM.Cl) + '\t' + str(FEM.Nu) + '\n')
             f.close()
         
         i+=1

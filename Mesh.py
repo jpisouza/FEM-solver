@@ -307,7 +307,12 @@ class mesh:
                 
                 edge['norm'][2][1] = edge['norm'][2][1]/mod
                 edge['norm'][2][0] = edge['norm'][2][0]/mod
-               
+                
+                for e in range (self.ne):
+                    if e not in self.solid_elem:
+                        if all(edge['nodes'][:2] == self.IEN[e,:2]) or all(edge['nodes'][:2] == self.IEN[e,1:3]) or all(edge['nodes'][:2] == np.array([self.IEN[e,2],self.IEN[e,0]])):
+                             edge['norm'][2] = -1.0*edge['norm'][2]
+                                                                                                                        
                 self.normal_vect[edge['nodes'][0],:] += edge['norm'][2]
                 self.normal_vect[edge['nodes'][1],:] += edge['norm'][2]
                 self.normal_vect[edge['nodes'][2],:] += edge['norm'][2]

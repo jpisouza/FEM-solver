@@ -41,4 +41,5 @@ class Fluid:
         self.epsd = np.zeros((mesh.npoints), dtype='float')
         
         self.FSIForces = np.zeros((mesh.npoints,2), dtype='float')
+        self.Nu_s = np.zeros((mesh.npoints), dtype='float')
         
