@@ -1305,7 +1305,7 @@ class FEM:
                 cls.fluid.p_quad[cls.mesh.IEN[:,i]]  = (cls.fluid.p_quad[cls.mesh.IEN[:,j]] + cls.fluid.p_quad[cls.mesh.IEN[:,i-3]])/2.0     
         
         
-        cls.mesh.calc_normal()
+        cls.mesh.calc_normal(cls.int_i)
         cls.calcFSIForces(cls.mesh.normal_vect)
         if len(cls.mesh.FSI) > 0:
             cls.solidMesh.update_forces(cls.fluid.FSIForces, cls.BC_solid)

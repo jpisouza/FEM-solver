@@ -127,6 +127,7 @@ class mesh:
                   
             self.boundary = []
             
+            self.normal_correct =  np.ones((self.npoints), dtype = 'float')
 
         elif self.mesh_kind == 'mini':
 
@@ -283,7 +284,7 @@ class mesh:
                 node.FSI_dist = [ID,dist_min]
         
 
-    def calc_normal(self):
+    def calc_normal(self, int_i):
         
         self.normal_vect = np.zeros((len(self.X),2), dtype='float')
         for edge in self.FSI_dict_list:
@@ -308,14 +309,17 @@ class mesh:
                 edge['norm'][2][1] = edge['norm'][2][1]/mod
                 edge['norm'][2][0] = edge['norm'][2][0]/mod
                 
-                for e in range (self.ne):
-                    if e not in self.solid_elem:
-                        if all(edge['nodes'][:2] == self.IEN[e,:2]) or all(edge['nodes'][:2] == self.IEN[e,1:3]) or all(edge['nodes'][:2] == np.array([self.IEN[e,2],self.IEN[e,0]])):
-                             edge['norm'][2] = -1.0*edge['norm'][2]
-                                                                                                                        
-                self.normal_vect[edge['nodes'][0],:] += edge['norm'][2]
-                self.normal_vect[edge['nodes'][1],:] += edge['norm'][2]
-                self.normal_vect[edge['nodes'][2],:] += edge['norm'][2]
+                if int_i == 0:
+                    for e in range (self.ne):
+                        if e not in self.solid_elem:
+                            if all(edge['nodes'][:2] == self.IEN[e,:2]) or all(edge['nodes'][:2] == self.IEN[e,1:3]) or all(edge['nodes'][:2] == np.array([self.IEN[e,2],self.IEN[e,0]])):
+                                 # edge['norm'][2] = -1.0*edge['norm'][2]
+                                 self.normal_correct[edge['nodes'][:]] = -1.0
+                 
+                # print (self.normal_correct)                                                                                     
+                self.normal_vect[edge['nodes'][0],:] += edge['norm'][2]*self.normal_correct[edge['nodes'][0]]
+                self.normal_vect[edge['nodes'][1],:] += edge['norm'][2]*self.normal_correct[edge['nodes'][1]]
+                self.normal_vect[edge['nodes'][2],:] += edge['norm'][2]*self.normal_correct[edge['nodes'][2]]
         
         for i in self.FSI_list:
             mod = np.sqrt(self.normal_vect[i,0]**2 + self.normal_vect[i,1]**2)
