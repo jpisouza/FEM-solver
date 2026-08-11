@@ -615,7 +615,7 @@ class FEM:
                                  comm=PETSc.COMM_SELF)
             
             # --- convert rhs vector b and solution vector x to PETSc Vec ---
-            b_petsc = PETSc.Vec().createWithArray(b.toarray(), comm=PETSc.COMM_SELF)
+            b_petsc = PETSc.Vec().createWithArray(b, comm=PETSc.COMM_SELF)
             x_petsc = PETSc.Vec().createSeq(nsize)
             
             # --- setup solver (preonly) ---
@@ -764,7 +764,7 @@ class FEM:
                                      comm=PETSc.COMM_SELF)
                 
                 # --- convert rhs vector b and solution vector x to PETSc Vec ---
-                b_petsc = PETSc.Vec().createWithArray(b.toarray(), comm=PETSc.COMM_SELF)
+                b_petsc = PETSc.Vec().createWithArray(b, comm=PETSc.COMM_SELF)
                 x_petsc = PETSc.Vec().createSeq(nsize)
                 
                 # --- setup solver (preonly) ---
