@@ -22,7 +22,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
     
     gamma = 0.5
     beta = 0.5
-    dynamic = True
+    dynamic = False
     
     output_dir = case + 'Results'
     if not os.path.isdir(output_dir):
@@ -41,7 +41,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
     t = [0]
     i = 0
     
-    nat_freq = False
+    nat_freq = True
     n_freq = 10
 
     refconfig_force = True #Force calculated in the reference configuration (undeformed)
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     nu = 0.4
     rho = 1000.0
     disp = 1.0
-    HE = True
+    HE = False
     case = './Cases/Solid_Turek/'
     # case = 'C:\\Users\\jpinn\\Downloads\\'
     msh = 'malhaTeste.msh'

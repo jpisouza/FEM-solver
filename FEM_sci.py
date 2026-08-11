@@ -888,18 +888,18 @@ class FEM:
                     u_0 = float(BC[i]['vx'].split('-')[1])
                     ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
                     h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
-                    cls.vetor_vx[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)
+                    cls.vetor_vx[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                 elif BC[i]['vx'] != 'None':
-                    cls.vetor_vx[j] = float(BC[i]['vx'])
+                    cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
 
                 if 'Profile' in BC[i]['vy']:                    
                     u_0 = float(BC[i]['vy'].split('-')[1])
                     ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
                     h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
-                    cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)
+                    cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                     
                 elif BC[i]['vy'] != 'None':
-                    cls.vetor_vy[j] = float(BC[i]['vy']) 
+                    cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
                     
                 if cls.mesh.mesh_kind == 'quad':
                     if BC[i]['T'] != 'None':
@@ -941,7 +941,7 @@ class FEM:
                     u_0 = float(BC[i]['vx'].split('-')[1])
                     ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
                     h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
-                    cls.vetor_vx[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)
+                    cls.vetor_vx[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                 elif BC[i]['vx'] != 'None':
                     row = cls.Matriz.getrow(j)
                     for col in row.indices:
@@ -952,7 +952,7 @@ class FEM:
                         if not cls.robin:
                             cls.vetor_vx[j] = cls.fluid.vx[j]
                     else:
-                        cls.vetor_vx[j] = float(BC[i]['vx'])
+                        cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
 
                 if 'Profile' in BC[i]['vy']:
                     row = cls.Matriz.getrow(j + cls.mesh.npoints)
@@ -963,7 +963,7 @@ class FEM:
                     u_0 = float(BC[i]['vy'].split('-')[1])
                     ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
                     h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
-                    cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)
+                    cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                     
                 elif BC[i]['vy'] != 'None':
                     row = cls.Matriz.getrow(j + cls.mesh.npoints)
@@ -975,7 +975,7 @@ class FEM:
                         if not cls.robin:
                             cls.vetor_vy[j] = cls.fluid.vy[j]
                     else:
-                        cls.vetor_vy[j] = float(BC[i]['vy']) 
+                        cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
                 
                 if cls.mesh.mesh_kind == 'quad':
                                                 
@@ -1188,13 +1188,19 @@ class FEM:
                 cls.build_quad_GQ_COO()               
                 cls.set_block_matrices(cls.BC)
                 end = timer()
-                print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')                                   
-            
-            start = timer()            
-            cls.set_block_vectors(forces)
-            cls.set_BC_dynamic(cls.BC)
-            end = timer()
-            print('time --> Set boundaries = ' + str(end-start) + ' [s]')
+                print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')                                             
+                start = timer()            
+                cls.set_block_vectors(forces)
+                cls.set_BC_dynamic(cls.BC)
+                end = timer()
+                print('time --> Set boundaries = ' + str(end-start) + ' [s]')
+            else:
+                start = timer()            
+                cls.set_block_vectors(forces)
+                cls.set_BC(cls.BC)
+                end = timer()
+                print('time --> Set boundaries = ' + str(end-start) + ' [s]')
+                
         if cls.porous or cls.turb:
             cls.set_block_vectors(forces)
             cls.set_BC_dynamic(cls.BC)

@@ -5,6 +5,9 @@ from scipy.sparse import lil_matrix, csr_matrix, csc_matrix, coo_matrix, dok_mat
 import scipy.linalg  
 import scipy.sparse.linalg 
 import Elements
+import sys
+if sys.platform != "win32":
+    from petsc4py import PETSc
 
 class FEM:
     
@@ -594,7 +597,43 @@ class FEM:
         cls.set_BC()
         
         # print (cls.b)
-        cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+        if sys.platform == "win32":
+            cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+        
+        else:
+            #PETSC ----------------------------------------------------------------
+            A = cls.A.copy()
+            b = cls.b.copy()
+            
+            A_coo = A.tocoo()
+            nsize = A.shape[0]
+            
+            A_coo = A_coo + sp.sparse.diags([1e-10 * (A_coo.diagonal() == 0)], [0])
+            A_csr = A_coo.tocsr()  
+            A_petsc = PETSc.Mat().createAIJ(size=A_csr.shape,
+                                 csr=(A_csr.indptr, A_csr.indices, A_csr.data),
+                                 comm=PETSc.COMM_SELF)
+            
+            # --- convert rhs vector b and solution vector x to PETSc Vec ---
+            b_petsc = PETSc.Vec().createWithArray(b.toarray(), comm=PETSc.COMM_SELF)
+            x_petsc = PETSc.Vec().createSeq(nsize)
+            
+            # --- setup solver (preonly) ---
+            ksp = PETSc.KSP().create(comm=PETSc.COMM_SELF)
+            ksp.setOperators(A_petsc)
+
+            # direct solver
+            ksp.setType('preonly')         # solver type
+            ksp.getPC().setType('lu')      # direct solver
+            #ksp.getPC().setFactorSolverType('superlu') # multithread
+            #ksp.getPC().setFactorSolverType('umfpack') # serial 
+            ksp.getPC().setFactorSolverType('umfpack')
+            
+            ksp.setFromOptions()
+            ksp.solve(b_petsc, x_petsc)
+            
+            cls.u = x_petsc.getArray()
+        
         # print(sp.sparse.csr_matrix.sum(cls.A))
         # print(np.sum(cls.b))
         
@@ -707,7 +746,42 @@ class FEM:
             Res = sp.sparse.csr_matrix.dot(cls.h*cls.Mb.tocsr(),cls.forces) + sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(), (1.0/cls.Fr**2)*cls.g) - cls.h*cls.Res_stress - sp.sparse.csr_matrix.dot(cls.rho*cls.h*cls.M.tocsr(),cls.u_doubleprime)     
             cls.set_BCHE(Res)
             
-            du = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+            if sys.platform == "win32":
+                du = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
+            
+            else:
+                #PETSC ----------------------------------------------------------------
+                A = cls.A.copy()
+                b = cls.b.copy()
+                
+                A_coo = A.tocoo()
+                nsize = A.shape[0]
+                
+                A_coo = A_coo + sp.sparse.diags([1e-10 * (A_coo.diagonal() == 0)], [0])
+                A_csr = A_coo.tocsr()  
+                A_petsc = PETSc.Mat().createAIJ(size=A_csr.shape,
+                                     csr=(A_csr.indptr, A_csr.indices, A_csr.data),
+                                     comm=PETSc.COMM_SELF)
+                
+                # --- convert rhs vector b and solution vector x to PETSc Vec ---
+                b_petsc = PETSc.Vec().createWithArray(b.toarray(), comm=PETSc.COMM_SELF)
+                x_petsc = PETSc.Vec().createSeq(nsize)
+                
+                # --- setup solver (preonly) ---
+                ksp = PETSc.KSP().create(comm=PETSc.COMM_SELF)
+                ksp.setOperators(A_petsc)
+
+                # direct solver
+                ksp.setType('preonly')         # solver type
+                ksp.getPC().setType('lu')      # direct solver
+                #ksp.getPC().setFactorSolverType('superlu') # multithread
+                #ksp.getPC().setFactorSolverType('umfpack') # serial 
+                ksp.getPC().setFactorSolverType('umfpack')
+                
+                ksp.setFromOptions()
+                ksp.solve(b_petsc, x_petsc)
+                
+                du = x_petsc.getArray()
             
             cls.calc_stressHE()
             

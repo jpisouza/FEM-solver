@@ -142,6 +142,10 @@ class Case:
         BC_list = []
         FSI_list = []
         for child in cls.root.find('BoundaryCondition'):
+            if 'freq' not in child.attrib.keys():
+                child.attrib['freq'] = 0
+            if 'amp' not in child.attrib.keys():
+                child.attrib['amp'] = 1.0
             BC_list.append(child.attrib)
         BC_list.reverse() 
         
@@ -153,6 +157,8 @@ class Case:
                 FSI_bound['vy'] = '0.0'
                 FSI_bound['p'] = 'None'
                 FSI_bound['T'] = 'None'
+                FSI_bound['freq'] = 0
+                FSI_bound['amp'] = 1.0
                 FSI_list.append(FSI_bound)
             BC_list = BC_list + FSI_list
             
