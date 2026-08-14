@@ -16,7 +16,7 @@ import os
 def Solid_solver(E,nu,rho,disp,HE,case,msh):
 
     g = [0,-2.0]
-    h = 1.0
+    h = 0.1
     dt = 0.02
     end = 1000
     
@@ -85,12 +85,12 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
     return FEM
 
 if __name__ == "__main__":
-    E = 1.4e6
-    nu = 0.4
-    rho = 1000.0
+    E = 800
+    nu = 0.3
+    rho = 10.0
     disp = 1.0
     HE = False
-    case = './Cases/Solid_Turek/'
+    case = './Cases/Solid_naturalmodes/'
     # case = 'C:\\Users\\jpinn\\Downloads\\'
     msh = 'malhaTeste.msh'
     # msh = 'tri_quad.msh'

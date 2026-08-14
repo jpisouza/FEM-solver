@@ -156,9 +156,9 @@ def main():
             n = 0 
             n_max = 0
             if i>=SolidProp['Fluid_conv']:
-                n_max = 10
+                n_max = 30
             error = 1000.0
-            while error >= 1e-4 and n <= n_max:
+            while error >= 1e-5 and n <= n_max:
                 # print ('--------Start of convergence iteration ' + str(n) + ' --------\n')
                 # u_prime_x_ant = SolidFEM.u_prime_x
                 # FSIForces_ant = FEM.fluid.FSIForces[:,0].copy()
@@ -183,7 +183,8 @@ def main():
                 # error = np.linalg.norm(SolidFEM.u_prime_x - u_prime_x_ant)/np.linalg.norm(SolidFEM.u_prime_x)
                 # error = np.linalg.norm(fluid.vx - vx_ant)/np.linalg.norm(fluid.vx)
                 # error = max(abs(SolidFEM.ux - ux_ant))
-                error = np.linalg.norm(SolidFEM.ux - ux_ant)/np.linalg.norm(SolidFEM.ux)
+                # error = np.linalg.norm(SolidFEM.ux - ux_ant)/np.linalg.norm(SolidFEM.ux)
+                error = np.linalg.norm(SolidFEM.u - SolidFEM.u_relax)/np.linalg.norm(SolidFEM.u)
                 # error = np.sqrt(sum((FEM.fluid.FSIForces[:,0] - FSIForces_ant)**2))
                 # error = max(abs(fluid.FSIForces[:,0] - FSIForces_ant))
                 if n_max > 0:

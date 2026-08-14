@@ -1,38 +1,30 @@
-ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek100-iter/Results/*sol-*" |
+ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/fin_6000/Results/*sol-*" |
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
         $num = [int]$Matches[2]
-        $num -ge 11054
+        $num -ge 128
     }
 } |
 ForEach-Object {
     scp -P 51 joao@146.164.26.42:$_ .
 }
 
-
-
-
-ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Turek100-iter-0.025/Results/*sol-*" |
+ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/fin_4500/Results/*sol-*" |
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
         $num = [int]$Matches[2]
-        $num -ge 11040
+        $num -ge 0
     }
 } |
 ForEach-Object {
     scp -P 51 joao@146.164.26.42:$_ .
 }
 
-
-
-
-
-
-ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/FSI_Sahu-Up30/Results/*sol-*" |
+ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/fin_1000/Results/*sol-*" |
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
         $num = [int]$Matches[2]
-        $num -ge 4680
+        $num -ge 0
     }
 } |
 ForEach-Object {
