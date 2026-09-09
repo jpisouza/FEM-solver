@@ -87,7 +87,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
 if __name__ == "__main__":
     E = 15000
     nu = 0.3
-    rho = 10.0
+    rho = 20.0
     disp = 1.0
     HE = False
     case = './Cases/Solid_naturalmodes/'
