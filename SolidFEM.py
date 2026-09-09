@@ -505,7 +505,7 @@ class FEM:
         cls.sigma_VM = np.power(np.power(cls.sigma_x,2) + np.power(cls.sigma_y,2) - np.multiply(cls.sigma_x, cls.sigma_y) + 3.0*np.power(cls.tau_xy,2),0.5)
       
     @classmethod 
-    def calc_freq(cls):
+    def calc_freq(cls, n_freq=10):
         for bound in cls.BC:
             for node in cls.mesh.bound_dict[bound]:
                 if cls.BC[bound][0] != 'None':
@@ -521,11 +521,24 @@ class FEM:
                 cls.K_freq[i,j] = cls.K[cls.dof[i],cls.dof[j]]
                 
         # omega, modes = scipy.sparse.linalg.eigs(scipy.sparse.linalg.inv(cls.rho*cls.h*cls.M_freq.tocsc())*cls.h*cls.K_freq.tocsc(),6,None,None,'SM')
-        omega, modes = np.linalg.eig((scipy.sparse.linalg.inv(cls.rho*cls.h*cls.M_freq.tocsc())*cls.h*cls.K_freq.tocsc()).toarray())        
+        # omega, modes = np.linalg.eig((scipy.sparse.linalg.inv(cls.rho*cls.h*cls.M_freq.tocsc())*cls.h*cls.K_freq.tocsc()).toarray())        
         #omega, modes = scipy.sparse.linalg.eigs(cls.h*cls.K_freq.tocsc(),6,cls.rho*cls.h*cls.M_freq.tocsc(),None,'SM')
+
+        
+        omega, modes = scipy.sparse.linalg.eigsh(
+            cls.h * cls.K_freq.tocsc(),
+            k=n_freq,
+            M=cls.rho * cls.h * cls.M_freq.tocsc(),
+            sigma=0.0,
+            which='LM'
+        )
         
         indexes_omega = np.argsort(omega)
+        
         cls.omega_sort = omega[indexes_omega]
+        modes = modes[:, indexes_omega]   
+        # indexes_omega = np.argsort(omega)
+        # cls.omega_sort = omega[indexes_omega]
         
         # print('---------------------Natural Frequencies--------------------------------')
         # print(cls.omega_sort)
@@ -916,14 +929,14 @@ class FEM:
                     
     
     @classmethod   
-    def solve_static(cls, nat_freq):
+    def solve_static(cls, nat_freq, n_freq=10):
         cls.build_quad_GQ()
         cls.build_blocks_static()
         cls.calc_bound_force()
         cls.set_BC()
         
         if nat_freq:
-            cls.calc_freq()
+            cls.calc_freq(n_freq)
         
         cls.u = sp.sparse.linalg.spsolve(cls.A.tocsr(),cls.b)
         

@@ -42,7 +42,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
     i = 0
     
     nat_freq = True
-    n_freq = 10
+    n_freq = 1
 
     refconfig_force = True #Force calculated in the reference configuration (undeformed)
     
@@ -72,7 +72,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
         if HE:
             u = FEM.solve_staticHE() 
         else:
-            u, u_w = FEM.solve_static(nat_freq)
+            u, u_w = FEM.solve_static(nat_freq, n_freq)
         export_static(mesh, output_dir, u, FEM.sigma_x, FEM.sigma_y, FEM.tau_xy, FEM.PK_stress_x, FEM.PK_stress_y, FEM.PK_stress_xy, FEM.sigma_VM)
         
     if nat_freq and not HE:
@@ -85,7 +85,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
     return FEM
 
 if __name__ == "__main__":
-    E = 800
+    E = 15000
     nu = 0.3
     rho = 10.0
     disp = 1.0

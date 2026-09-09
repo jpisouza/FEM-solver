@@ -183,8 +183,8 @@ def main():
                 # error = np.linalg.norm(SolidFEM.u_prime_x - u_prime_x_ant)/np.linalg.norm(SolidFEM.u_prime_x)
                 # error = np.linalg.norm(fluid.vx - vx_ant)/np.linalg.norm(fluid.vx)
                 # error = max(abs(SolidFEM.ux - ux_ant))
-                # error = np.linalg.norm(SolidFEM.ux - ux_ant)/np.linalg.norm(SolidFEM.ux)
-                error = np.linalg.norm(SolidFEM.u - SolidFEM.u_relax)/np.linalg.norm(SolidFEM.u)
+                error = np.linalg.norm(SolidFEM.ux - ux_ant)/np.linalg.norm(SolidFEM.ux)
+                # error = np.linalg.norm(SolidFEM.u - SolidFEM.u_relax)/np.linalg.norm(SolidFEM.u)
                 # error = np.sqrt(sum((FEM.fluid.FSIForces[:,0] - FSIForces_ant)**2))
                 # error = max(abs(fluid.FSIForces[:,0] - FSIForces_ant))
                 if n_max > 0:
