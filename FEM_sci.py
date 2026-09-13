@@ -1183,7 +1183,7 @@ class FEM:
                 cls.Ma = 0.0
             else:
                 cls.Ma = cls.fluid.Ma
-                if i == 50:
+                if cls.i == 50: #Needs to recalculate matrices because Ma is introduced
                     start = timer()
                     cls.build_quad_GQ_COO()               
                     cls.set_block_matrices(cls.BC)
