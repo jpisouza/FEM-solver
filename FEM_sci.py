@@ -1183,6 +1183,18 @@ class FEM:
                 cls.Ma = 0.0
             else:
                 cls.Ma = cls.fluid.Ma
+                if i == 50:
+                    start = timer()
+                    cls.build_quad_GQ_COO()               
+                    cls.set_block_matrices(cls.BC)
+                    end = timer()
+                    print('time --> Build FEM matrices = ' + str(end-start) + ' [s]')                                             
+                    start = timer()            
+                    cls.set_block_vectors(forces)
+                    cls.set_BC_dynamic(cls.BC)
+                    end = timer()
+                    print('time --> Set boundaries = ' + str(end-start) + ' [s]')
+                    
             if cls.i >= 0.9*fluid_conv or cls.int_i < 1: #Does not build the matrices while the solid is frozen (except in the first time step)
                 start = timer()
                 cls.build_quad_GQ_COO()               
