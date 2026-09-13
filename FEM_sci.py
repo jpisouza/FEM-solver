@@ -1179,7 +1179,7 @@ class FEM:
             print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
         
         if len(cls.mesh.FSI) > 0:
-            if cls.i < 0.9*fluid_conv: #Accelerates pressure convergence while the solid is frozen
+            if cls.i < 50: #Accelerates pressure convergence while the solid is frozen
                 cls.Ma = 0.0
             else:
                 cls.Ma = cls.fluid.Ma

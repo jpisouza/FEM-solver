@@ -1,6 +1,5 @@
 name: dsc_env
 channels:
-  - mrossi
   - conda-forge
 
 dependencies:

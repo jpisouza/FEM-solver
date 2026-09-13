@@ -85,7 +85,7 @@ def Solid_solver(E,nu,rho,disp,HE,case,msh):
     return FEM
 
 if __name__ == "__main__":
-    E = 15000
+    E = 5000
     nu = 0.3
     rho = 20.0
     disp = 1.0
