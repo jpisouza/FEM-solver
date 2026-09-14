@@ -2,7 +2,7 @@ ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/internal_fin_rigid0.65/Resul
 Where-Object {
     if ($_ -match '(solid_)?sol-(\d+)') {
         $num = [int]$Matches[2]
-        $num -ge 0 -and $num -le 200
+        $num -ge 0 -and $num -le 273
     }
 } |
 ForEach-Object {

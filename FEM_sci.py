@@ -1179,11 +1179,11 @@ class FEM:
             print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
         
         if len(cls.mesh.FSI) > 0:
-            if cls.i < 50: #Accelerates pressure convergence while the solid is frozen
+            if cls.i < 45: #Accelerates pressure convergence while the solid is frozen
                 cls.Ma = 0.0
             else:
                 cls.Ma = cls.fluid.Ma
-                if cls.i == 50: #Needs to recalculate matrices because Ma is introduced
+                if cls.i == 45 and cls.i < 0.9*fluid_conv: #Needs to recalculate matrices because Ma is introduced
                     start = timer()
                     cls.build_quad_GQ_COO()               
                     cls.set_block_matrices(cls.BC)

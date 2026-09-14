@@ -190,8 +190,7 @@ def main():
                 # error = max(abs(fluid.FSIForces[:,0] - FSIForces_ant))
                 if n_max > 0:
                     print('####################################################################################\n')
-                    print ('----------Main Loop Iteration ' + str(n) + ': Error 1 = ' + str(error1) + '---------\n')
-                    print ('----------Main Loop Iteration ' + str(n) + ': Error 2 = ' + str(error2) + '---------\n')
+                    print ('----------Main Loop Iteration ' + str(n) + ': Error 1 = ' + str(error1) + ': Error 2 = ' + str(error2) + '---------\n')
                     print('####################################################################################\n')
                 n+=1    
             
