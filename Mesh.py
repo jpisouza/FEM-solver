@@ -252,6 +252,7 @@ class mesh:
                         self.FSI_dict_list.append({'bound_elem':i})
                         self.FSI_dict_list[-1]['nodes'] = self.IENbound[i]
                         self.FSI_dict_list[-1]['norm'] = np.array(([[0,0],[0,0],[0,0]]), dtype='float')
+                        self.FSI_dict_list[-1]['name'] = bound['name']
                         if 'calc_force' in bound and bound['calc_force'] == 'True':
                             bound['fluid_interface'] = "True"
                         self.FSI_dict_list[-1]['fluid_interface'] = bound['fluid_interface']

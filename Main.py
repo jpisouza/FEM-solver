@@ -203,9 +203,20 @@ def main():
                             
         
         if len(FEM.mesh.FSI_list) > 0:
-            f = open(output_dir + '/FSI_Cd.txt', 'a')    
-            f.write(str(i*dt)+ '\t' + str(FEM.Cd) + '\t' + str(FEM.Cl) + '\t' + str(FEM.Nu) + '\n')
+            f = open(output_dir + '/FSI_Coeffs.txt', 'a')  
+            f2 = open(output_dir + '/Nu.txt', 'a')
+            f.write(str(i*dt) + '\t' + str(FEM.Cd) + '\t' + str(FEM.Cl) + '\n')
+            if i == 0:
+                f2.write('time' + '\t' + 'Nu total' + '\t')
+                for k in range (len(list(FEM.Nu_dict.keys()))):
+                    f2.write(str(list(FEM.Nu_dict.keys())[k]) + '\t' )
+                f2.write('\n')       
+            f2.write(str(i*dt) + '\t' + str(FEM.Nu) + '\t')                
+            for k in range (len(list(FEM.Nu_dict.keys()))):
+                f2.write(str(FEM.Nu_dict[list(FEM.Nu_dict.keys())[k]][0]) + '\t' )
+            f2.write('\n')
             f.close()
+            f2.close()
         
         i+=1
     

@@ -66,6 +66,7 @@ class FEM:
             cls.BC_solid = cls.solidMesh.build_BCdict(cls.fluid.FSIForces)
             SolidFEM.set_parameters(cls.solidMesh, cls.BC_solid, cls.IC, float(SolidProp['h']), float(SolidProp['E']), dt, float(SolidProp['rho']), float(SolidProp['nu']), float(SolidProp['gamma']), float(SolidProp['beta']), [0,0], 1.0/cls.Ga**2, SolidProp['relax'])
         
+        
         if len(cls.mesh.FSI) == 0:
             start = timer()
             if cls.mesh.mesh_kind == 'mini':
@@ -1073,29 +1074,39 @@ class FEM:
         Cl_local = 2*(np.multiply(cls.T21, norm[:,0]) + np.multiply(cls.T22, norm[:,1]))
         
         #calculate the total force------------------------------------------------
-        
+                    
         cls.Cd = 0
         cls.Cl = 0
         cls.Nu = 0
+        #Creating Nu dictionary for each boundary----------------------------------
+        cls.Nu_dict = {}
+        for i in range (len(cls.mesh.FSI_dict_list)):
+            if cls.mesh.FSI_dict_list[i]['fluid_interface'] == 'True':
+                cls.Nu_dict[cls.mesh.FSI_dict_list[i]['name']] = np.array([0.0,0.0]) #(Nu,h)
+            
         h_total = 0
         totalforce_x = 0
         totalforce_y = 0
         interp_matrix = np.array([1.0/6.0, 1.0/6.0, 4.0/6.0])
         for elem in cls.mesh.FSI_dict_list:
-            nodes = elem['nodes']
-            h1 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[0]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[0]])**2)**0.5
-            h2 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[1]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[1]])**2)**0.5
-            h = h1 + h2
-            h_total += h
-            totalforce_x += h*interp_matrix@cls.FSIForces_x[nodes]
-            totalforce_y += h*interp_matrix@cls.FSIForces_y[nodes]
-            cls.Cd += h*interp_matrix@Cd_local[nodes]
-            cls.Cl += h*interp_matrix@Cl_local[nodes]
-            cls.Nu += h*interp_matrix@Nu_s[nodes]
+            if elem['fluid_interface'] == 'True':
+                nodes = elem['nodes']
+                h1 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[0]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[0]])**2)**0.5
+                h2 = ((cls.mesh.X[nodes[2]] - cls.mesh.X[nodes[1]])**2 + (cls.mesh.Y[nodes[2]] - cls.mesh.Y[nodes[1]])**2)**0.5
+                h = h1 + h2
+                h_total += h
+                totalforce_x += h*interp_matrix@cls.FSIForces_x[nodes]
+                totalforce_y += h*interp_matrix@cls.FSIForces_y[nodes]
+                cls.Cd += h*interp_matrix@Cd_local[nodes]
+                cls.Cl += h*interp_matrix@Cl_local[nodes]
+                cls.Nu += h*interp_matrix@Nu_s[nodes]
+                cls.Nu_dict[elem['name']][0] += h*interp_matrix@Nu_s[nodes]
+                cls.Nu_dict[elem['name']][1] += h
         cls.totalforce = np.array([totalforce_x,totalforce_y])
         cls.Nu = cls.Nu/h_total
-            
-    
+        
+        for name in list(cls.Nu_dict.keys()):
+            cls.Nu_dict[name][0] = cls.Nu_dict[name][0]/cls.Nu_dict[name][1]    
     
     @classmethod
     def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[],n=0,fluid_conv=0):
