@@ -165,6 +165,7 @@ class Case:
                 FSI_bound['T'] = 'None'
                 FSI_bound['freq'] = 0
                 FSI_bound['amp'] = 1.0
+                FSI_bound['ramp'] = 'None'
                 FSI_list.append(FSI_bound)
             BC_list = BC_list + FSI_list
             

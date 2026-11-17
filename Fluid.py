@@ -17,6 +17,7 @@ class Fluid:
             self.vx = float(IC['vx'])*np.ones((mesh.npoints), dtype='float')
             self.vy = float(IC['vy'])*np.ones((mesh.npoints), dtype='float')
             self.p = float(IC['p'])*np.ones((mesh.npoints_p), dtype='float')
+            self.p_relax=self.p
             if mesh.mesh_kind == 'quad':
                 self.T = float(IC['T'])*np.ones((mesh.npoints), dtype='float')
             if mesh.mesh_kind == 'mini':
@@ -25,6 +26,7 @@ class Fluid:
             self.vx = IC['vx']
             self.vy = IC['vy']
             self.p = IC['p']
+            self.p_relax=self.p
             self.T = IC['T']
             self.mesh.mesh_displacement = IC['mesh_displacement']
 

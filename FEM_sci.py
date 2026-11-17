@@ -875,7 +875,8 @@ class FEM:
             cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td)
         
         if cls.compressible:
-            cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.p_minus) #+ sp.sparse.csr_matrix.dot(cls.Dx, cls.mesh.mesh_velocity[:,0]) + sp.sparse.csr_matrix.dot(cls.Dy, cls.mesh.mesh_velocity[:,1])
+            # cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.p_minus) #+ sp.sparse.csr_matrix.dot(cls.Dx, cls.mesh.mesh_velocity[:,0]) + sp.sparse.csr_matrix.dot(cls.Dy, cls.mesh.mesh_velocity[:,1])
+            cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.fluid.p_relax)
         else:
             cls.vetor_p = np.zeros((cls.mesh.npoints_p),dtype='float' ) #+ sp.sparse.csr_matrix.dot(cls.Dx, cls.mesh.mesh_velocity[:,0]) + sp.sparse.csr_matrix.dot(cls.Dy, cls.mesh.mesh_velocity[:,1])
         
@@ -894,10 +895,14 @@ class FEM:
                     if BC[i]['ramp'] == 'None':
                         cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                     else:
+                        u_max = float(BC[i]['vx'])
                         ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
                         h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
-                        cls.vetor_vx[j] = (1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
-
+                        if cls.i*cls.dt <= 1.0:
+                            cls.vetor_vx[j] = u_max*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
+                        else:
+                            cls.vetor_vx[j] = u_max*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)
+                            
                 if 'Profile' in BC[i]['vy']:                    
                     u_0 = float(BC[i]['vy'].split('-')[1])
                     ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
@@ -905,13 +910,8 @@ class FEM:
                     cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                     
                 elif BC[i]['vy'] != 'None':
-                    if BC[i]['ramp'] == 'None':
-                        cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
-                    else:
-                        ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
-                        h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
-                        cls.vetor_vy[j] = (1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
-                        
+                    cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
+                    
                 if cls.mesh.mesh_kind == 'quad':
                     if BC[i]['T'] != 'None':
                         cls.vetor_T[j] = float(BC[i]['T'])
@@ -966,9 +966,13 @@ class FEM:
                         if BC[i]['ramp'] == 'None':
                             cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                         else:
+                            u_max = float(BC[i]['vx'])
                             ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
                             h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
-                            cls.vetor_vx[j] = (1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
+                            if cls.i*cls.dt <= 1.0:
+                                cls.vetor_vx[j] = u_max*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
+                            else:
+                                cls.vetor_vx[j] = u_max*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)
 
                 if 'Profile' in BC[i]['vy']:
                     row = cls.Matriz.getrow(j + cls.mesh.npoints)
@@ -991,13 +995,8 @@ class FEM:
                         if not cls.robin:
                             cls.vetor_vy[j] = cls.fluid.vy[j]
                     else:
-                        if BC[i]['ramp'] == 'None':
-                            cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
-                        else:
-                            ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
-                            h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
-                            cls.vetor_vy[j] = (1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
-                            
+                        cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
+                        
                 if cls.mesh.mesh_kind == 'quad':
                                                 
                     if BC[i]['T'] != 'None':
