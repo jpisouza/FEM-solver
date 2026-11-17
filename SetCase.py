@@ -104,6 +104,10 @@ class Case:
             if 'Fluid_conv' in parSolid.attrib:
                 SolidProp['Fluid_conv'] = int(parSolid.attrib['Fluid_conv'])
                 
+            SolidProp['AC_conv'] = 45
+            if 'AC_conv' in parSolid.attrib:
+                SolidProp['AC_conv'] = int(parSolid.attrib['AC_conv'])
+                
             SolidProp['relax'] = False
             if 'relax' in parSolid.attrib:
                 if parSolid.attrib['relax'] == "True":
@@ -146,6 +150,8 @@ class Case:
                 child.attrib['freq'] = 0
             if 'amp' not in child.attrib.keys():
                 child.attrib['amp'] = 1.0
+            if 'ramp' not in child.attrib.keys():
+                child.attrib['ramp'] = 'None'
             BC_list.append(child.attrib)
         BC_list.reverse() 
         

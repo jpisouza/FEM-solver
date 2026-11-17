@@ -891,7 +891,12 @@ class FEM:
                     h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
                     cls.vetor_vx[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                 elif BC[i]['vx'] != 'None':
-                    cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
+                    if BC[i]['ramp'] == 'None':
+                        cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
+                    else:
+                        ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
+                        h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
+                        cls.vetor_vx[j] = (1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
 
                 if 'Profile' in BC[i]['vy']:                    
                     u_0 = float(BC[i]['vy'].split('-')[1])
@@ -900,8 +905,13 @@ class FEM:
                     cls.vetor_vy[j] = 1.5*u_0*(1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
                     
                 elif BC[i]['vy'] != 'None':
-                    cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
-                    
+                    if BC[i]['ramp'] == 'None':
+                        cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
+                    else:
+                        ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
+                        h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
+                        cls.vetor_vy[j] = (1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
+                        
                 if cls.mesh.mesh_kind == 'quad':
                     if BC[i]['T'] != 'None':
                         cls.vetor_T[j] = float(BC[i]['T'])
@@ -953,7 +963,12 @@ class FEM:
                         if not cls.robin:
                             cls.vetor_vx[j] = cls.fluid.vx[j]
                     else:
-                        cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
+                        if BC[i]['ramp'] == 'None':
+                            cls.vetor_vx[j] = float(BC[i]['vx'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq'])))
+                        else:
+                            ref = (np.min(cls.mesh.Y[cls.mesh.boundary[i]]) + np.max(cls.mesh.Y[cls.mesh.boundary[i]]))/2.0
+                            h = np.abs(np.min(cls.mesh.Y[cls.mesh.boundary[i]]) - np.max(cls.mesh.Y[cls.mesh.boundary[i]]))
+                            cls.vetor_vx[j] = (1.0 - (2.0*(cls.mesh.Y[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
 
                 if 'Profile' in BC[i]['vy']:
                     row = cls.Matriz.getrow(j + cls.mesh.npoints)
@@ -976,8 +991,13 @@ class FEM:
                         if not cls.robin:
                             cls.vetor_vy[j] = cls.fluid.vy[j]
                     else:
-                        cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
-                
+                        if BC[i]['ramp'] == 'None':
+                            cls.vetor_vy[j] = float(BC[i]['vy'])*(1.0+float(BC[i]['amp'])*np.sin(2.0*np.pi*cls.i*cls.dt*float(BC[i]['freq']))) 
+                        else:
+                            ref = (np.min(cls.mesh.X[cls.mesh.boundary[i]]) + np.max(cls.mesh.X[cls.mesh.boundary[i]]))/2.0
+                            h = np.abs(np.min(cls.mesh.X[cls.mesh.boundary[i]]) - np.max(cls.mesh.X[cls.mesh.boundary[i]]))
+                            cls.vetor_vy[j] = (1.0 - (2.0*(cls.mesh.X[j]-ref)/h)**2)*(np.sin(np.pi*(cls.i*cls.dt + 1.5)) + 1.0)/2.0
+                            
                 if cls.mesh.mesh_kind == 'quad':
                                                 
                     if BC[i]['T'] != 'None':
@@ -1109,7 +1129,7 @@ class FEM:
             cls.Nu_dict[name][0] = cls.Nu_dict[name][0]/cls.Nu_dict[name][1]    
     
     @classmethod
-    def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[],n=0,fluid_conv=0):
+    def solve_fields(cls, i, forces, dt = 0.1, SL_matrix=False,neighborElem=[[]],oface=[],n=0,fluid_conv=0,AC_conv=0):
         cls.i = i
         if i > 0 and cls.int_i < 1 and type(cls.IC['mesh_X']) == np.ndarray:
             cls.mesh.X = cls.IC['mesh_X']
@@ -1190,11 +1210,11 @@ class FEM:
             print('time --> Set turbulent parcel = ' + str(end-start) + ' [s]')
         
         if len(cls.mesh.FSI) > 0:
-            if cls.i < 45: #Accelerates pressure convergence while the solid is frozen
+            if cls.i < AC_conv: #Accelerates pressure convergence while the solid is frozen
                 cls.Ma = 0.0
-            else:
+            if cls.i >= AC_conv or cls.i>=0.9*fluid_conv:
                 cls.Ma = cls.fluid.Ma
-                if cls.i == 45 and cls.i < 0.9*fluid_conv: #Needs to recalculate matrices because Ma is introduced
+                if cls.i == AC_conv and cls.i < 0.9*fluid_conv: #Needs to recalculate matrices because Ma is introduced
                     start = timer()
                     cls.build_quad_GQ_COO()               
                     cls.set_block_matrices(cls.BC)
