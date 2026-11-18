@@ -187,12 +187,14 @@ def main():
                 error1 = np.linalg.norm(SolidFEM.u - u_ant)/np.linalg.norm(SolidFEM.u)
                 error2 = np.linalg.norm(SolidFEM.u - SolidFEM.u_relax)/np.linalg.norm(SolidFEM.u)
                 error3 = np.linalg.norm(fluid.p - p_ant)/np.linalg.norm(fluid.p)
-                error = max(error1, error2, error3)
+                p_scale = max(np.linalg.norm(fluid.p), 1.0)
+                error4 = np.linalg.norm(fluid.p - fluid.p_relax)/p_scale
+                error = max(error1, error2)
                 # error = np.sqrt(sum((FEM.fluid.FSIForces[:,0] - FSIForces_ant)**2))
                 # error = max(abs(fluid.FSIForces[:,0] - FSIForces_ant))
                 if n_max > 0:
                     print('####################################################################################\n')
-                    print ('----------Main Loop Iteration ' + str(n) + ': Error 1 = ' + str(error1) + ' Error 2 = ' + str(error2) + ' Error 3 = ' + str(error3) +'---------\n')
+                    print ('----------Main Loop Iteration ' + str(n) + ': Error 1 = ' + str(error1) + ' Error 2 = ' + str(error2) + ' Error 3 = ' + str(error3) + ' Error 4 = ' + str(error4) +'---------\n')
                     print('####################################################################################\n')
                 n+=1    
             

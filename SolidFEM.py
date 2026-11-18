@@ -813,9 +813,9 @@ class FEM:
         if cls.mesh.FSI_flag:
             if cls.relax:
                 w_relax_min = 0.01
-                w_relax_max = 0.75
+                w_relax_max = 0.9
                 if n == 0:
-                    cls.w_relax = 0.1
+                    cls.w_relax = 0.6
                     cls.r = cls.u - cls.u_relax
                 else:
                     r_ant = cls.r.copy()
@@ -839,7 +839,8 @@ class FEM:
             if not cls.robin:
                 cls.mesh.fluid.vx[cls.mesh.IEN_orig] = cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
                 cls.mesh.fluid.vy[cls.mesh.IEN_orig] = cls.vy_relax[cls.mesh.IEN] #cls.u_prime_y[cls.mesh.IEN]
-            
+                cls.mesh.fluid.p_relax = (1-cls.w_relax)*cls.mesh.fluid.p_relax + cls.w_relax*cls.mesh.fluid.p
+
             cls.mesh.X = cls.X_orig + cls.ux
             cls.mesh.Y = cls.Y_orig + cls.uy
             # cls.mesh.fluidmesh.mesh_velocity[cls.mesh.IEN_orig,0] = cls.u_prime_x[cls.mesh.IEN]#cls.vx_relax[cls.mesh.IEN] #cls.u_prime_x[cls.mesh.IEN]
