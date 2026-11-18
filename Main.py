@@ -163,6 +163,7 @@ def main():
                 # u_prime_x_ant = SolidFEM.u_prime_x
                 # FSIForces_ant = FEM.fluid.FSIForces[:,0].copy()
                 u_ant = SolidFEM.u
+                p_ant = fluid.p
                 # ux_relax_ant = SolidFEM.ux_relax
                 # vx_ant = fluid.vx
                 for j in range(fluid_steps):
@@ -185,12 +186,13 @@ def main():
                 # error = max(abs(SolidFEM.ux - ux_ant))
                 error1 = np.linalg.norm(SolidFEM.u - u_ant)/np.linalg.norm(SolidFEM.u)
                 error2 = np.linalg.norm(SolidFEM.u - SolidFEM.u_relax)/np.linalg.norm(SolidFEM.u)
-                error = max(error1, error2)
+                error3 = np.linalg.norm(fluid.p - p_ant)/np.linalg.norm(fluid.p)
+                error = max(error1, error2, error3)
                 # error = np.sqrt(sum((FEM.fluid.FSIForces[:,0] - FSIForces_ant)**2))
                 # error = max(abs(fluid.FSIForces[:,0] - FSIForces_ant))
                 if n_max > 0:
                     print('####################################################################################\n')
-                    print ('----------Main Loop Iteration ' + str(n) + ': Error 1 = ' + str(error1) + ': Error 2 = ' + str(error2) + '---------\n')
+                    print ('----------Main Loop Iteration ' + str(n) + ': Error 1 = ' + str(error1) + ' Error 2 = ' + str(error2) + ' Error 3 = ' + str(error3) +'---------\n')
                     print('####################################################################################\n')
                 n+=1    
             

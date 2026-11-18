@@ -56,7 +56,16 @@ ForEach-Object {
     scp -P 51 joao@146.164.26.42:$_ .
 }
 
-
+ssh -p 51 joao@146.164.26.42 "ls ~/FEM-solver/Cases/balloon/Results/*sol-*" |
+Where-Object {
+    if ($_ -match '(solid_)?sol-(\d+)') {
+        $num = [int]$Matches[2]
+        $num -ge 20 
+    }
+} |
+ForEach-Object {
+    scp -P 51 joao@146.164.26.42:$_ .
+}
 
 
 
