@@ -158,6 +158,7 @@ class FEM:
 
     @classmethod
     def build_quad_GQ_COO(cls):
+        cls.mesh.area = 0
         dofVel, dofP, ngauss = 6, 3, 12 # degrees of fredom of velocity/pressure
         element_class = clElement.Triangle
         
@@ -235,6 +236,7 @@ class FEM:
                 ky_data[s_vv]  = local[e].kyy.ravel()
                 k_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
                 kT_data[s_vv]   = (local[e].kxx + local[e].kyy).ravel()
+                cls.mesh.area += 0.5*local[e].area
             
             if len(cls.mesh.FSI) > 0:
                 d = 0

@@ -209,7 +209,7 @@ def main():
         if len(FEM.mesh.FSI_list) > 0:
             f = open(output_dir + '/FSI_Coeffs.txt', 'a')  
             f2 = open(output_dir + '/Nu.txt', 'a')
-            f.write(str(i*dt) + '\t' + str(FEM.Cd) + '\t' + str(FEM.Cl) + '\n')
+            f.write(str(i*dt) + '\t' + str(FEM.Cd) + '\t' + str(FEM.Cl) + '\t' + str(MESH.area) + '\n')
             if i == 0:
                 f2.write('time' + '\t' + 'Nu total' + '\t')
                 for k in range (len(list(FEM.Nu_dict.keys()))):

@@ -20,6 +20,7 @@ class mesh:
         
         self.dict_boundary = {}
         self.dict_element = {}
+        self.area = 0
         i = 0
         for key in self.msh.field_data:
             if self.msh.field_data[key][1] < 2:

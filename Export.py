@@ -94,12 +94,14 @@ def export_data(i,output_dir,fluid,MESH,particleCloud,compress_output):
         point_data.update(data_FSIForces)
         point_data.update(data_meshVel)
         point_data.update(data_meshDisp)
+        field_data = {'Area': np.array([MESH.area], dtype=float)}
         meshio.write_points_cells(
         output_dir + '/sol-'+str(i)+extension,
         points,
         cells,
         #file_format="vtk-ascii",
-        point_data=point_data
+        point_data=point_data,
+        field_data=field_data
         )
     
     if particleCloud != 0: 
