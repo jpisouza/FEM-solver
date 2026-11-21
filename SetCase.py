@@ -117,6 +117,11 @@ class Case:
             if 'alpha' in parSolid.attrib:
                 SolidProp['alpha'] = parSolid.attrib['alpha']
                 
+            SolidProp['p_relax'] = False
+            if 'p_relax' in parSolid.attrib:
+                if parSolid.attrib['p_relax'] == "True":
+                    SolidProp['p_relax'] = True
+                
             
         particles = par.attrib['particles']
         if particles == 'True':

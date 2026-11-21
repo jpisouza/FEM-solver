@@ -877,8 +877,11 @@ class FEM:
             cls.vetor_T = sp.sparse.csr_matrix.dot((1.0/cls.dt)*cls.M_T,cls.fluid.Td)
         
         if cls.compressible:
-            # cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.p_minus) #+ sp.sparse.csr_matrix.dot(cls.Dx, cls.mesh.mesh_velocity[:,0]) + sp.sparse.csr_matrix.dot(cls.Dy, cls.mesh.mesh_velocity[:,1])
-            cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.fluid.p_relax)
+            if cls.SolidProp['p_relax']:
+                # cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.p_minus) #+ sp.sparse.csr_matrix.dot(cls.Dx, cls.mesh.mesh_velocity[:,0]) + sp.sparse.csr_matrix.dot(cls.Dy, cls.mesh.mesh_velocity[:,1])
+                cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.fluid.p_relax)
+            else:
+                cls.vetor_p = sp.sparse.csr_matrix.dot(((cls.Ma**2)/cls.dt)*cls.Mp,cls.fluid.p)
         else:
             cls.vetor_p = np.zeros((cls.mesh.npoints_p),dtype='float' ) #+ sp.sparse.csr_matrix.dot(cls.Dx, cls.mesh.mesh_velocity[:,0]) + sp.sparse.csr_matrix.dot(cls.Dy, cls.mesh.mesh_velocity[:,1])
         
